@@ -10,6 +10,8 @@ import shutil
 from datetime import datetime
 from typing import Optional
 
+from . import auth_utils
+
 class ImageEditThread(threading.Thread):
     """Background thread for AI image editing"""
     
@@ -84,7 +86,7 @@ class ImageEditThread(threading.Thread):
             height = int(orig_h * scale)
             print(f"[NANO BANANA] Edit target resolution: {width}x{height} (Mode: {self.resolution}, max_dim: {max_dim})")
 
-            if self.api_key.startswith("AIza"):
+            if auth_utils.is_google_api_key(self.api_key):
                 # ─── Direct Google API Mode ───
                 from .gemini_api import GeminiAPI
                 print("[NANO BANANA] Calling Google API directly for EDIT...")

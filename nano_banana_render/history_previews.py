@@ -9,10 +9,18 @@ _timer_registered = False
 
 def init_previews():
     global custom_icons
+    clear_previews()
     custom_icons = bpy.utils.previews.new()
 
 def clear_previews():
-    global custom_icons
+    global custom_icons, _load_queue, _timer_registered
+    _load_queue.clear()
+    if _timer_registered and bpy.app.timers.is_registered(_process_queue):
+        try:
+            bpy.app.timers.unregister(_process_queue)
+        except Exception:
+            pass
+    _timer_registered = False
     if custom_icons:
         bpy.utils.previews.remove(custom_icons)
         custom_icons = None

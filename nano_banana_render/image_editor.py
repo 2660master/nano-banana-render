@@ -9,6 +9,7 @@ import time
 from typing import Optional
 from bpy.types import Panel, PropertyGroup, Operator
 from bpy.props import StringProperty, BoolProperty, CollectionProperty, IntProperty, PointerProperty, EnumProperty
+from .model_config import IMAGE_MODEL_ITEMS, MODEL_MAP, get_image_cost, supports_image_resolution
 
 # Smart Points — lazy import to keep module order clean
 from . import smart_points as _sp
@@ -73,8 +74,9 @@ class ImageEditorProperties(PropertyGroup):
         name="Model",
         description="Select which AI model to use for editing",
         items=[
-            ('NANO_BANANA_2', "Nano Banana 2", "gemini-3.1-flash-image-preview — Fast, balanced quality"),
-            ('NANO_BANANA_PRO', "Nano Banana Pro", "gemini-3-pro-image-preview — Highest quality, slower"),
+            ('NANO_BANANA_2_LITE', "Nano Banana 2 Lite", "gemini-3.1-flash-lite-image - fastest, 1K only"),
+            ('NANO_BANANA_2', "Nano Banana 2", "gemini-3.1-flash-image - Fast, balanced quality"),
+            ('NANO_BANANA_PRO', "Nano Banana Pro", "gemini-3-pro-image - Highest quality, slower"),
             ('NANO_BANANA', "Nano Banana", "gemini-2.5-flash-image — Basic, fastest (1K only)"),
         ],
         default='NANO_BANANA_PRO',
@@ -193,10 +195,10 @@ class ImageEditorProperties(PropertyGroup):
     )
 
 
-class BananaPTImageEditorPanel(Panel):
+class NANO_BANANA_PT_ImageEditor(Panel):
     """Main Image Editor panel for AI post-processing"""
     bl_label = "Nanode AI Editor"
-    bl_idname = "BananaPTImageEditorPanel"
+    bl_idname = "NANO_BANANA_PT_image_editor"
     bl_space_type = 'IMAGE_EDITOR'
     bl_region_type = 'UI'
     bl_category = "Nanode AI Editor"
@@ -232,16 +234,15 @@ class BananaPTImageEditorPanel(Panel):
             row.operator("banana.google_login", text="Login with Google", icon='URL')
         else:
             # ─── Cost per render ───
-            model_tier = 'pro' if props.ai_model == 'NANO_BANANA_PRO' else 'flash'
-            cost_grid = {
-                'flash': {'1024': 10, '2048': 15, '4096': 60, 'AUTO': 10},
-                'pro':   {'1024': 30, '2048': 45, '4096': 60, 'AUTO': 30},
-            }
             res = getattr(props, 'resolution', '1024')
-            cost = cost_grid.get(model_tier, cost_grid['pro']).get(res, 30)
+            cost = get_image_cost(props.ai_model, res)
             row = box.row()
             row.scale_y = 0.8
-            row.label(text=f"Cost: {cost} credits per render")
+            if cost is None:
+                row.alert = True
+                row.label(text="Selected model supports 1K only", icon='ERROR')
+            else:
+                row.label(text=f"Cost: {cost} credits per render")
             
             row = box.row(align=True)
             if scene_props.beta_balance >= 0:
@@ -293,10 +294,10 @@ class BananaPTImageEditorPanel(Panel):
         box.prop(props, "resolution", text="")
         
         # Warn if 2K/4K selected with Nano Banana
-        if props.ai_model == 'NANO_BANANA' and props.resolution in ('2048', '4096'):
+        if not supports_image_resolution(props.ai_model, props.resolution):
             row = box.row()
             row.alert = True
-            row.label(text="Nano Banana supports 1K only", icon='ERROR')
+            row.label(text="Selected model supports 1K only", icon='ERROR')
         
         # Edit prompt
         layout.separator()
@@ -534,6 +535,10 @@ class NanoBananaOTApplyEdit(Operator):
         if not has_token:
             self.report({'ERROR'}, "Beta token not set. Enter it in addon preferences.")
             return {'CANCELLED'}
+
+        if not supports_image_resolution(props.ai_model, props.resolution):
+            self.report({'ERROR'}, "Selected model supports 1K only")
+            return {'CANCELLED'}
         
         # Start edit in background thread
         props.is_editing = True
@@ -722,12 +727,7 @@ class NanoBananaOTApplyEdit(Operator):
             final_image_path = image_path
             
             # Map model enum to API model name
-            MODEL_MAP = {
-                'NANO_BANANA_2': 'gemini-3.1-flash-image-preview',
-                'NANO_BANANA_PRO': 'gemini-3-pro-image-preview',
-                'NANO_BANANA': 'gemini-2.5-flash-image',
-            }
-            model_name = MODEL_MAP.get(props.ai_model, 'gemini-3.1-flash-image-preview')
+            model_name = MODEL_MAP.get(props.ai_model, 'gemini-3.1-flash-image')
             
             # Get auth token (Google API key or beta token)
             token = prefs.preferences.beta_token.strip() if prefs else ""
@@ -1415,7 +1415,7 @@ classes = (
     *_sp.classes,            # SmartPointItem MUST be registered before ImageEditorProperties
     EditHistoryItem,
     ImageEditorProperties,
-    BananaPTImageEditorPanel,
+    NANO_BANANA_PT_ImageEditor,
     NanoBananaCopyPrompt,
     NanoBananaOTApplyEdit,
     NanoBananaOTFinalizeComposite,

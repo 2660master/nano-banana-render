@@ -1,3 +1,5 @@
+import os
+
 import bpy
 
 OP_RATE_GEN = "banana.rate_generation"
@@ -5,6 +7,25 @@ OP_TOGGLE_FEEDBACK = "banana.toggle_feedback"
 from typing import Callable, Any, Optional
 from bpy.types import PropertyGroup, Panel
 from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty, IntProperty, CollectionProperty, PointerProperty
+from .model_config import (
+    IMAGE_MODEL_ITEMS,
+    OMNI_DURATION_ITEMS,
+    VIDEO_ASPECT_ITEMS,
+    get_image_cost,
+    get_omni_cost,
+    supports_image_resolution,
+)
+from . import auth_utils
+
+
+def on_omni_aspect_ratio_change(props, context) -> None:
+    scene = getattr(context, "scene", None)
+    if not scene:
+        return
+    from . import render_engine
+
+    render_engine.apply_omni_camera_aspect(scene, props.omni_aspect_ratio)
+
 
 class GeminiRenderHistoryItem(PropertyGroup):
     """Single render history entry with visual preview"""
@@ -67,8 +88,9 @@ class GeminiRenderProperties(PropertyGroup):
         name="Model",
         description="Select which AI model to use for rendering",
         items=[
-            ('NANO_BANANA_2', "Nano Banana 2", "gemini-3.1-flash-image-preview — Fast, balanced quality"),
-            ('NANO_BANANA_PRO', "Nano Banana Pro", "gemini-3-pro-image-preview — Highest quality, slower"),
+            ('NANO_BANANA_2_LITE', "Nano Banana 2 Lite", "gemini-3.1-flash-lite-image - fastest, 1K only"),
+            ('NANO_BANANA_2', "Nano Banana 2", "gemini-3.1-flash-image - Fast, balanced quality"),
+            ('NANO_BANANA_PRO', "Nano Banana Pro", "gemini-3-pro-image - Highest quality, slower"),
             ('NANO_BANANA', "Nano Banana", "gemini-2.5-flash-image — Basic, fastest"),
         ],
         default='NANO_BANANA_PRO',
@@ -197,6 +219,67 @@ class GeminiRenderProperties(PropertyGroup):
     )
 
     # ─── Beta Properties ──────────────────────────────────────
+    omni_render_mode: EnumProperty(
+        name="Source Render",
+        description="Render source that Omni uses as geometry, camera, and motion guidance",
+        items=[
+            ('WORKBENCH', "Workbench", "Flat Workbench/MatCap render using the same geometry settings as AI Texturing"),
+            ('EEVEE', "Eevee", "Scene Eevee render with current materials, lights, and camera"),
+        ],
+        default='EEVEE',
+    )
+
+    omni_input_mode: EnumProperty(
+        name="Input",
+        description="Choose how Blender animation guides Omni",
+        items=[
+            ('TIMELINE_FRAMES', "Timeline Frames", "Use the first, middle, and last blocking frames as motion guidance"),
+            ('FRAME', "Current Frame", "Animate the current camera frame from the prompt"),
+            ('VIDEO_EDIT', "Uploaded Motion Guide", "Upload the viewport animation for Omni rendering"),
+        ],
+        default='VIDEO_EDIT',
+    )
+
+    omni_duration: EnumProperty(
+        name="Duration",
+        description="Video duration",
+        items=OMNI_DURATION_ITEMS,
+        default='10',
+    )
+
+    omni_aspect_ratio: EnumProperty(
+        name="Aspect",
+        description="Omni output aspect ratio",
+        items=VIDEO_ASPECT_ITEMS,
+        default='16:9',
+        update=on_omni_aspect_ratio_change,
+    )
+
+    omni_status: StringProperty(
+        name="Omni Status",
+        description="Latest Omni video job status",
+        default="",
+    )
+
+    omni_last_job_id: IntProperty(
+        name="Omni Job ID",
+        description="Last Omni video job ID",
+        default=0,
+    )
+
+    omni_output_url: StringProperty(
+        name="Omni Output URL",
+        description="Latest Omni video result URL",
+        default="",
+    )
+
+    omni_source_video_override: StringProperty(
+        name="Reused Motion Guide",
+        description="Previously captured viewport video reused for the next Omni render",
+        default="",
+        subtype='FILE_PATH',
+    )
+
     beta_balance: IntProperty(
         name="Balance",
         description="Remaining AI generations",
@@ -398,21 +481,20 @@ class BananaPTRenderPanel(Panel):
         # Credit cost hint for current model
         prefs = context.preferences.addons.get("nano_banana_render")
         has_token = prefs and hasattr(prefs.preferences, 'beta_token') and prefs.preferences.beta_token.strip()
-        is_credit_user = has_token and prefs.preferences.beta_token.strip().startswith("nk_")
-        is_api_user = has_token and prefs.preferences.beta_token.strip().startswith("AIza")
+        token = prefs.preferences.beta_token.strip() if has_token else ""
+        is_credit_user = auth_utils.is_nanode_token(token)
+        is_api_user = auth_utils.is_google_api_key(token)
         
         if is_credit_user:
-            # Cost per model+resolution
-            model_tier = 'pro' if props.ai_model == 'NANO_BANANA_PRO' else 'flash'
-            cost_grid = {
-                'flash': {'1024': 10, '2048': 15, '4096': 60},
-                'pro':   {'1024': 30, '2048': 45, '4096': 60},
-            }
             res = getattr(props, 'resolution', '1024')
-            cost = cost_grid.get(model_tier, cost_grid['pro']).get(res, 30)
+            cost = get_image_cost(props.ai_model, res)
             row = layout.row()
             row.scale_y = 0.7
-            row.label(text=f"Cost: {cost} credits per render")
+            if cost is None:
+                row.alert = True
+                row.label(text="Selected model supports 1K only", icon='ERROR')
+            else:
+                row.label(text=f"Cost: {cost} credits per render")
         
         if not has_token:
             row = layout.row()
@@ -433,6 +515,8 @@ class BananaPTRenderPanel(Panel):
                     else:
                         row.label(text="Beta Active", icon='LINKED')
                 row.operator("banana.refresh_balance", text="", icon='FILE_REFRESH')
+                if is_credit_user:
+                    row.operator("banana.google_login", text="", icon='URL')
                 
                 # Buy Credits button for credit users (on the same row)
                 if is_credit_user:
@@ -537,11 +621,11 @@ class BananaPTRenderMode(Panel):
         layout.prop(props, "render_mode", text="Mode")
         layout.prop(props, "resolution")
         
-        # Warn if 2K/4K selected with Nano Banana (gemini-2.5-flash only supports 1K)
-        if props.ai_model == 'NANO_BANANA' and props.resolution != '1024':
+        # Warn if 2K/4K selected with a 1K-only image model.
+        if not supports_image_resolution(props.ai_model, props.resolution):
             row = layout.row()
             row.alert = True
-            row.label(text="Nano Banana supports 1K only", icon='ERROR')
+            row.label(text="Selected model supports 1K only", icon='ERROR')
         
         # Show auto-detected dimensions
         _, _ = get_render_dimensions_from_scene(context)
@@ -549,6 +633,193 @@ class BananaPTRenderMode(Panel):
 
 
 # ─── Mist Settings Sub-panel ───
+
+class BananaPTOmniEngine(Panel):
+    """Omni video render engine settings."""
+    bl_label = "Omni Engine"
+    bl_idname = "BANANA_PT_omni_engine"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "render"
+    COMPAT_ENGINES = {'NANODE_OMNI'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.engine in cls.COMPAT_ENGINES
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        props = context.scene.gemini_render
+        prefs = context.preferences.addons.get("nano_banana_render")
+        token = ""
+        if prefs and hasattr(prefs.preferences, 'beta_token'):
+            token = prefs.preferences.beta_token.strip()
+
+        is_nanode = auth_utils.is_nanode_token(token)
+        is_personal = auth_utils.is_google_api_key(token)
+        task = 'edit' if props.omni_input_mode == 'VIDEO_EDIT' else 'image_to_video'
+        duration = props.omni_duration or '10'
+        cost = get_omni_cost(task, duration)
+
+        model = layout.row()
+        model.label(text="Model")
+        model.label(text="Gemini Omni Flash")
+        row = layout.row()
+        row.scale_y = 0.8
+        if is_personal:
+            row.label(text="Personal Google API / 720p", icon='PREFERENCES')
+        else:
+            row.label(text=f"Cost: {cost} credits per video")
+
+        if not is_nanode and not is_personal:
+            row = layout.row()
+            row.alert = True
+            row.operator("banana.google_login", text="Login with Google", icon='URL')
+        elif is_nanode:
+            row = layout.row(align=True)
+            if props.beta_balance >= 0:
+                row.label(text=f"Credits: {props.beta_balance}")
+            else:
+                row.label(text="Nanode Account", icon='LINKED')
+            row.operator("banana.refresh_balance", text="", icon='FILE_REFRESH')
+            row.operator("banana.google_login", text="", icon='URL')
+            row.operator("banana.open_store", text="Buy Credits", icon='PLUS')
+        else:
+            layout.label(text="Advanced local mode", icon='LINKED')
+
+        action = layout.row()
+        action.scale_y = 1.25
+        action.enabled = (is_nanode or is_personal) and bool(props.prompt.strip())
+        action.operator("banana.ai_render", text="Generate One Omni Video", icon='RENDER_ANIMATION')
+
+        warning = layout.row()
+        warning.alert = True
+        warning.label(text="Do not use Blender Render Animation", icon='ERROR')
+
+        if props.omni_status:
+            layout.separator()
+            status = layout.box()
+            status_value = props.omni_status.lower()
+            status_icon = 'ERROR' if "failed" in status_value else 'CHECKMARK' if "ready" in status_value else 'TIME'
+            status.label(text=props.omni_status, icon=status_icon)
+
+
+class BananaPTOmniPrompt(Panel):
+    bl_label = "Prompt"
+    bl_idname = "BANANA_PT_omni_prompt"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "render"
+    bl_parent_id = "BANANA_PT_omni_engine"
+    COMPAT_ENGINES = {'NANODE_OMNI'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.engine in cls.COMPAT_ENGINES
+
+    def draw(self, context):
+        self.layout.prop(context.scene.gemini_render, "prompt", text="")
+
+
+class BananaPTOmniSettings(Panel):
+    bl_label = "Render Settings"
+    bl_idname = "BANANA_PT_omni_settings"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "render"
+    bl_parent_id = "BANANA_PT_omni_engine"
+    COMPAT_ENGINES = {'NANODE_OMNI'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.engine in cls.COMPAT_ENGINES
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+        props = context.scene.gemini_render
+        layout.prop(props, "omni_render_mode")
+        layout.prop(props, "omni_input_mode")
+        layout.prop(props, "omni_aspect_ratio")
+        layout.prop(props, "omni_duration")
+
+        if props.omni_source_video_override:
+            source = layout.box()
+            row = source.row(align=True)
+            row.label(
+                text=f"Reusing: {os.path.basename(bpy.path.abspath(props.omni_source_video_override))}",
+                icon='FILE_MOVIE',
+            )
+            row.operator("nanode.omni_clear_reuse_source", text="", icon='X')
+
+        notice = layout.row()
+        notice.alert = True
+        notice.label(text="Camera supports 16:9 and 9:16 only", icon='INFO')
+        if props.omni_input_mode == 'VIDEO_EDIT':
+            layout.label(text="Uploads the viewport motion guide", icon='FILE_MOVIE')
+        elif props.omni_input_mode == 'TIMELINE_FRAMES':
+            layout.label(text="Uses first, middle, and last timeline frames", icon='KEYFRAME_HLT')
+
+
+class BananaPTOmniStyleReference(Panel):
+    bl_label = "Style Reference"
+    bl_idname = "BANANA_PT_omni_style_reference"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "render"
+    bl_parent_id = "BANANA_PT_omni_engine"
+    bl_options = {'DEFAULT_CLOSED'}
+    COMPAT_ENGINES = {'NANODE_OMNI'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.engine in cls.COMPAT_ENGINES
+
+    def draw_header(self, context):
+        self.layout.prop(context.scene.gemini_render, "use_style_reference", text="")
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+        props = context.scene.gemini_render
+        layout.active = props.use_style_reference
+        layout.prop(props, "style_reference_image", text="Image")
+        layout.operator("gemini.load_image_as_reference", text="Load from File", icon='FILEBROWSER')
+        if props.style_reference_image:
+            width, height = props.style_reference_image.size
+            layout.label(text=f"{width} x {height}", icon='IMAGE_DATA')
+
+
+class BananaPTOmniHistory(Panel):
+    bl_label = "Video History"
+    bl_idname = "BANANA_PT_omni_history"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "render"
+    bl_parent_id = "BANANA_PT_omni_engine"
+    bl_options = {'DEFAULT_CLOSED'}
+    COMPAT_ENGINES = {'NANODE_OMNI'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.engine in cls.COMPAT_ENGINES
+
+    def draw(self, context):
+        from . import video_director
+
+        video_director.draw_video_history(
+            self.layout,
+            context,
+            omni_only=True,
+            show_header=False,
+            allow_omni_reuse=True,
+        )
+
 
 class BananaPTMist(Panel):
     """Mist pass settings for depth rendering"""
@@ -647,6 +918,9 @@ class BananaPTHistoryPanel(Panel):
         
         if len(props.render_history) == 0:
             layout.label(text="No renders yet", icon='INFO')
+            from . import video_director
+
+            video_director.draw_video_history(layout, context)
             return
         
         layout.label(text=f"{len(props.render_history)} renders", icon='IMAGE_DATA')
@@ -681,9 +955,22 @@ class BananaPTHistoryPanel(Panel):
             actions = box.row(align=True)
             view_btn = actions.operator("gemini.load_history", text="Open in Editor", icon='ZOOM_IN')
             view_btn.history_index = actual_index
+
+            first_btn = actions.operator("nanode.video_use_render_history", text="First", icon='TRIA_RIGHT')
+            first_btn.history_index = actual_index
+            first_btn.target = 'FIRST'
+
+            last_btn = actions.operator("nanode.video_use_render_history", text="Last", icon='TRACKING_FORWARDS')
+            last_btn.history_index = actual_index
+            last_btn.target = 'LAST'
             
             gear_btn = actions.operator("gemini.history_context_menu", text="", icon='DOWNARROW_HLT')
             gear_btn.history_index = actual_index
+
+        layout.separator()
+        from . import video_director
+
+        video_director.draw_video_history(layout, context)
 
 
 
@@ -886,10 +1173,9 @@ class BananaPTTexturingNpanel(Panel):
         prefs = context.preferences.addons.get("nano_banana_render")
         has_token = (prefs and hasattr(prefs.preferences, 'beta_token')
                      and prefs.preferences.beta_token.strip())
-        is_direct_api = (has_token and
-                         prefs.preferences.beta_token.strip().startswith("AIza"))
-        is_credit_user = (has_token and
-                          prefs.preferences.beta_token.strip().startswith("nk_"))
+        token = prefs.preferences.beta_token.strip() if has_token else ""
+        is_direct_api = auth_utils.is_google_api_key(token)
+        is_credit_user = auth_utils.is_nanode_token(token)
 
         if not has_token:
             box = layout.box()
@@ -1071,7 +1357,11 @@ class BananaPTTexturingNpanel(Panel):
                 draft_cost = _get_cost_per_request_ui(props)
                 sub = layout.row()
                 sub.scale_y = 0.7
-                sub.label(text=f"{draft_cost} credits (1 request)")
+                if draft_cost <= 0:
+                    sub.alert = True
+                    sub.label(text="Selected model supports 1K only", icon='ERROR')
+                else:
+                    sub.label(text=f"{draft_cost} credits (1 request)")
         else:
             layout.label(text="Init cameras to start generation", icon='INFO')
 
@@ -1092,10 +1382,5 @@ class BananaPTTexturingNpanel(Panel):
 
 def _get_cost_per_request_ui(props) -> int:
     """Calculate cost per request for UI display."""
-    model_tier = 'pro' if props.ai_model == 'NANO_BANANA_PRO' else 'flash'
-    cost_grid = {
-        'flash': {'1024': 10, '2048': 15, '4096': 60},
-        'pro':   {'1024': 30, '2048': 45, '4096': 60},
-    }
     res = getattr(props, 'tex_resolution', '1024')
-    return cost_grid.get(model_tier, cost_grid['pro']).get(res, 30)
+    return get_image_cost(props.ai_model, res) or 0

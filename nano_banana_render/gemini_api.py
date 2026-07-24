@@ -23,6 +23,93 @@ except ImportError:
 MIME_PNG = "image/png"
 
 
+def _image_mime_type(data: bytes) -> str:
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    raise GeminiAPIError("Video reference must be a valid PNG, JPEG, or WebP image")
+
+
+def _style_reference_aesthetics_rule(reference_label: str) -> str:
+    return (
+        f"The Style Reference image ({reference_label}) is purely for aesthetics! "
+        "ABSOLUTELY DO NOT copy, hallucinate, or reproduce ANY objects, faces, logos, "
+        "geometry, or subjects from the style reference."
+    )
+
+
+STYLE_REFERENCE_FILTER_RULE = (
+    "Treat the style reference as an abstract filter: steal its colors, its contrast, "
+    "its film grain, its lighting feel, BUT NOTHING ELSE."
+)
+
+
+def append_style_reference_policy(
+    prompt: str,
+    reference_label: str,
+    source_label: str,
+    preserve_fields: list[str],
+) -> str:
+    import json
+
+    policy = {
+        "style_reference_policy": {
+            "source": {
+                "label": source_label,
+                "preserve_strictly": preserve_fields,
+            },
+            "style_reference": {
+                "label": reference_label,
+                "type": "style_reference",
+                "extract": [
+                    "rendering_medium",
+                    "art_direction",
+                    "color_palette",
+                    "material_quality",
+                    "shader_response",
+                    "lighting_mood",
+                    "lighting_direction",
+                    "contrast_curve",
+                    "surface_textures",
+                    "texture_scale",
+                    "edge_treatment",
+                    "atmosphere",
+                    "color_grading",
+                    "film_grain",
+                ],
+                "DO_NOT_extract": [
+                    "objects",
+                    "subjects",
+                    "faces",
+                    "body_shape",
+                    "clothing",
+                    "wardrobe",
+                    "accessories",
+                    "logos",
+                    "geometry",
+                    "composition",
+                    "camera",
+                    "motion",
+                    "scene_layout",
+                ],
+            },
+            "ABSOLUTE_RULES": [
+                f"MATCH the visual language of {reference_label} as closely as possible; do not merely approximate it.",
+                "Apply the same rendering medium, materials, shader response, palette, lighting, contrast, texture treatment, and grade consistently to every frame.",
+                _style_reference_aesthetics_rule(reference_label),
+                STYLE_REFERENCE_FILTER_RULE,
+                f"PRESERVE all structure and motion from {source_label}; those properties are IMMUTABLE.",
+                "ONLY change materials, textures, colors, lighting, surface detail, atmosphere, and color grading.",
+            ],
+            "conflict_resolution": "user_prompt (appearance only) > reference_style > source_structure_and_motion (IMMUTABLE)",
+        }
+    }
+    return f"{prompt.rstrip()}\n\nSTYLE_REFERENCE_SCHEMA:\n{json.dumps(policy, ensure_ascii=False, indent=2)}"
+
+
 def _calculate_aspect_ratio(w: int, h: int) -> str:
     """Calculate closest supported aspect ratio string."""
     ratio = w / h if h > 0 else 1.0
@@ -55,13 +142,313 @@ class GeminiAPIError(Exception):
     """Custom exception for Gemini API errors"""
     pass
 
+
+def validate_google_api_key(api_key: str, timeout: int = 20) -> tuple[bool, str]:
+    """Validate a Google AI Studio API key without generating content."""
+    import json
+    import urllib.error
+    import urllib.parse
+    import urllib.request
+
+    key = (api_key or "").strip()
+    if not key:
+        return False, "Google API key is empty"
+
+    query = urllib.parse.urlencode({"key": key})
+    request = urllib.request.Request(
+        f"https://generativelanguage.googleapis.com/v1beta/models?{query}",
+        headers={"X-Goog-Api-Client": "nanode-blender-addon"},
+        method="GET",
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            if response.status == 200:
+                return True, "Google API key is valid"
+            return False, f"Google API returned HTTP {response.status}"
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        try:
+            parsed = json.loads(detail)
+            message = parsed.get("error", {}).get("message")
+            if message:
+                detail = message
+        except Exception:
+            pass
+        return False, f"Google API returned HTTP {exc.code}: {detail[:240]}"
+    except Exception as exc:
+        return False, f"Google API check failed: {exc}"
+
+
+def _omni_output_bytes(data) -> bytes:
+    if isinstance(data, str):
+        return base64.b64decode(data)
+    if isinstance(data, bytes):
+        if len(data) > 12 and data[4:8] == b"ftyp":
+            return data
+        try:
+            decoded = base64.b64decode(data, validate=True)
+            return decoded if decoded else data
+        except ValueError:
+            return data
+    raise GeminiAPIError("Omni returned an unsupported video payload")
+
+
+def _extract_omni_video(interaction) -> tuple[bytes, str]:
+    interaction_id = str(getattr(interaction, "id", "") or "")
+    output_video = getattr(interaction, "output_video", None)
+    if output_video and getattr(output_video, "data", None):
+        return _omni_output_bytes(output_video.data), interaction_id
+
+    for step in getattr(interaction, "steps", None) or []:
+        for part in getattr(step, "content", None) or []:
+            if getattr(part, "type", "") == "video" and getattr(part, "data", None):
+                return _omni_output_bytes(part.data), interaction_id
+
+    if isinstance(interaction, dict):
+        interaction_id = str(interaction.get("id") or "")
+        for step in interaction.get("steps", []):
+            for part in step.get("content", []):
+                if part.get("type") == "video" and part.get("data"):
+                    return _omni_output_bytes(part["data"]), interaction_id
+    raise GeminiAPIError("Omni response contained no video data")
+
+
+def _omni_file_state(file_obj) -> str:
+    state = getattr(file_obj, "state", "")
+    return str(getattr(state, "name", state) or "").upper()
+
+
+def _upload_omni_file_sdk(client, video_path: str):
+    import time
+
+    uploaded = client.files.upload(file=video_path)
+    deadline = time.monotonic() + 180
+    while "PROCESSING" in _omni_file_state(uploaded) and time.monotonic() < deadline:
+        time.sleep(5)
+        uploaded = client.files.get(name=uploaded.name)
+    state = _omni_file_state(uploaded)
+    if "FAILED" in state:
+        raise GeminiAPIError(f"Omni source video upload failed: {state}")
+    if "PROCESSING" in state:
+        raise GeminiAPIError("Omni source video upload timed out")
+    return uploaded
+
+
+def _omni_rest_request(api_key: str, endpoint: str, payload: dict, timeout: int = 600) -> dict:
+    import urllib.error
+    import urllib.parse
+    import urllib.request
+
+    query = urllib.parse.urlencode({"key": api_key})
+    request = urllib.request.Request(
+        f"https://generativelanguage.googleapis.com/v1beta/{endpoint}?{query}",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json", "X-Goog-Api-Client": "nanode-blender-addon"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise GeminiAPIError(f"Google Omni error {exc.code}: {detail[:600]}") from exc
+    except Exception as exc:
+        raise GeminiAPIError(f"Google Omni request failed: {exc}") from exc
+
+
+def _upload_omni_file_rest(api_key: str, video_path: str) -> dict:
+    import time
+    import urllib.error
+    import urllib.parse
+    import urllib.request
+
+    size = os.path.getsize(video_path)
+    query = urllib.parse.urlencode({"key": api_key})
+    start_request = urllib.request.Request(
+        f"https://generativelanguage.googleapis.com/upload/v1beta/files?{query}",
+        data=json.dumps({"file": {"display_name": os.path.basename(video_path)}}).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "X-Goog-Upload-Protocol": "resumable",
+            "X-Goog-Upload-Command": "start",
+            "X-Goog-Upload-Header-Content-Length": str(size),
+            "X-Goog-Upload-Header-Content-Type": "video/mp4",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(start_request, timeout=60) as response:
+            upload_url = response.headers.get("X-Goog-Upload-URL", "")
+        if not upload_url:
+            raise GeminiAPIError("Google Files API did not return an upload URL")
+
+        with open(video_path, "rb") as source:
+            upload_request = urllib.request.Request(
+                upload_url,
+                data=source.read(),
+                headers={
+                    "Content-Length": str(size),
+                    "X-Goog-Upload-Offset": "0",
+                    "X-Goog-Upload-Command": "upload, finalize",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(upload_request, timeout=300) as response:
+                uploaded = json.loads(response.read().decode("utf-8")).get("file", {})
+
+        deadline = time.monotonic() + 180
+        while str(uploaded.get("state", "")).upper() == "PROCESSING" and time.monotonic() < deadline:
+            time.sleep(5)
+            name = uploaded.get("name", "")
+            status_request = urllib.request.Request(
+                f"https://generativelanguage.googleapis.com/v1beta/{name}?{query}",
+                method="GET",
+            )
+            with urllib.request.urlopen(status_request, timeout=30) as response:
+                uploaded = json.loads(response.read().decode("utf-8"))
+        state = str(uploaded.get("state", "")).upper()
+        if state == "FAILED":
+            raise GeminiAPIError("Omni source video upload failed")
+        if state == "PROCESSING":
+            raise GeminiAPIError("Omni source video upload timed out")
+        return uploaded
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise GeminiAPIError(f"Google Files API error {exc.code}: {detail[:600]}") from exc
+
+
+def _delete_omni_file_rest(api_key: str, file_name: str) -> None:
+    import urllib.parse
+    import urllib.request
+
+    if not file_name:
+        return
+    query = urllib.parse.urlencode({"key": api_key})
+    request = urllib.request.Request(
+        f"https://generativelanguage.googleapis.com/v1beta/{file_name}?{query}",
+        method="DELETE",
+    )
+    try:
+        urllib.request.urlopen(request, timeout=30).close()
+    except Exception:
+        pass
+
+
+def generate_omni_video_direct(
+    api_key: str,
+    prompt: str,
+    task: str,
+    aspect_ratio: str,
+    duration_seconds: int,
+    input_image_path: str | None = None,
+    reference_image_paths: list[str] | None = None,
+    video_path: str | None = None,
+    match_source_duration: bool = False,
+) -> tuple[bytes, str]:
+    key = (api_key or "").strip()
+    if not key:
+        raise GeminiAPIError("Google API key is empty")
+    if aspect_ratio not in {"16:9", "9:16"}:
+        aspect_ratio = "16:9"
+
+    reference_image_paths = reference_image_paths or []
+    source_prompt = (prompt or "").strip()
+    if not video_path:
+        source_prompt = (
+            f"{source_prompt}\n\n"
+            f"Output target: {int(duration_seconds)} seconds, 720p, cinematic motion, coherent timing."
+        )
+
+    def image_part(path: str) -> dict:
+        with open(path, "rb") as source:
+            data = source.read()
+            return {
+                "type": "image",
+                "data": base64.b64encode(data).decode("ascii"),
+                "mime_type": _image_mime_type(data),
+            }
+
+    duration_seconds = max(3, min(10, int(duration_seconds)))
+    response_format = {"type": "video"}
+    if not (task == "edit" and video_path and match_source_duration):
+        response_format["duration"] = f"{duration_seconds}s"
+    if task != "edit":
+        response_format["aspect_ratio"] = aspect_ratio
+    generation_config = {}
+    if task not in {"auto", "edit"}:
+        generation_config = {"video_config": {"task": task}}
+
+    if GENAI_AVAILABLE:
+        client = genai.Client(api_key=key)
+        uploaded = None
+        try:
+            if video_path:
+                uploaded = _upload_omni_file_sdk(client, video_path)
+                input_payload = [{"type": "document", "uri": uploaded.uri}]
+                input_payload.extend(image_part(path) for path in reference_image_paths[:6])
+                input_payload.append({"type": "text", "text": source_prompt})
+            else:
+                input_payload = []
+                if input_image_path:
+                    input_payload.append(image_part(input_image_path))
+                input_payload.extend(image_part(path) for path in reference_image_paths[:6])
+                input_payload.append({"type": "text", "text": source_prompt})
+
+            kwargs = {
+                "model": "gemini-omni-flash-preview",
+                "input": input_payload,
+                "response_format": response_format,
+            }
+            if generation_config:
+                kwargs["generation_config"] = generation_config
+            interaction = client.interactions.create(**kwargs)
+            return _extract_omni_video(interaction)
+        except GeminiAPIError:
+            raise
+        except Exception as exc:
+            raise GeminiAPIError(f"Google Omni request failed: {exc}") from exc
+        finally:
+            if uploaded:
+                try:
+                    client.files.delete(name=uploaded.name)
+                except Exception:
+                    pass
+
+    uploaded = None
+    try:
+        if video_path:
+            uploaded = _upload_omni_file_rest(key, video_path)
+            input_payload = [{"type": "document", "uri": uploaded.get("uri", "")}]
+            input_payload.extend(image_part(path) for path in reference_image_paths[:6])
+            input_payload.append({"type": "text", "text": source_prompt})
+        else:
+            input_payload = []
+            if input_image_path:
+                input_payload.append(image_part(input_image_path))
+            input_payload.extend(image_part(path) for path in reference_image_paths[:6])
+            input_payload.append({"type": "text", "text": source_prompt})
+
+        body = {
+            "model": "gemini-omni-flash-preview",
+            "input": input_payload,
+            "response_format": response_format,
+        }
+        if generation_config:
+            body["generation_config"] = generation_config
+        return _extract_omni_video(_omni_rest_request(key, "interactions", body))
+    finally:
+        if uploaded:
+            _delete_omni_file_rest(key, uploaded.get("name", ""))
+
+
 class GeminiAPI:
     """Client for Google Gemini API with official SDK"""
     
     def __init__(self, api_key: str, model: str = None):
         """Initialize Gemini API client with SDK or REST fallback."""
         self.api_key = api_key
-        self._model_name = model or "gemini-3.1-flash-image-preview"
+        self._model_name = model or "gemini-3.1-flash-image"
         
         if GENAI_AVAILABLE and PIL_AVAILABLE:
             try:
@@ -112,8 +499,8 @@ class GeminiAPI:
                         "The depth map defines the EXACT object shapes — DO NOT deform, resize, or reposition any object",
                         "The depth map defines the EXACT composition — DO NOT crop, reframe, or change the layout",
                         "DO NOT add new objects that are not present in the depth map. No hallucinations of extra background details, stray characters, or environment props.",
-                        "The Style Reference image (image_1) is purely for aesthetics! ABSOLUTELY DO NOT copy, hallucinate, or reproduce ANY objects, faces, logos, geometry, or subjects from the style reference.",
-                        "Treat the style reference as an abstract filter: steal its colors, its contrast, its film grain, its lighting feel, BUT NOTHING ELSE.",
+                        _style_reference_aesthetics_rule("image_1"),
+                        STYLE_REFERENCE_FILTER_RULE,
                         "DO NOT remove objects that are present in the depth map",
                         "DO NOT change perspective or field of view",
                         "ONLY change: materials, textures, colors, lighting, surface detail, atmosphere"
@@ -193,8 +580,8 @@ class GeminiAPI:
                         "PRESERVE the exact position, size, and shape of every object — NO deformation",
                         "PRESERVE the exact composition and framing — NO cropping or reframing",
                         "PRESERVE the silhouettes of all objects exactly as they appear",
-                        "The Style Reference image (image_2) is purely for aesthetics! ABSOLUTELY DO NOT copy, hallucinate, or reproduce ANY objects, faces, logos, geometry, or subjects from the style reference.",
-                        "Treat the style reference as an abstract filter: steal its colors, its contrast, its film grain, its lighting feel, BUT NOTHING ELSE.",
+                        _style_reference_aesthetics_rule("image_2"),
+                        STYLE_REFERENCE_FILTER_RULE,
                         "DO NOT add new objects not present in the render",
                         "DO NOT remove any objects from the render",
                         "ONLY enhance: material quality, lighting, textures, surface details, atmosphere"

@@ -1,180 +1,213 @@
-# 🍌 Nano Banana Render
-
-https://github.com/user-attachments/assets/6728e18d-5ab0-4358-877e-9ee370678d84
-
-**Generative Pipeline for Blender**
-
-Nano Banana integrates seamlessly into Blender as a **standalone render engine** alongside Cycles and Eevee. Select it from the render engine dropdown and start generating photorealistic images from simple blockouts, depth maps, or existing renders — powered by **Google Gemini AI**. 
-
-<p align="center">
-  <a href="https://nanode.tech">🌐 nanode.tech</a> •
-  <a href="https://github.com/kovname/nano-banana-render/releases">📦 Download</a> •
-  <a href="https://github.com/kovname/nano-banana-render/issues">🐛 Report Bug</a>
-</p>
-
-[![Version](https://img.shields.io/badge/Version-2.7.0-brightgreen.svg?logo=github&logoColor=white)](https://github.com/kovname/nano-banana-render/releases)
-[![Blender](https://img.shields.io/badge/Blender-5.0%2B-orange?logo=blender)](https://www.blender.org/)
-[![License](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
-[![Downloads](https://img.shields.io/github/downloads/kovname/nano-banana-render/total?color=brightgreen)](https://github.com/kovname/nano-banana-render/releases)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Kovname_nano-banana-render&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Kovname_nano-banana-render)
-
----
-
-## 🚀 What's New in v2.7.0?
-
-- **📍 Smart Points:** A new way to guide AI! Click anywhere on your image to drop a colored, numbered marker, and give the AI precise instructions for that exact spot (e.g. "make this object gold", "change to wood"). The AI applies the edits perfectly while leaving the markers completely out of the final image. This enables highly targeted, convenient inpainting without drawing complex masks.
-- **🖼️ Beautiful Visual History:** The generation history has been completely rebuilt. It now features a gorgeous, clean UI with visual thumbnails making it easier than ever to browse, compare, and restore your previous renders or edits.
----
 <div align="center">
+
+# Nanode AI Render Engine
+
+**Native Gemini image and video workflows for Blender**
+
+[Website](https://nanode.tech) |
+[Documentation](https://nanode.tech/docs/#installation) |
+[Download](https://github.com/Kovname/nano-banana-render/releases) |
+[Pricing](https://nanode.tech/pricing) |
+[Issues](https://github.com/Kovname/nano-banana-render/issues)
+
+[![Version](https://img.shields.io/badge/version-2.8.0-ffc400?style=flat-square)](https://github.com/Kovname/nano-banana-render/releases)
+[![Blender](https://img.shields.io/badge/Blender-4.5%20%7C%205.0-f5792a?style=flat-square&logo=blender&logoColor=white)](https://www.blender.org/)
+[![Gemini](https://img.shields.io/badge/Google%20Gemini-image%20%2B%20video-4285f4?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev/)
+[![License](https://img.shields.io/badge/license-GPL--3.0-2ea44f?style=flat-square)](LICENSE)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=Kovname_nano-banana-render&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Kovname_nano-banana-render)
+
+</div>
+
+Nanode turns Blender blockouts, Eevee renders, animation guides, and reference images into finished AI-assisted images and videos. It works as native Blender render engines and editor panels, so generated media stays inside the scene, Render History, Image Editor, and Video Sequencer.
+
+## What's New in 2.8
+
+- **Omni Engine** renders a rough Blender animation into a finished 720p video while preserving camera motion, timing, subject movement, geometry, and composition.
+- **Eevee or Workbench source capture** lets you choose between an already-lit Eevee guide and a clean geometry-focused Workbench guide.
+- **Style Reference for video** transfers rendering medium, materials, lighting, palette, texture treatment, and color grade without copying objects from the reference.
+- **Nanode Video** adds a dedicated Video Sequencer panel for text-to-video, image-to-video, reference images, first/last frames, and video editing.
+- **Gemini Omni Flash** supports uploaded-motion editing, automatic source-duration matching, `16:9` and `9:16`, generated audio, and 4/6/8/10 second workflows.
+- **Veo 3.1 Lite, Fast, and Standard** are available for explicit video generation at supported 720p, 1080p, and 4K configurations.
+- **Continue from Playhead** captures any visible Sequencer frame and uses it as the first frame for a new generation with the currently selected video model.
+- **Unified video history** restores results to the current scene, loads video and audio strips, and supports reusing an Omni motion guide without starting a generation.
+- **Nano Banana 2 Lite** adds the lowest-cost image model: `gemini-3.1-flash-lite-image`, 1K output, 5 credits.
+- **New Google API keys** are supported in Personal API mode, including both `AQ...` and legacy `AIza...` key formats.
+- **Safer paid jobs** use unique request IDs, credit reservation, automatic finalization, and refund on API or safety failure.
+
+## Video Examples
+
+Click a preview to open the full video.
+
+<table>
+  <tr>
+    <th width="33%">1. Eevee Motion Guide</th>
+    <th width="33%">2. Omni Render</th>
+    <th width="33%">3. Omni + Style Reference</th>
+  </tr>
+  <tr>
+    <td><a href="docs/videos/1.mp4"><img src="docs/videos/omni-eevee-motion-guide.gif" alt="Eevee motion guide animation"></a></td>
+    <td><a href="docs/videos/2.mp4"><img src="docs/videos/omni-render.gif" alt="Omni render animation"></a></td>
+    <td><a href="docs/videos/3.mp4"><img src="docs/videos/omni-style-reference.gif" alt="Omni style reference animation"></a></td>
+  </tr>
+  <tr>
+    <td>Original camera, animation, timing, and scene layout rendered with Eevee.</td>
+    <td>Finished materials, lighting, shading, reflections, atmosphere, and color grade.</td>
+    <td>The same motion and subject identity rendered in the visual language of a reference image.</td>
+  </tr>
+</table>
+
+## Supported Models
+
+### Image generation
+
+| Nanode name | Google model | Output | Nanode credits |
+| --- | --- | ---: | ---: |
+| Nano Banana 2 Lite | `gemini-3.1-flash-lite-image` | 1K | 5 |
+| Nano Banana 2 | `gemini-3.1-flash-image` | 1K / 2K / 4K | 10 / 15 / 60 |
+| Nano Banana Pro | `gemini-3-pro-image` | 1K / 2K / 4K | 30 / 45 / 60 |
+| Nano Banana | `gemini-2.5-flash-image` | 1K | 10 |
+
+### Video generation
+
+| Model | Best for | Resolution |
+| --- | --- | --- |
+| Gemini Omni Flash | Animation rendering, video editing, style-guided video | 720p |
+| Veo 3.1 Lite | Lowest-cost standalone video generation | 720p / 1080p |
+| Veo 3.1 Fast | Faster production video and higher resolutions | 720p / 1080p / 4K |
+| Veo 3.1 Standard | Highest-quality Veo generation | 720p / 1080p / 4K |
+
+Higher-resolution Veo jobs use 8-second output where required by the model.
+
+## Blender Workflows
+
+### Nano Banana Render Engine
+
+- Convert depth/mist passes into finished images while retaining camera and scene geometry.
+- Enhance Eevee renders with better materials, lighting, texture detail, and atmosphere.
+- Generate 1K, 2K, or 4K output depending on the selected model.
+- Apply style references without copying their subjects or composition.
+- Browse visual Render History and restore exact generated images.
+
+### Omni Engine
+
+- Capture the active animation using Eevee or Workbench.
+- Upload the motion guide as a single video with the selected `16:9` or `9:16` camera.
+- Re-render motion, camera, timing, and scene structure with AI-generated shading.
+- Add an optional style reference for materials, lighting, palette, and final grade.
+- Load successful video and audio directly into the current scene's Sequencer.
+- Reuse the original motion guide and prompt from Video History.
+
+### Nanode Video
+
+Available in the Video Sequencer sidebar under `Nanode Video`.
+
+- Generate with Gemini Omni Flash or Veo 3.1.
+- Start from text, an image, reference images, or supported first/last frames.
+- Select frames directly from Render History or capture the current Sequencer playhead.
+- Queue jobs, monitor progress, estimate credits, and restore completed results.
+- Continue a generated clip from any visible frame with another supported model.
+
+### AI Video Editor
+
+- Select a Movie Strip, generated result, or local video file.
+- Edit with a text prompt while preserving duration, motion, camera path, and identity.
+- Match source duration automatically or select a compatible duration manually.
+- Apply an optional image as a strict visual-style reference.
+- Return the edited clip and its audio to the Video Sequencer.
+
+### Nanode AI Editor
+
+- Perform full-frame image edits from a text prompt.
+- Paint masks directly in Blender for inpainting.
+- Use Smart Points for precise localized instructions.
+- Add reference objects with matched lighting and shadows.
+- Browse and restore visual edit history.
+
+### Nanode AI Texturing
+
+- Generate context-aware materials directly on Blender objects.
+- Use multi-angle projection cameras for more complete coverage.
+- Guide material generation with a style-reference image.
+
+## Documentation
+
+<div align="center">
+
+Installation, authentication, render engines, video workflows, model settings, and troubleshooting are maintained in the Nanode documentation.
+
+[![Open Nanode Documentation](https://img.shields.io/badge/Open_Nanode_Documentation-Installation_and_Workflows-ffc400?style=for-the-badge&labelColor=171717)](https://nanode.tech/docs/#installation)
+
+**[Read the documentation](https://nanode.tech/docs/#installation)**
+
+</div>
+
+## Image Examples
+
+### Depth to render
+
+| Depth input | Result |
+| :---: | :---: |
+| <img src="docs/images/depth_input.png" alt="Depth input" height="300"> | <img src="docs/images/depth_result.png" alt="Generated render" height="300"> |
+
+### Eevee enhancement
+
+| Eevee draft | Result |
+| :---: | :---: |
+| <img src="docs/images/reg_render.png" alt="Eevee draft" height="300"> | <img src="docs/images/reg_prompt_result.png" alt="Enhanced result" height="300"> |
+
+### Style-guided image rendering
+
+| Eevee draft | Style reference | Result |
+| :---: | :---: | :---: |
+| <img src="docs/images/reg_render_2.png" alt="Eevee draft" height="260"> | <img src="docs/images/style_ref_2.png" alt="Style reference" height="260"> | <img src="docs/images/reg_prompt_result_2.png" alt="Style-guided result" height="260"> |
+
+### AI texturing
+
+| Plain object | Textured result |
+| :---: | :---: |
+| <img src="docs/images/texture_input.gif" alt="Plain object" height="300"> | <img src="docs/images/texture_result.gif" alt="AI-textured result" height="300"> |
+
+### Smart Points
+
+| Target points | Instructions | Result |
+| :---: | :---: | :---: |
+| <img src="docs/images/smart_points_input.png" alt="Smart Points input" height="260"> | <img src="docs/images/smart_points_prompt.png" alt="Smart Points instructions" height="260"> | <img src="docs/images/smart_points_result.png" alt="Smart Points result" height="260"> |
+
+## Credits and Reliability
+
+- New Nanode accounts receive starter credits after Google login.
+- Credit cost is shown before image and video generation.
+- Video credits are reserved once per unique request.
+- Successful jobs finalize the reservation.
+- API, moderation, and safety failures automatically refund the reservation.
+- Personal Google API mode bypasses Nanode credits.
+
+Current credit packages are listed at [nanode.tech/pricing](https://nanode.tech/pricing).
 
 ## Supported by Google Cloud for Startups
 
+<p align="center">
   <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Google_Cloud_logo.svg" width="200" alt="Google Cloud">
-</div>
+</p>
 
-This project is proudly supported by the **Google Cloud for Startups** program. Their generous cloud credits made it possible for us to build the heavy AI infrastructure bridging Blender to Google's Gemini models. A huge thank you to Google Cloud for believing in independent creators and open-source tools! 🙏
+Nanode is supported by the **Google Cloud for Startups** program. Its cloud credits help us operate the AI infrastructure behind Nanode and continue developing the open-source Blender add-on. Thank you to Google Cloud for supporting independent creators and open-source tools.
 
----
+## Feedback and Support
 
-## 🛠️ The Pipeline Components
+- [Open a GitHub issue](https://github.com/Kovname/nano-banana-render/issues)
+- Use the in-addon feedback controls
+- Email [contact@nanode.tech](mailto:contact@nanode.tech)
 
-Nanode provides three central workflows:
+## License
 
-### 1. 🎬 Render Engine (3D Viewport)
-- **Depth Map Render (Mist)** — Block out basic shapes, let AI create photorealistic results perfectly respecting your geometry.
-- **Regular Render (Eevee)** — Enhance Eevee renders with AI to add intricate details.
-- **Style Transfer** — Apply the look, lighting, and palette of any reference image to your scene.
-- **Resolution Control** — Generate in 1K, 2K, or 4K with automatic aspect ratio preservation.
-
-### 2. 🎨 Nanode AI Texturing
-- **Smart Material Generation** — Generate seamless textures directly onto your models inside the 3D viewport.
-- **Multi-Angle Projection** — AI automatically sets up and projects textures from multiple camera angles to cover complex geometry.
-- **Style References** — Match texturing to a specific style via image references.
-
-### 3. ✏️ Nanode AI Editor (Image Editor)
-- **Smart Points** — Drop a marker on an object to target your edits explicitly to that location without needing complex manual masks.
-- **Visual History** — Flip back and forth through generations using beautiful image thumbnails.
-- **Inpainting** — Draw a mask directly in Blender, describe what to add (e.g. "Add a red car"), and the AI perfectly integrates it.
-- **Object Integration** — Place reference objects into scenes with matched lighting and shadows.
-- **Full Image Edit** — Change mood, time of day, weather using text prompts.
-
----
-
-## 📖 Getting Started
-
-### 1. Install & Access
-1. Download the `.zip` from [Releases](https://github.com/kovname/nano-banana-render/releases) and install via `Edit > Preferences > Add-ons > Install from disk`.
-2. Enable **Nanode AI Render Engine**.
-3. Go to the active Render tab, select **Nano Banana**, and click **Login with Google** to receive **100 free credits upon signup**.
-
-### 2. Using the AI Render Engine
-1. Select **Nano Banana** from the render engine dropdown.
-2. Build your scene.
-3. Open the **Render Properties** tab -> write your prompt describing the final vision. Select reference image (optional).
-4. Select render type **Depth Map Render (Mist)** or **Regular Render (Eevee)**.
-5. Press **F12** or click **Render > Image Render**. Render is done!
-
-### 3. Using Nanode AI Texturing
-*Accessible via the 3D Viewport N-Panel (press `N` > Nanode AI Texturing).*
-1. Select the main object you want to texture.
-2. Click **Init Cameras** to surround your object with AI projection cameras.
-3. Type your prompt (e.g. "rusty metal surface with peeling blue paint").
-4. Click **Generate Draft** to project the textures.
-
-### 4. Using Nanode AI Editor
-*Accessible in the Image Editor space (press `N` in Image Editor).*
-1. Select your rendered image. Open the **Nanode AI Editor** panel in the sidebar.
-2. **For Smart Points:** Enable "Smart Points", click "Add Point", drop a numbered circle on your image, and write a prompt specifically for that spot.
-3. **For Inpainting:** Click **Draw**, paint over the area you want to change, type what to add (or load a Reference Object), and click **Apply Drawing**.
-4. **For History:** Scroll down to the History section to view large, beautiful thumbnails of all your previous edits and switch between them instantly.
-
----
-
-## 📸 Showcase & Examples
-
-### 1. Depth Map Render (Mist)
-Uses the depth map of the scene to create a render perfectly respecting geometry.
-| Depth Input | Prompt | Result |
-| :---: | :---: | :---: |
-| <img src="docs/images/depth_input.png" height="300"> | *"Ultra realistic, middle ages, knight defending himself from arrows, beautiful lighting, light fog, motion blur, night time, fire forrest"* | <img src="docs/images/depth_result.png" height="300"> |
-
-### 2. Depth Map Render (Mist) + Style Reference
-Create a render with the exact same style as your reference image.
-| Depth Input | Style Reference | Result |
-| :---: | :---: | :---: |
-| <img src="docs/images/depth_input2.png" height="300"> | <img src="docs/images/style_ref.png" height="300"> | <img src="docs/images/depth_style_result.png" height="300"> |
-
-### 3. Regular Render (Eevee)
-Enhances basic Eevee renders to add photorealistic, intricate details.
-| Eevee Draft | Prompt | Result |
-| :---: | :---: | :---: |
-| <img src="docs/images/reg_render.png" height="300"> | *"Photorealistic advertising, interesting background, beautiful light"* | <img src="docs/images/reg_prompt_result.png" height="300"> |
-
-### 4. Regular Render (Eevee) + Style Reference
-| Eevee Draft | Style Reference | Result |
-| :---: | :---: | :---: |
-| <img src="docs/images/reg_render_2.png" height="300"> | <img src="docs/images/style_ref_2.png" height="300"> | <img src="docs/images/reg_prompt_result_2.png" height="300"> |
-
-### 5. AI Texturing
-Apply incredible, context-aware seamless textures directly onto your models.
-| Plain Object | Prompt / Style | Textured Object |
-| :---: | :---: | :---: |
-| <img src="docs/images/texture_input.gif" height="300" alt="Save as docs/images/texture_input.gif"> | *"Arcane style, man in jacket, red tie, scar on face"* | <img src="docs/images/texture_result.gif" height="300" alt="Save as docs/images/texture_result.gif"> |
-
-### 6. Inpainting
-Draw a mask and the Nanode Editor will inpaint it with matched lighting and shadows.
-| Mask | Prompt | Result |
-| :---: | :---: | :---: |
-| <img src="docs/images/edit_mask.png" height="300"> | *"Add spot light"* | <img src="docs/images/edit_result.png" height="300"> |
-
-### 7. AI Image Editor
-Globally edit your image using a text prompt.
-| Original | Prompt | Result |
-| :---: | :---: | :---: |
-| <img src="docs/images/edit_input.png" height="300"> | *"Make the background blue and the text green, add some stars"* | <img src="docs/images/edit_output.png" height="300"> |
-
-### 8. Smart Points (New in v2.7.0!)
-Target precise edits without manually painting complex masks. Just drop a point and describe the change.
-| Points Input | Prompt Configuration | Result |
-| :---: | :---: | :---: |
-| <img src="docs/images/smart_points_input.png" height="300" alt="Image with Smart Points"> | <img src="docs/images/smart_points_prompt.png" height="300" alt="Prompt: Make this gold"> | <img src="docs/images/smart_points_result.png" height="300" alt="Resulting Image"> |
-
----
-
-## 💸 Credits & Pricing
-
-Generating heavy AI image pipelines requires massive server resources, but we strive to keep it incredibly accessible.
-
-- ✅ **Free Tier:** 100 Free Credits upon logging in with your Google account.
-- ✅ **Bonus Credits:** Earn +50 Credits anytime by submitting feedback using the in-addon feedback button.
-- ✅ **Store Live:** Run out of credits? You can securely purchase top-up bundles via [nanode.tech](https://nanode.tech/pricing) — directly linked to your Blender addon.
-
----
-
-## 🐛 Feedback & Bug Reports
-
-Found a bug? Have an idea? We need your help to make this better!
-
-- **In-addon Feedback** — Click the **Feedback** button in the editor panel.
-- **GitHub Issues** — [Open an issue](https://github.com/kovname/nano-banana-render/issues) for detailed bug reports
-- **Email** — Reach us at **contact@nanode.tech**
-
-Every piece of feedback helps shape the future of Nanode. We read absolutely everything. 🍌
-
----
-
-## ❤️ Support the Project
-
-If you find Nanode useful, the absolute best way to support us is:
-
-⭐ **[Star this repo](https://github.com/kovname/nano-banana-render)** — it helps others discover the project, boosts our algorithm ranking, and motivates us to keep building!
-
----
+Nanode AI Render Engine is open-source software licensed under [GPL-3.0](LICENSE). Google model availability, regional restrictions, pricing, and API behavior are controlled by Google and can change during preview periods.
 
 <div align="center">
 
-**Made with 🍌 by [Kovname](https://github.com/kovname)**
+Built by [Kovname](https://github.com/Kovname)
 
-[⭐ Star](https://github.com/kovname/nano-banana-render) • [📦 Download](https://github.com/kovname/nano-banana-render/releases) • [🐛 Issues](https://github.com/kovname/nano-banana-render/issues) • [🌐 nanode.tech](https://nanode.tech)
+[Star](https://github.com/Kovname/nano-banana-render) |
+[Download](https://github.com/Kovname/nano-banana-render/releases) |
+[Website](https://nanode.tech)
 
 </div>

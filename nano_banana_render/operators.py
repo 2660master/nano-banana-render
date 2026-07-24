@@ -7,6 +7,7 @@ import os
 import tempfile
 import logging
 from . import gemini_api
+from . import auth_utils
 from . import depth_utils
 from . import threading_utils
 from .credentials import (
@@ -155,14 +156,14 @@ class GeminiOTOpenApiKeyUrl(Operator):
         return {'FINISHED'}
 
 class GeminiOTValidateApiKey(Operator):
-    """Validate beta token"""
+    """Validate configured Nanode token or Google API key"""
     bl_idname = "gemini.validate_api_key"
-    bl_label = "Test Beta Token"
-    bl_description = "Test if the beta token is configured"
+    bl_label = "Test API Key"
+    bl_description = "Test the configured Nanode login token or Google Gemini API key"
     bl_options = {'REGISTER'}
     
     def execute(self, context):
-        """Validate beta token"""
+        """Validate configured token."""
         try:
             prefs = context.preferences.addons.get("nano_banana_render")
             if not prefs or not hasattr(prefs.preferences, 'beta_token'):
@@ -171,14 +172,26 @@ class GeminiOTValidateApiKey(Operator):
             
             token = prefs.preferences.beta_token.strip()
             if not token:
-                self.report({'ERROR'}, "No beta token set. Enter it in addon preferences.")
+                self.report({'ERROR'}, "No API key set. Enter it in addon preferences.")
+                return {'CANCELLED'}
+
+            if auth_utils.is_google_api_key(token):
+                ok, message = gemini_api.validate_google_api_key(token)
+                if ok:
+                    self.report({'INFO'}, "Google API key valid")
+                    return {'FINISHED'}
+                self.report({'ERROR'}, message)
+                return {'CANCELLED'}
+
+            if not auth_utils.is_nanode_token(token):
+                self.report({'ERROR'}, "Unknown credential format. Use Nanode login or a Google AI Studio key.")
                 return {'CANCELLED'}
             
             # Try to get balance from server as a connectivity test
             from . import beta_api
             balance = beta_api.get_balance()
             if balance >= 0:
-                self.report({'INFO'}, f"Token valid! Balance: {balance} generations")
+                self.report({'INFO'}, f"Nanode token valid! Balance: {balance} credits")
             else:
                 self.report({'WARNING'}, "Token set but server returned invalid response")
             
@@ -899,8 +912,9 @@ class BananaOTGoogleLogin(Operator):
     def execute(self, context):
         import webbrowser
         import threading
+        import json
         from http.server import HTTPServer, BaseHTTPRequestHandler
-        from urllib.parse import urlparse, parse_qs
+        from urllib.parse import urlparse, parse_qs, urlencode
         import socket
         from . import beta_api
 
@@ -977,6 +991,31 @@ class BananaOTGoogleLogin(Operator):
                     self_handler.send_response(404)
                     self_handler.end_headers()
 
+            def do_POST(self_handler):
+                parsed = urlparse(self_handler.path)
+                if parsed.path != "/nanode_auth_callback":
+                    self_handler.send_response(404)
+                    self_handler.end_headers()
+                    return
+
+                try:
+                    length = int(self_handler.headers.get("Content-Length", "0"))
+                    raw_body = self_handler.rfile.read(length).decode("utf-8")
+                    payload = json.loads(raw_body) if raw_body else {}
+                    query = urlencode({
+                        "api_key": payload.get("api_key", ""),
+                        "email": payload.get("email", ""),
+                        "name": payload.get("name", ""),
+                        "balance": str(payload.get("balance", 0)),
+                    })
+                    self_handler.path = f"/nanode_auth_callback?{query}"
+                    self_handler.do_GET()
+                except Exception:
+                    self_handler.send_response(400)
+                    self_handler.send_header("Content-Type", "text/plain; charset=utf-8")
+                    self_handler.end_headers()
+                    self_handler.wfile.write(b"Invalid Nanode login payload")
+
             def log_message(self_handler, format, *args):
                 pass  # Silence HTTP logs
 
@@ -995,7 +1034,11 @@ class BananaOTGoogleLogin(Operator):
         BananaOTGoogleLogin._thread = thread
 
         # ─── Open browser via api.nanode.tech ──────────────────
-        login_url = f"https://api.nanode.tech/auth/google/login?callback_port={port}"
+        login_query = urlencode({
+            "callback_port": str(port),
+            "hwid": beta_api._get_hwid(),
+        })
+        login_url = f"https://api.nanode.tech/auth/google/login?{login_query}"
         webbrowser.open(login_url)
 
         self.report({'INFO'}, "Browser opened — log in with Google and you'll be connected automatically!")

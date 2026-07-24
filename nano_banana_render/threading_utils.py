@@ -14,9 +14,15 @@ class BlenderThreadManager:
     def execute_in_main_thread(self, func: Callable, *args, **kwargs) -> None:
         """Execute function in main Blender thread via timer"""
         self.command_queue.put((func, args, kwargs))
-        
-        # Register timer if not already registered
-        if not self.timer_registered:
+
+        is_registered = False
+        try:
+            is_registered = bpy.app.timers.is_registered(self._process_queue)
+        except Exception:
+            is_registered = False
+
+        # Blender can clear timers when a different .blend file is opened.
+        if not self.timer_registered or not is_registered:
             bpy.app.timers.register(self._process_queue, first_interval=0.01)
             self.timer_registered = True
     
@@ -47,12 +53,19 @@ class BlenderThreadManager:
                 pass
             self.timer_registered = False
 
+    def reset_timer_state(self) -> None:
+        self.timer_registered = False
+
 # Global thread manager instance
 _thread_manager = BlenderThreadManager()
 
 def execute_in_main_thread(func: Callable, *args, **kwargs) -> None:
     """Convenience function to execute in main thread"""
     _thread_manager.execute_in_main_thread(func, *args, **kwargs)
+
+
+def reset_main_thread_timer_state() -> None:
+    _thread_manager.reset_timer_state()
 
 def redraw_all_areas():
     """Force redraw of all areas to update UI."""

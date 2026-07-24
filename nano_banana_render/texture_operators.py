@@ -20,22 +20,16 @@ from bpy.props import IntProperty, StringProperty
 
 from . import texture_pipeline as pipe
 from . import beta_api
+from . import auth_utils
 from .threading_utils import execute_in_main_thread
-from .render_engine import MODEL_MAP
+from .model_config import MODEL_MAP, get_image_cost
 
 
 # Helpers
 
-COST_GRID = {
-    'flash': {'1024': 10, '2048': 15, '4096': 60},
-    'pro':   {'1024': 30, '2048': 45, '4096': 60},
-}
-
-
 def _get_cost(props) -> int:
-    tier = 'pro' if props.ai_model == 'NANO_BANANA_PRO' else 'flash'
     res = getattr(props, 'tex_resolution', '1024')
-    return COST_GRID.get(tier, COST_GRID['pro']).get(res, 30)
+    return get_image_cost(props.ai_model, res) or 0
 
 
 def _get_token() -> str:
@@ -46,7 +40,7 @@ def _get_token() -> str:
 
 
 def _is_direct_api() -> bool:
-    return _get_token().startswith("AIza")
+    return auth_utils.is_google_api_key(_get_token())
 
 
 def _call_api_depth(prompt: str, model_name: str, depth_image_path: str,
@@ -59,7 +53,7 @@ def _call_api_depth(prompt: str, model_name: str, depth_image_path: str,
     """
     token = _get_token()
 
-    if token.startswith("AIza"):
+    if auth_utils.is_google_api_key(token):
         from .gemini_api import GeminiAPI
         gemini = GeminiAPI(api_key=token, model=model_name)
         image_data, _ = gemini.generate_image(
@@ -95,7 +89,7 @@ def _call_api_enhance(prompt: str, model_name: str,
     """
     token = _get_token()
 
-    if token.startswith("AIza"):
+    if auth_utils.is_google_api_key(token):
         from .gemini_api import GeminiAPI
         gemini = GeminiAPI(api_key=token, model=model_name)
         # For enhancement: send colour render as depth_image_path (main input),
@@ -332,6 +326,9 @@ class BananaOTTextureDraft(Operator):
         if not props.tex_prompt.strip() or len(props.tex_prompt.strip()) < 5:
             self.report({'ERROR'}, "Prompt too short")
             return {'CANCELLED'}
+        if _get_cost(props) <= 0:
+            self.report({'ERROR'}, "Selected model supports 1K only")
+            return {'CANCELLED'}
 
         try:
             pipe.prepare_mesh(obj, auto_uv=props.tex_auto_uv)
@@ -434,7 +431,7 @@ class BananaOTTextureDraft(Operator):
             _update_status(scene, "Sending depth collage to AI...")
 
             model_name = MODEL_MAP.get(
-                ai_model, 'gemini-3.1-flash-image-preview'
+                ai_model, 'gemini-3.1-flash-image'
             )
             num = len(cameras)
             names = ", ".join(cam['name'] for cam in cameras)
@@ -616,6 +613,10 @@ class BananaOTTextureEnhance(Operator):
         n = len(_collect_cameras())
         total = _get_cost(props) * n
 
+        if _get_cost(props) <= 0:
+            self.report({'ERROR'}, "Selected model supports 1K only")
+            return {'CANCELLED'}
+
         if props.beta_balance >= 0 and props.beta_balance < total:
             self.report(
                 {'ERROR'},
@@ -667,7 +668,7 @@ class BananaOTTextureEnhance(Operator):
         try:
             tmp_dir = tempfile.mkdtemp(prefix=pipe.TEMP_PREFIX)
             model_name = MODEL_MAP.get(
-                ai_model, 'gemini-3.1-flash-image-preview'
+                ai_model, 'gemini-3.1-flash-image'
             )
             total = len(cameras)
 
