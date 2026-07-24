@@ -20,6 +20,7 @@ env/
 /build/
 /dist/
 /*.zip
+/tools/
 
 # Blender temporary files
 *.blend1
