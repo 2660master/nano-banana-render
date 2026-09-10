@@ -167,10 +167,11 @@ def build():
 
     # -- drietand en schild ---------------------------------------------------
     out["entity/trident"] = veined(32, 32, hx("BCC8C0"), hx("7E8A84"), 911, density=0.10)
-    shield = hide(64, 64, hx("7A5A38"), 912, hx("5A4128"), 0.30, patch_scale=7)
+    # mossteen, door jou gekozen uit vier varianten
+    shield = hide(64, 64, hx("8C928A"), 942, hx("5C8A3A"), 0.34, patch_scale=6)
     fill(shield, (0, 0, 12, 22), hx("6B4F2C"))          # greep
-    fill(shield, (26, 22, 12, 12), hx("CBD2CA"))        # metalen knop
-    fill(shield, (28, 24, 8, 8), hx("9CA69D"))
+    fill(shield, (26, 22, 12, 12), hx("D2D8D0"))        # knop
+    fill(shield, (28, 24, 8, 8), hx("A8B0A6"))
     out["entity/shield_base"] = shield
     out["entity/shield_base_nopattern"] = shield.copy()
 
