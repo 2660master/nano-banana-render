@@ -163,6 +163,9 @@ figcaption{font-size:13px; color:var(--ink); text-align:center; line-height:1.25
 .stile[data-state="fix"] .sslot,.stile[data-state="fix"] .aslot{outline:2px solid var(--amber); outline-offset:2px}
 .stile[data-state="ok"] .sslot,.stile[data-state="ok"] .aslot{outline:2px solid var(--moss); outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.aslot{animation:none}}
+.eslot{position:relative; width:min(260px,72vw); border:1px solid var(--line2); border-radius:3px}
+.eslot img{display:block; width:100%; height:auto; image-rendering:pixelated}
+.facebox{position:absolute; border:2px solid var(--amber); border-radius:2px; pointer-events:none}
 
 /* ---------- geluid ---------- */
 .slist{margin-top:14px; display:flex; flex-direction:column; gap:2px}
@@ -230,8 +233,8 @@ figcaption{font-size:13px; color:var(--ink); text-align:center; line-height:1.25
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">Verdant · deel 1 tot en met 5</div>
-  <h1>Items, blokken, lucht &amp; geluid</h1>
+  <div class="eyebrow">Verdant · compleet pack</div>
+  <h1>Items, blokken, lucht, geluid &amp; dieren</h1>
   <p class="lede">@@TOTAL@@ texturen, allemaal 16×16 — precies de vanilla-resolutie, dus geen extra kosten voor FPS of VRAM. Loop ze langs en zet per stuk <b>goed</b> of <b>anders</b>. Wat je hier aanklikt lees ik terug, dus je hoeft niets over te typen.</p>
   <div class="meta">
     <span>Minecraft 1.21.11</span><span>pack_format 75</span><span>16×16</span>
@@ -282,6 +285,12 @@ figcaption{font-size:13px; color:var(--ink); text-align:center; line-height:1.25
 </section>
 
 <section class="block">
+  <h2>Dieren</h2>
+  <p class="blurb">Dit zijn geen platte plaatjes maar <b>uitgevouwen modellen</b>: elk kubusje van het dier pakt een vast rechthoekje uit dit vel. Die indeling zit in de modelcode van het spel, niet in de texture. De <span style="color:var(--amber)"><b>oranje kader</b></span> is waar het gezicht hoort te landen. De rest van het vel is volledig met vacht gevuld, juist zodat een paar pixels verschuiving nauwelijks opvalt. <b>Zet er een koe naast in het spel en kijk of het gezicht klopt.</b></p>
+  <div class="skygrid">@@ANIMALS@@</div>
+</section>
+
+<section class="block">
   <h2>Geluid</h2>
   <p class="blurb">@@NSOUNDS@@ klanken, allemaal van nul opgebouwd uit ruis en toon — er zitten geen samples in. Mono en 44100 Hz, want Minecraft plaatst alleen mono-geluid echt in de ruimte; stereo klinkt overal even hard. Klik op het driehoekje om te luisteren. <b>Ik kan ze zelf niet horen</b>, dus jij bent hier de oren.</p>
   @@SOUNDS@@
@@ -290,8 +299,7 @@ figcaption{font-size:13px; color:var(--ink); text-align:center; line-height:1.25
 <section class="next">
   <h2>Wat er hierna komt</h2>
   <ol class="steps">
-    <li><span class="n">06</span><div><b>Dieren</b><p>Koeien, schapen, varkens, kippen en papegaaien in het thema. Monsters blijven vanilla.</p></div></li>
-    <li><span class="n">07</span><div><b>Resterende items</b><p>Harnas, schild, elytra, vishengel, schaar, boeken en de rest. Die vul ik aan als de stijl staat.</p></div></li>
+    <li><span class="n">07</span><div><b>Meer dieren</b><p>Paarden, vossen, papegaaien, bijen en de rest hebben elk hun eigen uitvouwing. Die doe ik zodra ik van jou hoor of de koe en het varken goed landen — dan weet ik dat mijn berekening klopt.</p></div></li>
   </ol>
   <p class="caveat">Geluid en lucht kosten geen FPS: geluid draait op de audio-thread en de luchttexturen zijn even groot als vanilla.</p>
 </section>

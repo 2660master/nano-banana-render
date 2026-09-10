@@ -15,8 +15,11 @@ import render
 import sky
 import sound_catalog
 import sound_events
+import sprites_armor
+import sprites_entity
 import sprites_blocks
 import sprites_items
+import sprites_items2
 import sprites_tools
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -26,13 +29,14 @@ ITEM_DIR = os.path.join(PACK, "assets", "minecraft", "textures", "item")
 BLOCK_DIR = os.path.join(PACK, "assets", "minecraft", "textures", "block")
 ENV_DIR = os.path.join(PACK, "assets", "minecraft", "textures", "environment")
 SOUND_DIR = os.path.join(PACK, "assets", "minecraft", "sounds")
+TEX_DIR = os.path.join(PACK, "assets", "minecraft", "textures")
 DIST = os.path.join(ROOT, "dist")
 
 PACK_FORMAT = 75          # Minecraft 1.21.11
 MIN_FORMAT = 64           # 1.21.7 / 1.21.8
 MAX_FORMAT = 75
 
-DESCRIPTION = "§2Verdant §r§7– natuur-texturepack\n§8Items · blokken · lucht · water  §a16x"
+DESCRIPTION = "§2Verdant §r§7– natuur-texturepack\n§8Items · blokken · lucht · geluid · dieren  §a16x"
 
 
 # --------------------------------------------------------------- boog-frames
@@ -89,11 +93,12 @@ def build():
             img.save(os.path.join(ITEM_DIR, name + ".png"))
             written.append(name)
 
-    # 2. losse items
-    for name, spec in sprites_items.ITEMS.items():
-        rows, pal = spec[0], spec[1]
-        img = render.render(rows, pal, name)
-        img.save(os.path.join(ITEM_DIR, name + ".png"))
+    # 2. losse items (deel 1, harnas en de rest)
+    all_items = {n: (v[0], v[1]) for n, v in sprites_items.ITEMS.items()}
+    all_items.update(sprites_armor.items())
+    all_items.update(sprites_items2.ITEMS2)
+    for name, (rows, pal) in all_items.items():
+        render.render(rows, pal, name).save(os.path.join(ITEM_DIR, name + ".png"))
         written.append(name)
 
     # 3. boog-spanframes (anders springt de boog terug naar vanilla)
@@ -111,10 +116,18 @@ def build():
     # 5. lucht, weer, water en lava
     env_written = build_sky()
 
-    # 6. geluiden
+    # 6. dieren
+    ent_written = []
+    for path, im in sprites_entity.build().items():
+        full = os.path.join(TEX_DIR, path + ".png")
+        os.makedirs(os.path.dirname(full), exist_ok=True)
+        im.save(full)
+        ent_written.append(path)
+
+    # 7. geluiden
     snd_written = build_sounds()
 
-    # 7. pack.mcmeta
+    # 8. pack.mcmeta
     meta = {
         "pack": {
             "pack_format": PACK_FORMAT,
@@ -126,10 +139,10 @@ def build():
         json.dump(meta, f, indent=2, ensure_ascii=False)
         f.write("\n")
 
-    # 8. pack-icoon
+    # 9. pack-icoon
     make_icon().save(os.path.join(PACK, "pack.png"))
 
-    # 9. zip
+    # 10. zip
     zip_path = os.path.join(DIST, "Verdant-1.21.11.zip")
     if os.path.exists(zip_path):
         os.remove(zip_path)
@@ -142,9 +155,10 @@ def build():
     print(f"{len(written)} item-texturen -> {os.path.relpath(ITEM_DIR, ROOT)}")
     print(f"{len(blocks_written)} blok-texturen -> {os.path.relpath(BLOCK_DIR, ROOT)}")
     print(f"{len(env_written)} lucht-, weer- en vloeistoftexturen")
+    print(f"{len(ent_written)} dier-texturen")
     print(f"{len(snd_written)} geluiden -> {os.path.relpath(SOUND_DIR, ROOT)}")
     print(f"zip -> {os.path.relpath(zip_path, ROOT)}")
-    return written + blocks_written + env_written + snd_written
+    return written + blocks_written + env_written + ent_written + snd_written
 
 
 # Geanimeerde texturen: frametime is hoeveel ticks een frame blijft staan.

@@ -12,9 +12,10 @@ de hele set één consistente stijl en één palet deelt.
 | 2 | Bouwblokken | goedgekeurd |
 | 3 | Natuurblokken: aarde, gras, blad, erts, zand, planten, gewassen | goedgekeurd |
 | 4 | Lucht, weer, water en lava | goedgekeurd |
-| 5 | Geluiden (73 klanken) | **klaar — ter beoordeling** |
-| 6 | Dieren (geen monsters) | gepland |
-| — | Resterende items (harnas, schild, gereedschap, potions, …) | volgt na akkoord |
+| 5 | Geluiden (73 klanken) | goedgekeurd |
+| 6 | Resterende items (225 in totaal) | **klaar — ter beoordeling** |
+| 7 | Boerderijdieren en wolven | **klaar — moet in het spel gecheckt** |
+| — | Overige dieren (paard, vos, papegaai, bij, …) | wacht op bevestiging dat de uitvouwing klopt |
 
 ## Afgesproken scope
 
@@ -200,3 +201,29 @@ band- en laagdoorlaatfilters.
 
 **Prestaties.** Geluid draait op de audio-thread, niet op de renderthread.
 Het pack voegt hier dus niets toe aan de frametijd.
+
+
+## Dieren
+
+Dier-texturen zijn geen platte plaatjes maar **uitgevouwen modellen**: elk
+kubusje van het model pakt een vast rechthoekje uit het vel. Die indeling
+staat in de modelcode van het spel, niet in de texture.
+
+De vanilla-bestanden waren hier niet op te halen — Mojang's servers zijn
+achter de proxy geblokkeerd — dus de gezichten zijn berekend met de
+standaard doos-uitvouwing uit `sprites_entity.box_uv`:
+
+| Vlak | Positie |
+|---|---|
+| voorkant | `(u + d, v + d)`, breedte `w`, hoogte `h` |
+| achterkant | `(u + d + w + d, v + d)` |
+| links | `(u, v + d)`, breedte `d` |
+| rechts | `(u + d + w, v + d)`, breedte `d` |
+| boven | `(u + d, v)`, hoogte `d` |
+| onder | `(u + d + w, v)` |
+
+De kop-dozen staan in `sprites_entity.HEADS`. Het hele vel wordt met vacht
+gevuld: valt de uitvouwing een paar pixels anders uit, dan zie je dat aan
+een egale vacht nauwelijks. **Alleen de gezichten moeten kloppen, en die
+moeten in het spel gecontroleerd worden.** Klopt het, dan volgen de
+overige dieren; klopt het niet, dan is er één getal per dier dat verschuift.

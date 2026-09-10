@@ -2,12 +2,15 @@
 """Bouwt de keuringspagina (HTML-artifact) met alle texturen ingebed."""
 import base64
 import html
+import io
 import os
 
 import build as B
 import palette
+import item_groups
 import preview_blocks
 import sound_preview
+import sprites_entity
 import sprites_blocks
 import sprites_tools
 
@@ -22,20 +25,7 @@ TOOL_NL = {
     "shovel": "schep", "hoe": "schoffel",
 }
 
-GROUPS = [
-    ("Voedsel & oogst", "Wat je eet en oogst — hier telt of de kleur eetbaar oogt.",
-     ["apple", "golden_apple", "bread", "carrot", "wheat", "wheat_seeds", "honeycomb"]),
-    ("Grondstoffen", "Losse buit uit de wereld.",
-     ["stick", "coal", "charcoal", "flint", "clay_ball", "leather", "string",
-      "feather", "bone", "slime_ball", "ender_pearl"]),
-    ("Staven", "Zelfde vorm, per materiaal een ander natuurpalet.",
-     ["iron_ingot", "gold_ingot", "copper_ingot", "netherite_ingot"]),
-    ("Kristallen & stof", "De felle kleuren — deze moeten opvallen zonder te schreeuwen.",
-     ["diamond", "emerald", "amethyst_shard", "lapis_lazuli", "redstone"]),
-    ("Uitrusting", "De boog heeft drie spanframes, anders springt hij terug naar vanilla.",
-     ["bow", "bow_pulling_0", "bow_pulling_1", "bow_pulling_2", "arrow",
-      "bucket", "water_bucket", "totem_of_undying"]),
-]
+GROUPS = item_groups.groups()
 
 
 def data_uri(name, folder=None):
@@ -121,6 +111,54 @@ def anim_tile(name, fw, frames, frametime, caption):
     )
 
 
+ANIMAL_CAPTION = {
+    "entity/cow/cow": "Donkere huid met roomkleurige vlekken.",
+    "entity/cow/red_mooshroom": "Roodbruin, met een lichtere aftekening.",
+    "entity/cow/brown_mooshroom": "Warmer bruin dan de gewone koe.",
+    "entity/pig/pig": "Zachtroze met een donkere snuit.",
+    "entity/sheep/sheep": "Het vel ónder de vacht.",
+    "entity/sheep/sheep_wool": "Bijna wit — het spel kleurt dit met de kleur van het schaap.",
+    "entity/chicken": "Veren met een oranje snavel en rode lel.",
+    "entity/wolf/wolf": "Grijze vacht, amberkleurige ogen.",
+    "entity/wolf/wolf_tame": "Lichter, met blauwe ogen.",
+    "entity/wolf/wolf_angry": "Donkerder, met rode ogen.",
+}
+
+
+def animal_tiles():
+    """Elke tegel toont het uitgevouwen vel, met het gezichtsvlak omkaderd."""
+    parts = []
+    for path, im in sprites_entity.build().items():
+        buf = io.BytesIO()
+        im.save(buf, format="PNG")
+        uri = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+        key = path.rsplit("/", 1)[-1]
+        key = {"red_mooshroom": "cow", "brown_mooshroom": "cow",
+               "wolf_tame": "wolf", "wolf_angry": "wolf",
+               "sheep_wool": None}.get(key, key)
+        mark = ""
+        if key in sprites_entity.HEADS:
+            fx, fy, fw, fh = sprites_entity.box_uv(*sprites_entity.HEADS[key])["front"]
+            mark = (f'<i class="facebox" style="left:{fx / im.width * 100}%;'
+                    f'top:{fy / im.height * 100}%;width:{fw / im.width * 100}%;'
+                    f'height:{fh / im.height * 100}%"></i>')
+        ratio = im.height / im.width
+        parts.append(
+            f'<figure class="tile stile" data-name="{html.escape(path)}">'
+            f'<div class="eslot" style="aspect-ratio:{im.width}/{im.height}">'
+            f'<img src="{uri}" alt="{html.escape(path)}">{mark}</div>'
+            f'<code>{html.escape(path)}.png</code>'
+            f'<p class="cap">{ANIMAL_CAPTION.get(path, "")} '
+            f'{im.width}&times;{im.height}</p>'
+            f'<div class="verdict" role="group" aria-label="oordeel {html.escape(path)}">'
+            f'<button type="button" class="v v-ok" data-v="ok">goed</button>'
+            f'<button type="button" class="v v-fix" data-v="fix">anders</button></div>'
+            f'<input class="note" id="note-{html.escape(path)}" type="text" hidden '
+            f'placeholder="wat moet er anders?" autocomplete="off"></figure>')
+        _ = ratio
+    return "".join(parts), len(parts)
+
+
 BLOCK_BLURBS = {
     "Planken": "Vier lange gangen met doorlopende nerf. Trappen, treden, hekken en deurpanelen erven deze texture automatisch.",
     "Stammen & stengels": "Bast aan de zijkant, jaarringen aan de kop. Berk heeft zijn zwarte streepjes gehouden.",
@@ -198,13 +236,14 @@ def build_html():
             f'<section class="grp"><h3>{title}</h3><p class="blurb">{blurb}</p>'
             f'<div class="bgrid">{cards}</div></section>')
 
+    animal_html, n_animals = animal_tiles()
     sound_html, n_sounds = sound_preview.build()
     sky_html = ("".join(sky_tile(*t) for t in SKY_STATIC)
                 + "".join(anim_tile(*t) for t in SKY_ANIMATED))
     n_sky = len(SKY_STATIC) + len(SKY_ANIMATED)
 
     total = (len(palette.TIER_ORDER) * len(tools) + sum(len(g[2]) for g in GROUPS)
-             + n_blocks + n_sky + n_sounds)
+             + n_blocks + n_sky + n_sounds + n_animals)
 
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "review_template.html"),
               encoding="utf-8") as f:
@@ -217,6 +256,7 @@ def build_html():
             .replace("@@NBLOCKS@@", str(n_blocks))
             .replace("@@SKY@@", sky_html)
             .replace("@@SOUNDS@@", sound_html)
+            .replace("@@ANIMALS@@", animal_html)
             .replace("@@NSOUNDS@@", str(n_sounds))
             .replace("@@TOTAL@@", str(total)))
 

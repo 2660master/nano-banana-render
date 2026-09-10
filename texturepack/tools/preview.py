@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 import build as B
 import palette
-import sprites_items
+import item_groups
 import sprites_tools
 
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
@@ -46,7 +46,7 @@ def main():
     f_tier = ImageFont.truetype(FONT_B, 14)
 
     tools = list(sprites_tools.TOOLS.keys())
-    items = [n for n in sprites_items.ITEMS] + ["bow_pulling_0", "bow_pulling_1", "bow_pulling_2"]
+    items = [n for _t, _b, names in item_groups.groups() for n in names]
 
     cols_i = 8
     tool_h = len(palette.TIER_ORDER) * (CELL + PAD + LABEL_H)
