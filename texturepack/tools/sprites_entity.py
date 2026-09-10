@@ -162,7 +162,8 @@ def build():
         out[f"entity/wolf/{name}"] = w
 
     # -- elytra: bladvleugels met nerven --------------------------------------
-    out["entity/elytra"] = veined(64, 32, hx("5E8A4A"), hx("36542C"), 910)
+    # donker blad met felgroene nerf, door jou gekozen uit vier varianten
+    out["entity/elytra"] = veined(64, 32, hx("2E3A2A"), hx("5EC474"), 931, density=0.20)
 
     # -- drietand en schild ---------------------------------------------------
     out["entity/trident"] = veined(32, 32, hx("BCC8C0"), hx("7E8A84"), 911, density=0.10)
