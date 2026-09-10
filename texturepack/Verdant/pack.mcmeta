@@ -1,0 +1,10 @@
+{
+  "pack": {
+    "pack_format": 75,
+    "supported_formats": {
+      "min_inclusive": 64,
+      "max_inclusive": 75
+    },
+    "description": "§2Verdant §r§7– natuur-texturepack\n§8Deel 1: items & gereedschap  §a16x"
+  }
+}
