@@ -233,8 +233,13 @@ def end_sky(size=64):
     return im
 
 
-def rain(size=32, tint="A8C8D8", streaks=26):
-    """Regen: dunne verticale strepen met een groenblauwe zweem."""
+def rain(size=32, tint="A8C8D8", streaks=14, peak=120):
+    """Regen: dunne verticale strepen met een groenblauwe zweem.
+
+    Dit vel wordt over het hele beeld getegeld, dus dicht tekenen geeft
+    een muur van water waar je niets meer doorheen ziet. Veertien strepen
+    op een doorzichtigheid van 120 is de stand die je gekozen hebt.
+    """
     im = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     px = im.load()
     col = hx(tint)
@@ -244,23 +249,27 @@ def rain(size=32, tint="A8C8D8", streaks=26):
         length = 5 + int(noise(k, 3, 61) * 9)
         for i in range(length):
             y = (y0 + i) % size
-            a = int(210 * (1.0 - abs(i - length / 2) / (length / 2)) + 30)
+            a = int(peak * (1.0 - abs(i - length / 2) / (length / 2)) + peak * 0.12)
             px[x, y] = (col[0], col[1], col[2], min(255, a))
     return im
 
 
-def snow_weather(size=32, flakes=52):
-    """Sneeuw: zachte vlokken van een enkele pixel met een halo."""
+def snow_weather(size=32, flakes=20, alpha=150):
+    """Sneeuw: zachte vlokken van een enkele pixel met een halo.
+
+    Zelfde verhaal als bij de regen: dit tegelt over je hele beeld, dus
+    het moet dun blijven.
+    """
     im = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     px = im.load()
     col = hx("F4F8FA")
     for k in range(flakes):
         x = int(noise(k, 4, 71) * size)
         y = int(noise(k, 5, 71) * size)
-        px[x, y] = (col[0], col[1], col[2], 235)
+        px[x, y] = (col[0], col[1], col[2], alpha)
         for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            if noise(k, 6 + dx + dy * 3, 71) < 0.45:
-                px[(x + dx) % size, (y + dy) % size] = (col[0], col[1], col[2], 90)
+            if noise(k, 6 + dx + dy * 3, 71) < 0.35:
+                px[(x + dx) % size, (y + dy) % size] = (col[0], col[1], col[2], alpha // 3)
     return im
 
 
