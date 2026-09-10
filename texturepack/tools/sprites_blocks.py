@@ -240,9 +240,11 @@ def catalog():
     add("glowstone",       lambda: G.ore(G.stone(hx("A8722A"), 762, contrast=0.24),
                                          hx("FFD87A"), 763, blobs=7, spread=1.1))
     add("netherite_block", lambda: G.stone(hx("40332C"), 704, contrast=0.28))
-    add("enchanting_table_top",    lambda: G.stone(hx("3A2E4A"), 720, contrast=0.28))
-    add("enchanting_table_side",   lambda: G.stone(hx("2E2438"), 721, contrast=0.30))
-    add("enchanting_table_bottom", lambda: G.stone(hx("14101F"), 722, contrast=0.34))
+    # groen-donker met lichtgroene runen, door jou gekozen uit vier varianten
+    add("enchanting_table_top",    lambda: G.ore(G.stone(hx("24382A"), 810, contrast=0.26),
+                                                 hx("6ED184"), 811, blobs=4, spread=0.8))
+    add("enchanting_table_side",   lambda: G.stone(hx("18261C"), 812, contrast=0.28))
+    add("enchanting_table_bottom", lambda: G.stone(hx("101A14"), 813, contrast=0.30))
     # mossteen, door jou gekozen uit vier varianten
     add("anvil",       lambda: G.moss_over(G.stone(hx("6E746E"), 780, contrast=0.26), 781, amount=0.26))
     add("anvil_top",   lambda: G.moss_over(G.stone(hx("767C76"), 784, contrast=0.24), 785, amount=0.20))
