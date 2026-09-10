@@ -12,6 +12,7 @@ from PIL import Image
 
 import palette
 import render
+import sprites_blocks
 import sprites_items
 import sprites_tools
 
@@ -19,13 +20,14 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 PACK = os.path.join(ROOT, "Verdant")
 ITEM_DIR = os.path.join(PACK, "assets", "minecraft", "textures", "item")
+BLOCK_DIR = os.path.join(PACK, "assets", "minecraft", "textures", "block")
 DIST = os.path.join(ROOT, "dist")
 
 PACK_FORMAT = 75          # Minecraft 1.21.11
 MIN_FORMAT = 64           # 1.21.7 / 1.21.8
 MAX_FORMAT = 75
 
-DESCRIPTION = "§2Verdant §r§7– natuur-texturepack\n§8Deel 1: items & gereedschap  §a16x"
+DESCRIPTION = "§2Verdant §r§7– natuur-texturepack\n§8Items, gereedschap & bouwblokken  §a16x"
 
 
 # --------------------------------------------------------------- boog-frames
@@ -66,6 +68,7 @@ def build():
     if os.path.isdir(PACK):
         shutil.rmtree(PACK)
     os.makedirs(ITEM_DIR)
+    os.makedirs(BLOCK_DIR)
     os.makedirs(DIST, exist_ok=True)
 
     written = []
@@ -93,7 +96,13 @@ def build():
         bow_pulling(nock).save(os.path.join(ITEM_DIR, name + ".png"))
         written.append(name)
 
-    # 4. pack.mcmeta
+    # 4. bouwblokken
+    blocks_written = []
+    for name, make in sprites_blocks.catalog().items():
+        make().save(os.path.join(BLOCK_DIR, name + ".png"))
+        blocks_written.append(name)
+
+    # 5. pack.mcmeta
     meta = {
         "pack": {
             "pack_format": PACK_FORMAT,
@@ -105,11 +114,11 @@ def build():
         json.dump(meta, f, indent=2, ensure_ascii=False)
         f.write("\n")
 
-    # 5. pack-icoon
+    # 6. pack-icoon
     make_icon().save(os.path.join(PACK, "pack.png"))
 
-    # 6. zip
-    zip_path = os.path.join(DIST, "Verdant-1.21.11-items.zip")
+    # 7. zip
+    zip_path = os.path.join(DIST, "Verdant-1.21.11.zip")
     if os.path.exists(zip_path):
         os.remove(zip_path)
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
@@ -118,9 +127,10 @@ def build():
                 full = os.path.join(base, fn)
                 z.write(full, os.path.relpath(full, PACK))
 
-    print(f"{len(written)} texturen geschreven -> {os.path.relpath(ITEM_DIR, ROOT)}")
+    print(f"{len(written)} item-texturen -> {os.path.relpath(ITEM_DIR, ROOT)}")
+    print(f"{len(blocks_written)} blok-texturen -> {os.path.relpath(BLOCK_DIR, ROOT)}")
     print(f"zip -> {os.path.relpath(zip_path, ROOT)}")
-    return written
+    return written + blocks_written
 
 
 def make_icon(size=128):

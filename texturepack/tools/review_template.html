@@ -136,6 +136,19 @@ figcaption{font-size:13px; color:var(--ink); text-align:center; line-height:1.25
   margin-top:16px; display:grid; gap:18px 14px;
   grid-template-columns:repeat(auto-fill,minmax(calc(var(--px) + 30px),1fr));
 }
+.bgrid{
+  margin-top:16px; display:grid; gap:18px 14px;
+  grid-template-columns:repeat(auto-fill,minmax(calc(var(--px) * 1.5 + 12px),1fr));
+}
+.bslot{
+  width:calc(var(--px) * 1.5); height:calc(var(--px) * 1.5);
+  background-size:50% 50%; background-repeat:repeat;
+  image-rendering:pixelated; image-rendering:crisp-edges;
+  border:1px solid var(--line2); border-radius:3px;
+}
+.btile code{max-width:calc(var(--px) * 1.5 + 8px)}
+.btile[data-state="fix"] .bslot{outline:2px solid var(--amber); outline-offset:2px}
+.btile[data-state="ok"] .bslot{outline:2px solid var(--moss); outline-offset:2px}
 
 /* ---------- volgende stappen ---------- */
 .next{
@@ -165,8 +178,8 @@ figcaption{font-size:13px; color:var(--ink); text-align:center; line-height:1.25
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">Verdant · deel 1 van 4</div>
-  <h1>Items &amp; gereedschap ter keuring</h1>
+  <div class="eyebrow">Verdant · deel 1 en 2</div>
+  <h1>Items, gereedschap &amp; bouwblokken</h1>
   <p class="lede">@@TOTAL@@ texturen, allemaal 16×16 — precies de vanilla-resolutie, dus geen extra kosten voor FPS of VRAM. Loop ze langs en zet per stuk <b>goed</b> of <b>anders</b>. Wat je hier aanklikt lees ik terug, dus je hoeft niets over te typen.</p>
   <div class="meta">
     <span>Minecraft 1.21.11</span><span>pack_format 75</span><span>16×16</span>
@@ -204,14 +217,21 @@ figcaption{font-size:13px; color:var(--ink); text-align:center; line-height:1.25
   @@GROUPS@@
 </section>
 
+<section class="block">
+  <h2>Bouwblokken</h2>
+  <p class="blurb">@@NBLOCKS@@ blokken, procedureel getekend zodat het hele pak één palet deelt. Elk blok staat hier <b>2×2 getegeld</b> — zo zie je meteen of de herhaling naadloos is of dat er een raster in springt. Trappen, treden, muren, hekken en deuren gebruiken deze texturen automatisch, die hoeven dus niet apart.</p>
+  @@BLOCKS@@
+</section>
+
 <section class="next">
   <h2>Wat er hierna komt</h2>
   <ol class="steps">
-    <li><span class="n">02</span><div><b>Blokken</b><p>Aarde, gras, steen, hout, blad, erts, zand — dezelfde palet-logica als de gereedschapstiers, zodat blok en item bij elkaar horen.</p></div></li>
-    <li><span class="n">03</span><div><b>Lucht</b><p>Zon, maan, wolken en end-sky kan ik in vanilla vervangen. Een échte skybox met bergen en vogels kan alleen met OptiFine of FabricSkyBoxes — ik lever dat als losse map die vanilla gewoon negeert.</p></div></li>
-    <li><span class="n">04</span><div><b>Geluid</b><p>Zachte natuurklanken voor hits, totem en meer. Vanilla-resourcepacks mogen geluid vervangen, dus dit kan zonder mods.</p></div></li>
+    <li><span class="n">03</span><div><b>Overige blokken</b><p>Aarde, gras, blad, erts, zand en de rest van de survival-blokken. Bouwblokken gingen eerst, zoals afgesproken.</p></div></li>
+    <li><span class="n">04</span><div><b>Lucht</b><p>Zon, maan, wolken en end-sky in natuurtint. Vanilla-only, zoals je koos — bergen en vogels aan de hemel kan een resourcepack zonder mod niet.</p></div></li>
+    <li><span class="n">05</span><div><b>Geluid</b><p>Gevecht en totem, voetstappen en blokken, en sfeer. Mobgeluiden blijven vanilla.</p></div></li>
+    <li><span class="n">06</span><div><b>Dieren</b><p>Koeien, schapen, varkens, kippen en papegaaien in het thema. Monsters blijven vanilla.</p></div></li>
   </ol>
-  <p class="caveat">Geluid en lucht kosten geen FPS: geluid draait op de audio-thread en de luchttexturen zijn even groot als vanilla. Alleen een skybox-mod voegt echt iets toe aan de rendering, en die blijft optioneel.</p>
+  <p class="caveat">Geluid en lucht kosten geen FPS: geluid draait op de audio-thread en de luchttexturen zijn even groot als vanilla.</p>
 </section>
 </div>
 

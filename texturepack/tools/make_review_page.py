@@ -6,6 +6,8 @@ import os
 
 import build as B
 import palette
+import preview_blocks
+import sprites_blocks
 import sprites_tools
 
 OUT = "/tmp/claude-0/-home-user-nano-banana-render/673b7979-40bd-557d-ae11-258818c67e59/scratchpad/verdant-review.html"
@@ -35,9 +37,39 @@ GROUPS = [
 ]
 
 
-def data_uri(name):
-    with open(os.path.join(B.ITEM_DIR, name + ".png"), "rb") as f:
+def data_uri(name, folder=None):
+    with open(os.path.join(folder or B.ITEM_DIR, name + ".png"), "rb") as f:
         return "data:image/png;base64," + base64.b64encode(f.read()).decode()
+
+
+def block_tile(name):
+    """Blok-tegel: CSS herhaalt de 16x16 texture 2x2, zodat naden opvallen."""
+    uri = data_uri(name, B.BLOCK_DIR)
+    return (
+        f'<figure class="tile btile" data-name="{html.escape(name)}">'
+        f'<div class="bslot" style="background-image:url({uri})"></div>'
+        f'<code>{html.escape(name)}.png</code>'
+        f'<div class="verdict" role="group" aria-label="oordeel {html.escape(name)}">'
+        f'<button type="button" class="v v-ok" data-v="ok">goed</button>'
+        f'<button type="button" class="v v-fix" data-v="fix">anders</button>'
+        f'</div>'
+        f'<input class="note" id="note-{html.escape(name)}" type="text" hidden '
+        f'placeholder="wat moet er anders?" autocomplete="off">'
+        f'</figure>'
+    )
+
+
+BLOCK_BLURBS = {
+    "Planken": "Vier lange gangen met doorlopende nerf. Trappen, treden, hekken en deurpanelen erven deze texture automatisch.",
+    "Stammen & stengels": "Bast aan de zijkant, jaarringen aan de kop. Berk heeft zijn zwarte streepjes gehouden.",
+    "Steen": "Van bemoste kei tot gepolijste deepslate. Het mos zit in plukken, niet als losse stippen.",
+    "Metselwerk": "Halfsteensverband met voegen die net iets lichter zijn dan de steen zelf.",
+    "Wol": "Plantaardig geverfd: zachter en grijzer dan vanilla. Tapijt gebruikt dezelfde texture.",
+    "Beton": "Vlak gehouden — beton hoort strak te zijn naast al dat gevlekte steen.",
+    "Betonpoeder": "Korreliger en iets lichter, zodat je poeder en blok uit elkaar houdt.",
+    "Terracotta": "Horizontale sliblagen, zoals in gebakken klei.",
+    "Glas": "Doorlopende rand per blok en twee lichtvegen. Getint glas is bewust bijna dicht.",
+}
 
 
 def tile(name, caption=None):
@@ -86,7 +118,19 @@ def build_html():
             f'<section class="grp"><h3>{title}</h3><p class="blurb">{blurb}</p>'
             f'<div class="grid">{cards}</div></section>')
 
-    total = len(palette.TIER_ORDER) * len(tools) + sum(len(g[2]) for g in GROUPS)
+    cat = sprites_blocks.catalog()
+    bsections = []
+    n_blocks = 0
+    for title, names in preview_blocks.groups():
+        names = [n for n in names if n in cat]
+        n_blocks += len(names)
+        cards = "".join(block_tile(n) for n in names)
+        blurb = BLOCK_BLURBS.get(title, "")
+        bsections.append(
+            f'<section class="grp"><h3>{title}</h3><p class="blurb">{blurb}</p>'
+            f'<div class="bgrid">{cards}</div></section>')
+
+    total = len(palette.TIER_ORDER) * len(tools) + sum(len(g[2]) for g in GROUPS) + n_blocks
 
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "review_template.html"),
               encoding="utf-8") as f:
@@ -95,6 +139,8 @@ def build_html():
     return (tpl
             .replace("@@MATRIX@@", "".join(matrix))
             .replace("@@GROUPS@@", "".join(groups))
+            .replace("@@BLOCKS@@", "".join(bsections))
+            .replace("@@NBLOCKS@@", str(n_blocks))
             .replace("@@TOTAL@@", str(total)))
 
 

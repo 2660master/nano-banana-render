@@ -8,8 +8,9 @@ de hele set één consistente stijl en één palet deelt.
 
 | Deel | Inhoud | Status |
 |---|---|---|
-| 1 | Items, gereedschap & wapens (selectie van 65) | **klaar — ter beoordeling** |
-| 2 | Bouwblokken, daarna survivalblokken | wacht op akkoord op deel 1 |
+| 1 | Items, gereedschap & wapens (selectie van 65) | goedgekeurd |
+| 2 | Bouwblokken (202 texturen) | **klaar — ter beoordeling** |
+| 2b | Overige survivalblokken (aarde, gras, blad, erts, zand) | volgt |
 | 3 | Lucht — vanilla-only | gepland |
 | 4 | Geluiden | gepland |
 | 5 | Dieren (geen monsters) | gepland |
@@ -51,7 +52,7 @@ op FPS en VRAM nul.
 
 ## Installeren
 
-1. Pak `dist/Verdant-1.21.11-items.zip`.
+1. Pak `dist/Verdant-1.21.11.zip`.
 2. Zet het bestand in `.minecraft/resourcepacks/`.
 3. In Minecraft: **Options → Resource Packs** → Verdant naar rechts schuiven.
 
@@ -63,8 +64,10 @@ Vereist Minecraft Java **1.21.11** (`pack_format` 75). Het pack draait ook op
 ```bash
 pip install Pillow
 cd texturepack/tools
-python3 build.py      # schrijft ../Verdant/ en ../dist/*.zip
-python3 preview.py    # schrijft ../dist/verdant-items-preview.png
+python3 build.py           # schrijft ../Verdant/ en ../dist/*.zip
+python3 preview.py         # overzichtsplaat items
+python3 preview_blocks.py  # overzichtsplaat blokken
+python3 make_review_page.py  # keuringspagina
 ```
 
 ## Mappen
@@ -78,8 +81,12 @@ texturepack/
     ├── render.py       tekenkaart -> PNG (schaduw, rand, spikkels)
     ├── sprites_tools.py  5 gereedschapsvormen
     ├── sprites_items.py  losse items
+    ├── blocks.py       procedurele blokpatronen (planken, ringen, mos, voegen)
+    ├── sprites_blocks.py  blokcatalogus met natuurpaletten
     ├── build.py        bouwt pack + zip
-    └── preview.py      overzichtsplaat
+    ├── preview.py      overzichtsplaat items
+    ├── preview_blocks.py  overzichtsplaat blokken
+    └── make_review_page.py  keuringspagina
 ```
 
 ## Materiaal-tiers
@@ -95,3 +102,24 @@ hetzelfde blaadje op elk stuk gereedschap:
 | gold | Amber | warme hars |
 | diamond | Dauwkristal | cyaan kristal |
 | netherite | Sintelwortel | verkoold hout met sintels |
+
+
+## Blokpatronen
+
+De blokken worden niet met de hand getekend maar procedureel opgebouwd uit
+een handvol patronen in `blocks.py`. Elk patroon tegelt naadloos: structuur
+wordt met modulo-rekenen op 16 gelegd en de ruis is puur een functie van
+`(x % 16, y % 16)`.
+
+| Patroon | Gebruikt voor |
+|---|---|
+| `planks` | alle plankensoorten — vier lange gangen, nerf loopt horizontaal door |
+| `log_side` / `log_top` | bast en jaarringen; berk krijgt zijn zwarte streepjes |
+| `bricks` | metselwerk in halfsteensverband |
+| `cobble` | tegelbare Voronoi voor keien en cobbled deepslate |
+| `stone` | gevlekte steen, met losse spikkels voor graniet en dioriet |
+| `fabric` | wol, met opstaande pluisjes |
+| `smooth` / `powder` | beton en betonpoeder |
+| `clay` | terracotta met horizontale sliblagen |
+| `glass` | ruit met doorlopende rand en instelbare dichtheid |
+| `moss_over` | mos in plukken over kei en metselwerk, sterker naar boven |
