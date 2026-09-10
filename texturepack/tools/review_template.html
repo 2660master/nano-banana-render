@@ -1,0 +1,321 @@
+<title>Verdant Texturekeuring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Karla:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#F1F3EA; --panel:#FBFCF7; --sunk:#E6EADB;
+  --ink:#1B2419; --ink2:#4C5848; --ink3:#7E8A76;
+  --line:#D4DAC6; --line2:#C2CAB0;
+  --moss:#4A8730; --moss-soft:#E1EFD3; --moss-line:#A8CD8B;
+  --amber:#A66C15; --amber-soft:#F7E8C9; --amber-line:#DCB672;
+  --slot:#8B8B8B; --slot-hi:#FFFFFF; --slot-lo:#373737;
+  --px:80px; --radius:10px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#11160F; --panel:#1A2016; --sunk:#232B1D;
+    --ink:#E9EFE1; --ink2:#B3BDA8; --ink3:#7F8B76;
+    --line:#2E3826; --line2:#3C4832;
+    --moss:#96CE68; --moss-soft:#22321A; --moss-line:#415C2E;
+    --amber:#E2AC44; --amber-soft:#332813; --amber-line:#5C4720;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#11160F; --panel:#1A2016; --sunk:#232B1D;
+  --ink:#E9EFE1; --ink2:#B3BDA8; --ink3:#7F8B76;
+  --line:#2E3826; --line2:#3C4832;
+  --moss:#96CE68; --moss-soft:#22321A; --moss-line:#415C2E;
+  --amber:#E2AC44; --amber-soft:#332813; --amber-line:#5C4720;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:Karla,"Helvetica Neue",Arial,sans-serif; font-size:15px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px; margin:0 auto; padding-inline:20px; padding-block:0 64px}
+h1,h2,h3{font-family:Fraunces,Georgia,"Times New Roman",serif; margin:0; text-wrap:balance}
+h1{font-size:clamp(30px,5vw,46px); font-weight:700; letter-spacing:-.015em; line-height:1.06}
+h2{font-size:clamp(21px,3vw,27px); font-weight:700}
+h3{font-size:19px; font-weight:600}
+code,.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+p{margin:0}
+
+/* ---------- kop ---------- */
+header{padding-block:44px 26px; border-bottom:1px solid var(--line)}
+.eyebrow{
+  font-size:11.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--moss); font-weight:700; margin-bottom:12px;
+}
+.lede{max-width:62ch; color:var(--ink2); margin-top:14px; font-size:16px}
+.meta{display:flex; flex-wrap:wrap; gap:8px; margin-top:20px}
+.meta span{
+  font-family:"JetBrains Mono",monospace; font-size:11.5px; color:var(--ink2);
+  background:var(--sunk); border:1px solid var(--line); border-radius:999px;
+  padding:4px 11px; white-space:nowrap;
+}
+
+/* ---------- balk ---------- */
+.bar{
+  position:sticky; top:0; z-index:20; background:var(--ground);
+  border-bottom:1px solid var(--line); margin-inline:-20px; padding:12px 20px;
+  display:flex; flex-wrap:wrap; align-items:center; gap:14px 22px;
+}
+.tally{display:flex; align-items:baseline; gap:7px; font-size:13.5px; color:var(--ink2)}
+.tally b{font-family:"JetBrains Mono",monospace; font-size:17px; color:var(--ink); font-variant-numeric:tabular-nums}
+.tally.ok b{color:var(--moss)} .tally.fix b{color:var(--amber)}
+.progress{flex:1 1 160px; min-width:120px; height:6px; border-radius:3px; background:var(--sunk); overflow:hidden}
+.progress i{display:block; height:100%; width:0; background:var(--moss); transition:width .25s ease}
+.seg{display:flex; border:1px solid var(--line2); border-radius:8px; overflow:hidden}
+.seg button{
+  font:inherit; font-size:12.5px; border:0; background:var(--panel); color:var(--ink2);
+  padding:5px 11px; cursor:pointer; border-right:1px solid var(--line2);
+}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--moss-soft); color:var(--moss); font-weight:700}
+.seg button:hover{color:var(--ink)}
+.barlabel{font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink3); font-weight:700}
+.status{font-size:12.5px; color:var(--ink3); margin-left:auto}
+.status.warn{color:var(--amber)}
+
+/* ---------- secties ---------- */
+section.block{padding-block:44px 8px}
+.blurb{color:var(--ink2); font-size:14px; margin-top:5px; max-width:60ch}
+
+/* ---------- tegels ---------- */
+.tile{margin:0; display:flex; flex-direction:column; align-items:center; gap:5px}
+.slot{
+  width:calc(var(--px) + 16px); height:calc(var(--px) + 16px);
+  display:grid; place-items:center; background:var(--slot);
+  border-top:2px solid var(--slot-lo); border-left:2px solid var(--slot-lo);
+  border-bottom:2px solid var(--slot-hi); border-right:2px solid var(--slot-hi);
+}
+body.dark-slots .slot{--slot:#2B2B2B; --slot-hi:#5A5A5A; --slot-lo:#141414}
+.slot img{
+  width:var(--px); height:var(--px); image-rendering:pixelated;
+  image-rendering:-moz-crisp-edges; image-rendering:crisp-edges;
+}
+figcaption{font-size:13px; color:var(--ink); text-align:center; line-height:1.25}
+.tile code{font-size:10.5px; color:var(--ink3); word-break:break-all; text-align:center}
+.verdict{display:flex; gap:4px}
+.v{
+  font:inherit; font-size:11.5px; font-weight:700; cursor:pointer;
+  padding:3px 10px; border-radius:999px; border:1px solid var(--line2);
+  background:var(--panel); color:var(--ink3); transition:none;
+}
+.v:hover{color:var(--ink); border-color:var(--ink3)}
+.v-ok[aria-pressed="true"]{background:var(--moss-soft); border-color:var(--moss-line); color:var(--moss)}
+.v-fix[aria-pressed="true"]{background:var(--amber-soft); border-color:var(--amber-line); color:var(--amber)}
+.note{
+  font:inherit; font-size:12px; width:100%; max-width:calc(var(--px) + 20px);
+  padding:4px 8px; border-radius:6px; border:1px solid var(--amber-line);
+  background:var(--panel); color:var(--ink);
+}
+.tile[data-state="fix"] .slot{outline:2px solid var(--amber); outline-offset:3px}
+.tile[data-state="ok"] .slot{outline:2px solid var(--moss); outline-offset:3px}
+:focus-visible{outline:2px solid var(--moss); outline-offset:2px}
+
+/* ---------- matrix ---------- */
+.matrix{margin-top:24px; display:flex; flex-direction:column; gap:26px; overflow-x:auto}
+.mrow{display:grid; grid-template-columns:132px repeat(5,minmax(120px,1fr)); gap:14px; align-items:start}
+.mhead{gap:14px; position:relative}
+.mlabel{
+  font-size:11.5px; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--ink3); font-weight:700; text-align:center;
+}
+.mtier{display:flex; flex-direction:column; gap:1px; padding-top:6px; line-height:1.25}
+.mtier b{font-family:Fraunces,Georgia,serif; font-size:17px}
+.mtier span:last-child{font-size:12px; color:var(--ink3)}
+.chip{width:22px; height:8px; border-radius:2px; background:var(--sw); border:1px solid var(--line2); margin-bottom:5px}
+
+/* ---------- item-grids ---------- */
+.grp{margin-top:34px}
+.grid{
+  margin-top:16px; display:grid; gap:18px 14px;
+  grid-template-columns:repeat(auto-fill,minmax(calc(var(--px) + 30px),1fr));
+}
+
+/* ---------- volgende stappen ---------- */
+.next{
+  margin-top:56px; background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--radius); padding:26px 26px 28px;
+}
+.steps{list-style:none; margin:18px 0 0; padding:0; display:grid; gap:12px}
+.steps li{display:grid; grid-template-columns:auto 1fr; gap:12px; align-items:baseline}
+.steps .n{
+  font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:500;
+  color:var(--moss); border:1px solid var(--moss-line); border-radius:5px;
+  padding:1px 6px; background:var(--moss-soft);
+}
+.steps b{font-weight:700}
+.steps p{color:var(--ink2); font-size:14px}
+.caveat{margin-top:22px; padding-top:18px; border-top:1px solid var(--line); color:var(--ink2); font-size:14px; max-width:64ch}
+
+@media (max-width:760px){
+  .mrow{grid-template-columns:repeat(2,minmax(120px,1fr))}
+  .mtier{grid-column:1/-1; flex-direction:row; align-items:baseline; gap:8px; padding-top:0}
+  .mtier .chip{margin-bottom:0}
+  .mhead{display:none}
+  :root{--px:64px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Verdant · deel 1 van 4</div>
+  <h1>Items &amp; gereedschap ter keuring</h1>
+  <p class="lede">@@TOTAL@@ texturen, allemaal 16×16 — precies de vanilla-resolutie, dus geen extra kosten voor FPS of VRAM. Loop ze langs en zet per stuk <b>goed</b> of <b>anders</b>. Wat je hier aanklikt lees ik terug, dus je hoeft niets over te typen.</p>
+  <div class="meta">
+    <span>Minecraft 1.21.11</span><span>pack_format 75</span><span>16×16</span>
+    <span>assets/minecraft/textures/item/</span>
+  </div>
+</header>
+
+<div class="bar">
+  <div class="tally ok"><b id="n-ok">0</b> goed</div>
+  <div class="tally fix"><b id="n-fix">0</b> anders</div>
+  <div class="tally"><b id="n-left">@@TOTAL@@</b> te doen</div>
+  <div class="progress"><i id="pbar"></i></div>
+  <span class="barlabel">zoom</span>
+  <div class="seg" id="zoom">
+    <button type="button" data-px="48">3×</button>
+    <button type="button" data-px="80" aria-pressed="true">5×</button>
+    <button type="button" data-px="128">8×</button>
+  </div>
+  <span class="barlabel">slot</span>
+  <div class="seg" id="slots">
+    <button type="button" data-slot="light" aria-pressed="true">inventaris</button>
+    <button type="button" data-slot="dark">hotbar</button>
+  </div>
+  <span class="status" id="status">oordelen bewaren…</span>
+</div>
+
+<section class="block">
+  <h2>Gereedschap &amp; wapens</h2>
+  <p class="blurb">Elke vanilla-tier is hertaald naar een natuurmateriaal. Alle dertig stukken delen dezelfde bast-steel, touwgreep en rank, zodat de set als één familie leest — de tier verschilt alleen in de kop.</p>
+  @@MATRIX@@
+</section>
+
+<section class="block">
+  <h2>Items</h2>
+  @@GROUPS@@
+</section>
+
+<section class="next">
+  <h2>Wat er hierna komt</h2>
+  <ol class="steps">
+    <li><span class="n">02</span><div><b>Blokken</b><p>Aarde, gras, steen, hout, blad, erts, zand — dezelfde palet-logica als de gereedschapstiers, zodat blok en item bij elkaar horen.</p></div></li>
+    <li><span class="n">03</span><div><b>Lucht</b><p>Zon, maan, wolken en end-sky kan ik in vanilla vervangen. Een échte skybox met bergen en vogels kan alleen met OptiFine of FabricSkyBoxes — ik lever dat als losse map die vanilla gewoon negeert.</p></div></li>
+    <li><span class="n">04</span><div><b>Geluid</b><p>Zachte natuurklanken voor hits, totem en meer. Vanilla-resourcepacks mogen geluid vervangen, dus dit kan zonder mods.</p></div></li>
+  </ol>
+  <p class="caveat">Geluid en lucht kosten geen FPS: geluid draait op de audio-thread en de luchttexturen zijn even groot als vanilla. Alleen een skybox-mod voegt echt iets toe aan de rendering, en die blijft optioneel.</p>
+</section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var KEY = "reviews/verdicts";
+  var db = null;
+  var state = {};
+  var statusEl = document.getElementById("status");
+  var tiles = Array.prototype.slice.call(document.querySelectorAll(".tile"));
+  var total = tiles.length;
+
+  function setStatus(text, warn){
+    statusEl.textContent = text;
+    statusEl.classList.toggle("warn", !!warn);
+  }
+
+  function paint(){
+    var ok = 0, fix = 0;
+    tiles.forEach(function(t){
+      var name = t.dataset.name;
+      var rec = state[name] || {};
+      var v = rec.verdict || "";
+      if (v === "ok") ok++; else if (v === "fix") fix++;
+      t.dataset.state = v;
+      t.querySelectorAll(".v").forEach(function(b){
+        b.setAttribute("aria-pressed", String(b.dataset.v === v));
+      });
+      var note = t.querySelector(".note");
+      note.hidden = v !== "fix";
+      if (document.activeElement !== note) note.value = rec.note || "";
+    });
+    document.getElementById("n-ok").textContent = ok;
+    document.getElementById("n-fix").textContent = fix;
+    document.getElementById("n-left").textContent = total - ok - fix;
+    document.getElementById("pbar").style.width = ((ok + fix) / total * 100) + "%";
+  }
+
+  var saveTimer = null;
+  function save(){
+    if (!db) return;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function(){
+      db.doc(KEY).set({ items: state, updatedAt: new Date().toISOString() })
+        .then(function(){ setStatus("opgeslagen"); })
+        .catch(function(){ setStatus("opslaan lukte niet — probeer nog eens", true); });
+    }, 350);
+  }
+
+  document.addEventListener("click", function(e){
+    var b = e.target.closest(".v");
+    if (!b) return;
+    var tile = b.closest(".tile");
+    var name = tile.dataset.name;
+    var rec = state[name] || {};
+    rec.verdict = rec.verdict === b.dataset.v ? "" : b.dataset.v;
+    if (rec.verdict !== "fix") delete rec.note;
+    if (!rec.verdict && !rec.note) delete state[name]; else state[name] = rec;
+    paint();
+    if (rec.verdict === "fix") tile.querySelector(".note").focus();
+    save();
+  });
+
+  document.addEventListener("input", function(e){
+    if (!e.target.classList.contains("note")) return;
+    var name = e.target.closest(".tile").dataset.name;
+    var rec = state[name] || { verdict: "fix" };
+    rec.note = e.target.value;
+    state[name] = rec;
+    save();
+  });
+
+  document.getElementById("zoom").addEventListener("click", function(e){
+    var b = e.target.closest("button"); if (!b) return;
+    document.documentElement.style.setProperty("--px", b.dataset.px + "px");
+    this.querySelectorAll("button").forEach(function(x){
+      x.setAttribute("aria-pressed", String(x === b));
+    });
+  });
+
+  document.getElementById("slots").addEventListener("click", function(e){
+    var b = e.target.closest("button"); if (!b) return;
+    document.body.classList.toggle("dark-slots", b.dataset.slot === "dark");
+    this.querySelectorAll("button").forEach(function(x){
+      x.setAttribute("aria-pressed", String(x === b));
+    });
+  });
+
+  paint();
+
+  if (window.claude && typeof window.claude.use === "function") {
+    window.claude.use("db").then(function(ref){
+      if (!ref) { setStatus("oordelen worden hier niet bewaard", true); return; }
+      db = ref;
+      setStatus("klaar");
+      db.doc(KEY).onSnapshot(function(snap){
+        if (!snap.exists) return;
+        var data = snap.data() || {};
+        if (data.items && typeof data.items === "object") { state = data.items; paint(); }
+      }, function(){ setStatus("verbinding weg — nieuwe oordelen worden niet bewaard", true); });
+    }).catch(function(){ setStatus("oordelen worden hier niet bewaard", true); });
+  } else {
+    setStatus("oordelen worden hier niet bewaard", true);
+  }
+})();
+</script>
