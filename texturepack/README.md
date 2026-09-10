@@ -156,10 +156,10 @@ Alles staat op vanilla-formaat, dus er verandert niets aan de kosten.
 
 | Texture | Formaat | Bijzonderheid |
 |---|---|---|
-| `environment/sun.png` | 32x32 | warme amberkern met krans |
-| `environment/moon_phases.png` | 128x64 | acht schijngestalten in een raster van 4 x 2 |
-| `environment/clouds.png` | 256x256 | alpha bepaalt de wolk |
-| `environment/end_sky.png` | 16x16 | getegeld over de end-hemel |
+| `environment/sun.png` | 64x64 | hete kern, glad verloop, zachte krans |
+| `environment/moon_phases.png` | 256x128 | acht fasen van 64x64, met zeeen en kraters |
+| `environment/clouds.png` | 256x256 | alpha bepaalt de wolk — bewust niet groter |
+| `environment/end_sky.png` | 64x64 | sterrenveld met vage nevel |
 | `environment/rain.png`, `snow.png` | 32x32 | |
 | `block/water_still.png` | 16x512 | 32 frames, frametime 2 |
 | `block/water_flow.png` | 32x1024 | 32 frames, frametime 1 |
@@ -313,3 +313,23 @@ namen slaan we over bij het schrijven, en wat niet in het pack zit haalt
 Minecraft uit zijn eigen bestanden. Dat is de nette manier om een item
 onaangeroerd te laten — een kopie van de originele texture meeleveren zou
 dat ook doen, maar dan sleep je andermans werk mee.
+
+
+## Waarom de zon groter mag en de wolken niet
+
+Zon, maan en end-hemel zijn gewone texturen: groter betekent alleen een
+gladder verloop en minder zichtbare herhaling, en kost een paar honderd
+kilobyte videogeheugen. Die staan daarom nu op 64x64 en 256x128.
+
+`clouds.png` is een ander geval. Minecraft bouwt uit elke pixel met
+alpha > 0 een echte wolkendoos. De resolutie van dat bestand bepaalt dus
+hoeveel geometrie er in de lucht hangt. Die blijft daarom op 256x256, en
+de dekking op 30% — iets onder de vorige 34%, dus er komt zelfs iets
+minder geometrie bij dan eerst.
+
+**Uitrekken zonder de naad te breken.** Echte wolken liggen langgerekt
+langs de wind. De eerste poging schaalde de x-coordinaat, maar dan loopt
+het ruisrooster niet meer rond op de textuurbreedte en zie je een
+verticale naad in de lucht. `value_noise2` neemt in plaats daarvan minder
+cellen in x dan in y: hetzelfde uitgerekte effect, en het wrapt weer
+netjes. Gemeten verschil op de naad: 0, tegen 4 binnenin de texture.

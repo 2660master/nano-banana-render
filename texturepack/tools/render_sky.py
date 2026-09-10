@@ -171,7 +171,9 @@ def panel_night():
         if rs.random() > 0.94:
             d.point((x + 1, y), fill=(b // 2, b // 2, b // 2))
     im = project_clouds(im, sky.clouds(), (86, 96, 124), offset=40, strength=0.75).convert("RGBA")
-    moon = sky.moon_phases().crop((0, 0, 32, 32))
+    ph = sky.moon_phases()
+    fs = ph.height // 2                      # één fase is een halve velhoogte
+    moon = ph.crop((0, 0, fs, fs))
     im = paste_disc(im, moon, int(W * 0.24), int(H * 0.16), 48, (198, 212, 228, 95))
     im = birds(im, (10, 12, 20), flock=((0.60, 0.20, 6), (0.66, 0.25, 4), (0.72, 0.17, 5)))
     im = hills(im, [((44, 52, 78), 12, HORIZON - 26, 170, 14),
@@ -181,10 +183,12 @@ def panel_night():
 
 
 def panel_end():
-    tile = sky.end_sky().resize((48, 48), Image.NEAREST)
+    src = sky.end_sky()
+    step = src.width * 2                    # twee keer vergroot, zoals je het ziet
+    tile = src.resize((step, step), Image.NEAREST)
     im = Image.new("RGBA", (W, H))
-    for y in range(0, H, 48):
-        for x in range(0, W, 48):
+    for y in range(0, H, step):
+        for x in range(0, W, step):
             im.paste(tile, (x, y))
     d = ImageDraw.Draw(im)
     for cx, cy, rw, rh in ((W * 0.28, H * 0.60, 150, 24), (W * 0.70, H * 0.42, 108, 18),

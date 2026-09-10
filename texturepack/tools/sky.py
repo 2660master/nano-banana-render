@@ -38,6 +38,33 @@ def value_noise(x, y, cells, size, seed):
     return _lerp(_lerp(n00, n10, tx), _lerp(n01, n11, tx), ty)
 
 
+def value_noise2(x, y, cells_x, cells_y, size, seed):
+    """Zelfde als value_noise, maar met een eigen celtelling per as.
+
+    Uitrekken door x te schalen brak het naadloos herhalen: de lattice
+    liep dan niet meer rond op de textuurbreedte. Door in plaats daarvan
+    minder cellen in x te nemen blijft het wel netjes wrappen.
+    """
+    sx, sy = size / cells_x, size / cells_y
+    gx, gy = x / sx, y / sy
+    x0, y0 = int(math.floor(gx)) % cells_x, int(math.floor(gy)) % cells_y
+    x1, y1 = (x0 + 1) % cells_x, (y0 + 1) % cells_y
+    tx, ty = _smooth(gx - math.floor(gx)), _smooth(gy - math.floor(gy))
+    n00, n10 = noise(x0, y0, seed), noise(x1, y0, seed)
+    n01, n11 = noise(x0, y1, seed), noise(x1, y1, seed)
+    return _lerp(_lerp(n00, n10, tx), _lerp(n01, n11, tx), ty)
+
+
+def fbm2(x, y, size, seed, octaves=4, cells_x=4, cells_y=4):
+    total, amp, norm = 0.0, 1.0, 0.0
+    for o in range(octaves):
+        total += amp * value_noise2(x, y, cells_x * (2 ** o), cells_y * (2 ** o),
+                                    size, seed + o * 37)
+        norm += amp
+        amp *= 0.5
+    return total / norm
+
+
 def fbm(x, y, size, seed, octaves=4, cells=4):
     """Gestapelde value-noise; elke octaaf verdubbelt het rooster."""
     total, amp, norm = 0.0, 1.0, 0.0
@@ -49,61 +76,81 @@ def fbm(x, y, size, seed, octaves=4, cells=4):
 
 
 # ----------------------------------------------------------------- hemellichten
-def sun(size=32):
-    """Warme zon met een zachte krans, alsof je door bladeren omhoog kijkt."""
+def sun(size=64):
+    """Warme zon met een hete kern en een zachte krans.
+
+    Op 64x64 in plaats van de vanilla 32x32: het verloop wordt daardoor
+    glad in plaats van getrapt. Het gaat om één texture, dus dat kost
+    niets aan frametijd — anders dan bij de wolken, zie clouds().
+    """
     im = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     px = im.load()
     c = (size - 1) / 2
-    white, core, rim, halo = hx("FFFFF4"), hx("FFF2C8"), hx("FFCE60"), hx("F09A34")
+    stops = [(0.00, hx("FFFFFF")), (0.20, hx("FFFCE8")), (0.42, hx("FFEDB4")),
+             (0.62, hx("FFCE68")), (0.80, hx("F5A73C")), (1.00, hx("E8801E"))]
     for y in range(size):
         for x in range(size):
-            dx, dy = x - c, y - c
-            d = math.hypot(dx, dy) / (size / 2)
+            d = math.hypot(x - c, y - c) / (size / 2)
             if d > 1.0:
                 continue
-            # acht zachte stralen die de rand doorbreken
-            ang = math.atan2(dy, dx)
-            ray = 0.06 * max(0.0, math.cos(ang * 8.0)) * max(0.0, d - 0.45)
-            dd = max(0.0, d - ray)
-            if dd < 0.26:
-                col, a = mix(white, core, dd / 0.26), 255
-            elif dd < 0.58:
-                col, a = mix(core, rim, (dd - 0.26) / 0.32), 255
-            elif dd < 0.84:
-                col, a = mix(rim, halo, (dd - 0.58) / 0.26), 255
+            for i in range(len(stops) - 1):
+                p0, c0 = stops[i]
+                p1, c1 = stops[i + 1]
+                if p0 <= d <= p1:
+                    col = mix(c0, c1, (d - p0) / max(1e-6, p1 - p0))
+                    break
             else:
-                col = halo
-                a = int(255 * (1.0 - (dd - 0.84) / 0.16))
-            j = noise(x, y, 5) * 0.05 + 0.975
+                col = stops[-1][1]
+            # zachte krans aan de buitenrand in plaats van een harde stop
+            a = 255 if d < 0.82 else int(255 * (1.0 - (d - 0.82) / 0.18) ** 1.6)
+            j = 0.985 + noise(x, y, 5) * 0.030
             px[x, y] = (min(255, int(col[0] * j)), min(255, int(col[1] * j)),
                         min(255, int(col[2] * j)), max(0, a))
     return im
 
 
-def moon_phases(size=32):
-    """Alle acht schijngestalten in een raster van 4 x 2, zoals vanilla leest."""
+def moon_phases(size=64):
+    """Acht schijngestalten in het raster van 4 x 2 dat het spel uitleest.
+
+    Op 64x64 per fase: genoeg ruimte voor echte zeeen en kraters. De
+    verhouding 4:2 blijft, want daar rekent het spel mee.
+    """
     sheet = Image.new("RGBA", (size * 4, size * 2), (0, 0, 0, 0))
     disc = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     dp = disc.load()
     c = (size - 1) / 2
-    face, crater = hx("EDF0E6"), hx("C6CCC0")
+    face, mare, dark = hx("E6E8DE"), hx("B4B8AE"), hx("8E948C")
+
+    # grote donkere vlakken, zoals de zeeen op de echte maan
+    seas = [(0.36, 0.30, 0.20), (0.62, 0.44, 0.15), (0.44, 0.66, 0.17),
+            (0.70, 0.72, 0.11), (0.26, 0.56, 0.10)]
+    # kraters: (x, y, straal)
+    craters = [(0.72, 0.24, 0.075), (0.30, 0.74, 0.060), (0.56, 0.20, 0.045),
+               (0.22, 0.42, 0.040), (0.80, 0.56, 0.038), (0.48, 0.50, 0.034),
+               (0.64, 0.82, 0.030), (0.38, 0.16, 0.026), (0.14, 0.62, 0.024),
+               (0.86, 0.38, 0.022), (0.52, 0.36, 0.020), (0.68, 0.62, 0.018)]
+
     for y in range(size):
         for x in range(size):
             d = math.hypot(x - c, y - c) / (size / 2)
-            if d > 0.98:
+            if d > 0.99:
                 continue
-            t = fbm(x, y, size, 91, octaves=4, cells=3)
-            col = mix(face, crater, min(1.0, max(0.0, (t - 0.30) * 3.2)))
-            # een paar echte kraters met een lichte rand
-            for cxr, cyr, rr in ((0.34, 0.30, 0.15), (0.66, 0.52, 0.11),
-                                 (0.44, 0.70, 0.09), (0.72, 0.24, 0.07)):
-                dc = math.hypot(x / size - cxr, y / size - cyr)
-                if dc < rr:
-                    col = mul(col, 0.80 + (dc / rr) * 0.30)
-                elif dc < rr * 1.22:
-                    col = mul(col, 1.08)
-            col = mul(col, 1.06 - d * 0.26)
-            a = 255 if d < 0.94 else int(255 * (0.98 - d) / 0.04)
+            nx, ny = x / size, y / size
+            col = face
+            for sx, sy, sr in seas:
+                dd = math.hypot(nx - sx, ny - sy) / sr
+                edge = fbm(x, y, size, 61, octaves=3, cells=4) * 0.45
+                if dd < 1.0 + edge:
+                    col = mix(col, mare, min(1.0, (1.0 + edge - dd) * 1.6))
+            col = mul(col, 0.96 + fbm(x, y, size, 91, octaves=4, cells=5) * 0.12)
+            for cx, cy, cr in craters:
+                dd = math.hypot(nx - cx, ny - cy) / cr
+                if dd < 0.86:
+                    col = mix(col, dark, 0.55 * (1.0 - dd))     # bodem
+                elif dd < 1.10:
+                    col = mul(col, 1.14)                        # opstaande rand
+            col = mul(col, 1.05 - (d ** 2) * 0.30)              # randverdonkering
+            a = 255 if d < 0.95 else int(255 * (0.99 - d) / 0.04)
             dp[x, y] = (col[0], col[1], col[2], max(0, a))
 
     for p in range(8):
@@ -124,39 +171,65 @@ def moon_phases(size=32):
     return sheet
 
 
-def clouds(size=256, coverage=0.34):
-    """Organische wolkenvelden, hard afgesneden om geometrie te sparen."""
-    im = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    px = im.load()
-    # twee schalen door elkaar: grote banken en losse flarden
-    vals = [[0.68 * fbm(x, y, size, 7, octaves=4, cells=5)
-             + 0.32 * fbm(x, y, size, 19, octaves=3, cells=13)
-             for x in range(size)] for y in range(size)]
-    flat = sorted(v for row in vals for v in row)
-    cut = flat[int(len(flat) * (1.0 - coverage))]
+def clouds(size=256, coverage=0.30):
+    """Wolkenbanken, uitgerekt in de windrichting.
+
+    Blijft bewust op 256x256. Minecraft bouwt uit elke pixel met alpha > 0
+    een echte wolkendoos, dus een grotere texture is letterlijk meer
+    geometrie en kost wel frametijd — anders dan de zon en de maan.
+
+    Echte wolken zijn langgerekt langs de wind en rafelig aan de randen.
+    Daarom wordt de ruis in x samengedrukt (banken) en komt er een fijne
+    laag overheen die de randen laat uitfranselen.
+    """
+    vals = [[0.0] * size for _ in range(size)]
     for y in range(size):
         for x in range(size):
-            if vals[y][x] >= cut:
-                g = 236 + int(noise(x, y, 3) * 19)
-                px[x, y] = (g, g, min(255, g + 4), 255)
+            # minder cellen in x dan in y: banken die langs de wind liggen
+            bank = fbm2(x, y, size, 7, octaves=4, cells_x=2, cells_y=6)
+            wisp = fbm2(x, y, size, 19, octaves=4, cells_x=7, cells_y=13)
+            vals[y][x] = 0.70 * bank + 0.30 * wisp
+
+    flat = sorted(v for row in vals for v in row)
+    cut = flat[int(len(flat) * (1.0 - coverage))]
+    im = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    px = im.load()
+    for y in range(size):
+        for x in range(size):
+            v = vals[y][x]
+            if v < cut:
+                continue
+            # dichter naar het hart van de bank toe iets witter
+            t = min(1.0, (v - cut) / max(1e-6, flat[-1] - cut))
+            g = 232 + int(t * 22) + int(noise(x, y, 3) * 6)
+            px[x, y] = (min(255, g), min(255, g), min(255, g + 5), 255)
     return im
 
 
-def end_sky(size=16):
-    """Diepgroen-zwarte end-hemel met zwevende sporen."""
+def end_sky(size=64):
+    """Sterrenveld met een vage groene nevel.
+
+    Op 64x64 in plaats van 16x16: bij zestien pixels zie je het raster van
+    de herhaling meteen. Vier keer groter betekent zestien keer minder
+    zichtbare herhaling, en het blijft een enkele kleine texture.
+    """
     im = Image.new("RGBA", (size, size), (0, 0, 0, 255))
     px = im.load()
-    base = hx("0E1A14")
+    base, neb = hx("07100C"), hx("16321F")
     for y in range(size):
         for x in range(size):
-            v = fbm(x, y, size, 23, octaves=3, cells=2)
-            px[x, y] = mul(base, 0.7 + v * 0.8)
-    for k in range(2):                       # sporen die licht vangen
+            n = fbm(x, y, size, 23, octaves=4, cells=3)
+            px[x, y] = mix(base, neb, max(0.0, (n - 0.42)) * 1.5)
+    for k in range(46):
         sx = int(noise(k, 50, 23) * size)
         sy = int(noise(k, 51, 23) * size)
-        # gedempt: bij vier sporen per tegel valt de herhaling nog niet op
-        g = mix(hx("2E4A3A"), hx("6A9A78"), noise(k, 52, 23))
-        px[sx, sy] = g
+        b = noise(k, 52, 23)
+        col = mix(hx("6E8A78"), hx("E8F4E8"), b ** 2)
+        px[sx, sy] = col
+        if b > 0.86:                       # de helderste sterren stralen uit
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx, ny = (sx + dx) % size, (sy + dy) % size
+                px[nx, ny] = mix(px[nx, ny], col, 0.45)
     return im
 
 
