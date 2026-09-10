@@ -132,7 +132,8 @@ def items():
     out["mace"] = (MACE, {"1": hx("34343C"), "2": hx("56565E")})
     # groen kristal, door jou gekozen uit vier varianten
     out["trident"] = (TRIDENT, P("6ED184", "2A6B3E"))
-    wood = P("A07B4E", "6B4F2C", "6E7075", "C4362E")
+    # donker hout, door jou gekozen uit vier varianten
+    wood = P("5E4630", "3A2A18", "6E7075", "C4362E")
     out["crossbow_standby"] = (crossbow(0), wood)
     for i in range(3):
         out[f"crossbow_pulling_{i}"] = (crossbow(i + 1), wood)
