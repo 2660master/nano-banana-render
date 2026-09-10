@@ -180,4 +180,19 @@ def build():
     fill(ender, (0, 0, 14, 14), hx("4E8A6A"))           # slot
     out["entity/chest/ender"] = ender
 
+    # -- vliegende dieren -----------------------------------------------------
+    # Dit zijn de enige vogels die een resourcepack kan aanraken: in de lucht
+    # zelf kan een pack niets laten vliegen, dat kan alleen een mod.
+    parrots = {
+        "parrot_red_blue":    ("C4342C", "2E56B4"),
+        "parrot_blue":        ("2E56B4", "5E8AD8"),
+        "parrot_green":       ("3E8A32", "7EC44E"),
+        "parrot_yellow_blue": ("E8C43A", "2E56B4"),
+        "parrot_grey":        ("9AA096", "5E645E"),
+    }
+    for name, (body, wing) in parrots.items():
+        out[f"entity/parrot/{name}"] = veined(32, 32, hx(body), hx(wing), 920, density=0.12)
+    out["entity/bat"] = hide(64, 64, hx("4A3A32"), 921, hx("2E241E"), 0.28, patch_scale=6)
+    out["entity/allay/allay"] = veined(32, 32, hx("6ED2E4"), hx("3E8AA8"), 922, density=0.10)
+
     return out

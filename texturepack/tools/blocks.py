@@ -439,3 +439,36 @@ def ice(tint, seed, alpha=200, cracks=4):
             else:
                 y += 1
     return im
+
+
+def emboss(im, strength=0.55, roundness=2.6):
+    """Reliëf uit de eigen helderheid van de texture.
+
+    De helderheid wordt als hoogtekaart gelezen; de helling daarvan geeft
+    een normaal, en daar valt licht op uit linksboven. Buren worden modulo
+    16 genomen, dus dit blijft naadloos tegelen — anders dan de belichting
+    op items, die juist van het silhouet uitgaat.
+    """
+    import shading
+
+    px = im.load()
+    if any(px[x, y][3] < 255 for y in range(N) for x in range(N)):
+        return im                                   # laat alpha met rust
+    lum = [[(px[x, y][0] * 0.30 + px[x, y][1] * 0.59 + px[x, y][2] * 0.11) / 255.0
+            for x in range(N)] for y in range(N)]
+    out = im.copy()
+    op = out.load()
+    for y in range(N):
+        for x in range(N):
+            gx = (lum[y][(x + 1) % N] - lum[y][(x - 1) % N]) * 0.5
+            gy = (lum[(y + 1) % N][x] - lum[(y - 1) % N][x]) * 0.5
+            nx, ny, nz = -gx * 3.0, -gy * 3.0, 1.0 / roundness
+            ln = (nx * nx + ny * ny + nz * nz) ** 0.5
+            nx, ny, nz = nx / ln, ny / ln, nz / ln
+            lam = max(0.0, nx * shading.LIGHT[0] + ny * shading.LIGHT[1]
+                      + nz * shading.LIGHT[2])
+            f = 1.0 + (0.62 + lam * 0.72 - 1.0) * strength
+            hd = max(0.0, nx * shading.HALF[0] + ny * shading.HALF[1]
+                     + nz * shading.HALF[2])
+            op[x, y] = shading.shade(px[x, y], f, (hd ** 24) * 0.20 * strength)
+    return out

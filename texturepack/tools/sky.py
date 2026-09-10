@@ -54,20 +54,27 @@ def sun(size=32):
     im = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     px = im.load()
     c = (size - 1) / 2
-    core, rim, halo = hx("FFF6D2"), hx("FFD066"), hx("F0A63C")
+    white, core, rim, halo = hx("FFFFF4"), hx("FFF2C8"), hx("FFCE60"), hx("F09A34")
     for y in range(size):
         for x in range(size):
-            d = math.hypot(x - c, y - c) / (size / 2)
+            dx, dy = x - c, y - c
+            d = math.hypot(dx, dy) / (size / 2)
             if d > 1.0:
                 continue
-            if d < 0.52:
-                col, a = mix(core, rim, d / 0.52), 255
-            elif d < 0.78:
-                col, a = mix(rim, halo, (d - 0.52) / 0.26), 255
+            # acht zachte stralen die de rand doorbreken
+            ang = math.atan2(dy, dx)
+            ray = 0.06 * max(0.0, math.cos(ang * 8.0)) * max(0.0, d - 0.45)
+            dd = max(0.0, d - ray)
+            if dd < 0.26:
+                col, a = mix(white, core, dd / 0.26), 255
+            elif dd < 0.58:
+                col, a = mix(core, rim, (dd - 0.26) / 0.32), 255
+            elif dd < 0.84:
+                col, a = mix(rim, halo, (dd - 0.58) / 0.26), 255
             else:
                 col = halo
-                a = int(255 * (1.0 - (d - 0.78) / 0.22))
-            j = noise(x, y, 5) * 0.06 + 0.97
+                a = int(255 * (1.0 - (dd - 0.84) / 0.16))
+            j = noise(x, y, 5) * 0.05 + 0.975
             px[x, y] = (min(255, int(col[0] * j)), min(255, int(col[1] * j)),
                         min(255, int(col[2] * j)), max(0, a))
     return im
@@ -85,9 +92,17 @@ def moon_phases(size=32):
             d = math.hypot(x - c, y - c) / (size / 2)
             if d > 0.98:
                 continue
-            t = fbm(x, y, size, 91, octaves=3, cells=3)
-            col = mix(face, crater, min(1.0, max(0.0, (t - 0.34) * 2.6)))
-            col = mul(col, 1.04 - d * 0.16)
+            t = fbm(x, y, size, 91, octaves=4, cells=3)
+            col = mix(face, crater, min(1.0, max(0.0, (t - 0.30) * 3.2)))
+            # een paar echte kraters met een lichte rand
+            for cxr, cyr, rr in ((0.34, 0.30, 0.15), (0.66, 0.52, 0.11),
+                                 (0.44, 0.70, 0.09), (0.72, 0.24, 0.07)):
+                dc = math.hypot(x / size - cxr, y / size - cyr)
+                if dc < rr:
+                    col = mul(col, 0.80 + (dc / rr) * 0.30)
+                elif dc < rr * 1.22:
+                    col = mul(col, 1.08)
+            col = mul(col, 1.06 - d * 0.26)
             a = 255 if d < 0.94 else int(255 * (0.98 - d) / 0.04)
             dp[x, y] = (col[0], col[1], col[2], max(0, a))
 
@@ -113,8 +128,10 @@ def clouds(size=256, coverage=0.34):
     """Organische wolkenvelden, hard afgesneden om geometrie te sparen."""
     im = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     px = im.load()
-    vals = [[fbm(x, y, size, 7, octaves=4, cells=7) for x in range(size)]
-            for y in range(size)]
+    # twee schalen door elkaar: grote banken en losse flarden
+    vals = [[0.68 * fbm(x, y, size, 7, octaves=4, cells=5)
+             + 0.32 * fbm(x, y, size, 19, octaves=3, cells=13)
+             for x in range(size)] for y in range(size)]
     flat = sorted(v for row in vals for v in row)
     cut = flat[int(len(flat) * (1.0 - coverage))]
     for y in range(size):
@@ -134,11 +151,11 @@ def end_sky(size=16):
         for x in range(size):
             v = fbm(x, y, size, 23, octaves=3, cells=2)
             px[x, y] = mul(base, 0.7 + v * 0.8)
-    for k in range(4):                       # sporen die licht vangen
+    for k in range(2):                       # sporen die licht vangen
         sx = int(noise(k, 50, 23) * size)
         sy = int(noise(k, 51, 23) * size)
         # gedempt: bij vier sporen per tegel valt de herhaling nog niet op
-        g = mix(hx("3E5E4A"), hx("8FC49A"), noise(k, 52, 23))
+        g = mix(hx("2E4A3A"), hx("6A9A78"), noise(k, 52, 23))
         px[sx, sy] = g
     return im
 

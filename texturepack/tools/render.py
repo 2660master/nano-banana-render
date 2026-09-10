@@ -1,5 +1,6 @@
 """Pixel-art renderer: zet 16x16 tekenkaarten om naar PNG's."""
 from PIL import Image
+import shading
 from palette import BASE
 
 SIZE = 16
@@ -23,7 +24,7 @@ def _mul(c, f):
 
 
 def render(rows, pal, name="?", outline=True, outline_factor=0.68, rim=True, rim_factor=1.10,
-           speckle=None, no_outline="vVcC"):
+           speckle=None, no_outline="vVcC", relief=1.0):
     """rows: 16 strings. pal: dict char -> RGBA.
 
     outline: donkert de onder-/rechterrand af (klassieke Minecraft-look).
@@ -32,6 +33,7 @@ def render(rows, pal, name="?", outline=True, outline_factor=0.68, rim=True, rim
              (mos op steen, sintels in netherite, nerf in hout).
     no_outline: tekens die geen randschaduw krijgen. Dunne details zoals
              ranken en boogpezen zouden anders volledig verduisteren.
+    relief:  hoe sterk de belichting uit shading.py meedoet. 0 zet hem uit.
     """
     validate(rows, name)
     p = dict(BASE)
@@ -56,6 +58,8 @@ def render(rows, pal, name="?", outline=True, outline_factor=0.68, rim=True, rim
     def solid(x, y):
         return 0 <= x < SIZE and 0 <= y < SIZE and grid[y][x][3] > 0
 
+    lit = shading.light(grid, SIZE, seed=len(name)) if relief > 0 else None
+
     out = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
     px = out.load()
     for y in range(SIZE):
@@ -63,10 +67,14 @@ def render(rows, pal, name="?", outline=True, outline_factor=0.68, rim=True, rim
             c = grid[y][x]
             if c[3] == 0:
                 continue
-            if outline and chars[y][x] not in no_outline and (
-                    not solid(x + 1, y) or not solid(x, y + 1)):
+            thin = chars[y][x] in no_outline
+            if outline and not thin and (not solid(x + 1, y) or not solid(x, y + 1)):
                 c = _mul(c, outline_factor)
             elif rim and (not solid(x - 1, y) and not solid(x, y - 1)):
                 c = _mul(c, rim_factor)
+            if lit and not thin:
+                f, spec = lit[y][x]
+                f = 1.0 + (f - 1.0) * relief
+                c = shading.shade(c, f, spec * relief)
             px[x, y] = c
     return out

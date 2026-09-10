@@ -12,6 +12,7 @@ from PIL import Image
 
 import palette
 import render
+import blocks
 import sky
 import sound_catalog
 import sound_events
@@ -112,7 +113,8 @@ def build():
     # 4. bouwblokken
     blocks_written = []
     for name, make in sprites_blocks.catalog().items():
-        make().save(os.path.join(BLOCK_DIR, name + ".png"))
+        im = blocks.emboss(make())          # reliëf, blijft naadloos tegelen
+        im.save(os.path.join(BLOCK_DIR, name + ".png"))
         blocks_written.append(name)
 
     # 5. lucht, weer, water en lava

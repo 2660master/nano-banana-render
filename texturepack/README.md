@@ -254,3 +254,33 @@ verschuiving in de uitvouwing valt daar nauwelijks op.
 boven de speler, zoals het spel dat ook doet, en zet er een blokkig
 heuvelsilhouet onder. Zo zie je hoe de lucht er echt uit gaat zien in
 plaats van alleen de platte bestanden.
+
+
+## Belichting
+
+Twee lichtmodellen, allebei in code, geen enkele pixel met de hand bijgetekend.
+
+**Items** (`shading.py`). Uit het silhouet komt een afstandsveld: hoe diep
+zit een pixel in de vorm. Dat veld is in feite een hoogtekaart, en de
+helling ervan geeft de normaal van het oppervlak. Daar valt Lambert-licht
+op uit linksboven, plus een glans. Elk item krijgt zo vanzelf een bolle
+lichtkant en een zachte schaduw ervan af.
+
+**Blokken** (`blocks.emboss`). Daar kan het silhouet niet gebruikt worden —
+een blok heeft geen rand, het herhaalt. Dus wordt de eigen helderheid van
+de texture als hoogtekaart gelezen en de buren modulo 16 genomen. Zo blijft
+het reliëf naadloos tegelen.
+
+In allebei verschuift de kleur mee met de helderheid: licht loopt naar warm,
+schaduw naar koel. Dat is wat pixelkunst geverfd laat ogen in plaats van
+uitgebleekt.
+
+## Vogels
+
+Een resourcepack kan niets in de lucht laten vliegen — daar zit geen texture
+achter, en zonder mod is er geen laag om iets aan toe te voegen. Wat wel kan:
+de dieren die in het spel al vliegen mooier maken. Daarom zitten er nu vijf
+papegaaien, een vleermuis en een allay in het pack.
+
+De vogels op `verdant-lucht-foto.png` zijn onderdeel van die tekening, niet
+van het pack.
