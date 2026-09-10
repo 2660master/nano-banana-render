@@ -174,8 +174,6 @@ def build():
     out["entity/shield_base_nopattern"] = shield.copy()
 
     # -- end crystal en enderkist --------------------------------------------
-    out["entity/end_crystal/end_crystal"] = veined(64, 32, hx("93E9DD"), hx("2F8981"), 913, density=0.08)
-    out["entity/end_crystal/end_crystal_beam"] = veined(16, 16, hx("D8FFF6"), hx("7FCFC4"), 914)
     ender = hide(64, 64, hx("2A3A34"), 915, hx("1A2620"), 0.30, patch_scale=6)
     fill(ender, (0, 0, 14, 14), hx("4E8A6A"))           # slot
     out["entity/chest/ender"] = ender

@@ -20,6 +20,7 @@ import sprites_armor
 import sprites_entity
 import sprites_blocks
 import sprites_cpvp
+import sprites_crystal
 import sprites_items
 import sprites_items2
 import sprites_tools
@@ -116,13 +117,19 @@ def build():
         im = blocks.emboss(make())          # reliëf, blijft naadloos tegelen
         im.save(os.path.join(BLOCK_DIR, name + ".png"))
         blocks_written.append(name)
+    # anchor is met de hand gelegd; die heeft het reliëf niet nodig
+    for name, im in sprites_crystal.build_blocks().items():
+        im.save(os.path.join(BLOCK_DIR, name + ".png"))
+        blocks_written.append(name)
 
     # 5. lucht, weer, water en lava
     env_written = build_sky()
 
     # 6. dieren
     ent_written = []
-    for path, im in sprites_entity.build().items():
+    ents = sprites_entity.build()
+    ents.update(sprites_crystal.build_entities())
+    for path, im in ents.items():
         full = os.path.join(TEX_DIR, path + ".png")
         os.makedirs(os.path.dirname(full), exist_ok=True)
         im.save(full)
