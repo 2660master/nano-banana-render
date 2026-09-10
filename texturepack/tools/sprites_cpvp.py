@@ -100,14 +100,14 @@ WIND_CHARGE = S(
 
 BREEZE_ROD = S(
     "", "",
-    "..........11",
-    ".........131",
-    "........131",
-    ".......131",
-    "......131",
-    ".....131",
-    "....131",
-    "...131",
+    ".........111",
+    "........1331",
+    ".......1331",
+    "......1331",
+    ".....1331",
+    "....1331",
+    "...1331",
+    "..1331",
     "..131",
     "..11",
 )
@@ -140,6 +140,7 @@ def items():
     out["crossbow_arrow"] = (crossbow(3, "arrow"), wood)
     out["crossbow_firework"] = (crossbow(3, "firework"), wood)
     out["wind_charge"] = (WIND_CHARGE, P("BCD2C8", "7E948C", "E4F0EA"))
-    out["breeze_rod"] = (BREEZE_ROD, P("8ED2C4", "4E8A80", "D8F4EC"))
+    # amber, door jou gekozen uit vier varianten
+    out["breeze_rod"] = (BREEZE_ROD, P("B87E28", "8A5C18", "FFE596"))
     out["heavy_core"] = (HEAVY_CORE, P("8E9A94", "3A423E", "C4D0CA"))
     return out
