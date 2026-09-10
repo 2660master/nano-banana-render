@@ -234,8 +234,9 @@ def catalog():
 
     # -- CPvP-blokken ---------------------------------------------------------
     add("obsidian",        lambda: G.stone(hx("14101F"), 700, contrast=0.40))
-    add("crying_obsidian", lambda: G.ore(G.stone(hx("140F22"), 700, contrast=0.36),
-                                         hx("8A3ACC"), 701, blobs=5, spread=0.9))
+    # veel kleine paarse tranen, door jou gekozen uit vier varianten
+    add("crying_obsidian", lambda: G.ore(G.stone(hx("14101F"), 700, contrast=0.40),
+                                         hx("A86ED8"), 842, blobs=9, spread=0.7))
     # honingkleurig, door jou gekozen uit vier varianten
     add("glowstone",       lambda: G.ore(G.stone(hx("A8722A"), 762, contrast=0.24),
                                          hx("FFD87A"), 763, blobs=7, spread=1.1))
