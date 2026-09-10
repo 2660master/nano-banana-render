@@ -10,8 +10,8 @@ de hele set één consistente stijl en één palet deelt.
 |---|---|---|
 | 1 | Items, gereedschap & wapens (selectie van 65) | goedgekeurd |
 | 2 | Bouwblokken | goedgekeurd |
-| 3 | Natuurblokken: aarde, gras, blad, erts, zand, planten, gewassen | **klaar — ter beoordeling** |
-| 4 | Lucht — vanilla-only | gepland |
+| 3 | Natuurblokken: aarde, gras, blad, erts, zand, planten, gewassen | goedgekeurd |
+| 4 | Lucht, weer, water en lava | **klaar — ter beoordeling** |
 | 5 | Geluiden | gepland |
 | 6 | Dieren (geen monsters) | gepland |
 | — | Resterende items (harnas, schild, gereedschap, potions, …) | volgt na akkoord |
@@ -85,6 +85,7 @@ texturepack/
     ├── sprites_blocks.py  blokcatalogus met natuurpaletten
     ├── build.py        bouwt pack + zip
     ├── preview.py      overzichtsplaat items
+    ├── sky.py         lucht, weer, water en lava
     ├── preview_blocks.py  overzichtsplaat blokken
     └── make_review_page.py  keuringspagina
 ```
@@ -141,3 +142,28 @@ zou in-game veel te donker uitkomen.
 | `short_grass`, `fern`, `tall_grass_*`, `large_fern_*`, `vine`, `sugar_cane` | ja, bleek grijsgroen |
 | `cherry_leaves`, `azalea_leaves`, `pale_oak_leaves` | nee, vaste kleur |
 | bloemen, gewassen, mos, glow lichen | nee, vaste kleur |
+
+
+## Lucht, weer en vloeistoffen
+
+Alles staat op vanilla-formaat, dus er verandert niets aan de kosten.
+
+| Texture | Formaat | Bijzonderheid |
+|---|---|---|
+| `environment/sun.png` | 32x32 | warme amberkern met krans |
+| `environment/moon_phases.png` | 128x64 | acht schijngestalten in een raster van 4 x 2 |
+| `environment/clouds.png` | 256x256 | alpha bepaalt de wolk |
+| `environment/end_sky.png` | 16x16 | getegeld over de end-hemel |
+| `environment/rain.png`, `snow.png` | 32x32 | |
+| `block/water_still.png` | 16x512 | 32 frames, frametime 2 |
+| `block/water_flow.png` | 32x1024 | 32 frames, frametime 1 |
+| `block/lava_still.png` | 16x320 | 20 frames, frametime 2 |
+| `block/lava_flow.png` | 32x640 | 20 frames, frametime 3 |
+
+De animaties zijn opgebouwd uit sinusfases: frame N gebruikt fase `2*pi*N/F`,
+dus het laatste frame sluit exact aan op het eerste en de lus springt nooit.
+
+**Wolken en FPS.** Minecraft bouwt echte wolkendozen uit elke pixel in
+`clouds.png` met alpha > 0. Meer wolk is dus letterlijk meer geometrie. De
+dekking blijft daarom rond de 34%, ongeveer vanilla, en de alpha is hard
+afgesneden op 0 of 255 — zachte randen zouden alleen maar extra dozen opleveren.

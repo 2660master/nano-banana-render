@@ -59,6 +59,67 @@ def block_tile(name):
     )
 
 
+# (naam, map, weergavebreedte px, herhaling, bijschrift)
+SKY_STATIC = [
+    ("sun", "env", 128, 1, "Warme amberkern met een zachte krans."),
+    ("moon_phases", "env", 256, 1, "Alle acht schijngestalten in het raster van 4 x 2 dat het spel uitleest."),
+    ("clouds", "env", 256, 1, "Wit is wolk, doorzichtig is lucht. 34% dekking — ongeveer vanilla."),
+    ("end_sky", "env", 128, 8, "Diepgroen-zwart met sporen die licht vangen."),
+    ("rain", "env", 128, 1, "Dunne strepen met een groenblauwe zweem."),
+    ("snow", "env", 128, 1, "Zachte vlokken met een halo."),
+]
+
+# (naam, framebreedte, aantal frames, frametime in ticks, bijschrift)
+SKY_ANIMATED = [
+    ("water_still", 16, 32, 2, "Stilstaand water. Het spel kleurt dit met de biome-kleur, dus het staat hier bleek."),
+    ("water_flow", 32, 32, 1, "Stromend water, met verticale strengen die meelopen."),
+    ("lava_still", 16, 20, 2, "Donkere korst die opengaat en weer dichttrekt."),
+    ("lava_flow", 32, 20, 3, "Lava die omlaag kruipt."),
+]
+
+
+def sky_tile(name, folder, width, repeat, caption):
+    uri = data_uri(name, B.ENV_DIR if folder == "env" else B.BLOCK_DIR)
+    style = f"width:{width}px;background-image:url({uri})"
+    style += f";background-size:{width // repeat}px auto" if repeat > 1 else ";background-size:100% auto"
+    im_h = {"sun": width, "moon_phases": width // 2, "clouds": width,
+            "end_sky": width, "rain": width, "snow": width}[name]
+    style += f";height:{im_h}px"
+    return (
+        f'<figure class="tile stile" data-name="{html.escape(name)}">'
+        f'<div class="sslot" style="{style}"></div>'
+        f'<code>{html.escape(name)}.png</code>'
+        f'<p class="cap">{caption}</p>'
+        f'<div class="verdict" role="group" aria-label="oordeel {html.escape(name)}">'
+        f'<button type="button" class="v v-ok" data-v="ok">goed</button>'
+        f'<button type="button" class="v v-fix" data-v="fix">anders</button></div>'
+        f'<input class="note" id="note-{html.escape(name)}" type="text" hidden '
+        f'placeholder="wat moet er anders?" autocomplete="off"></figure>'
+    )
+
+
+def anim_tile(name, fw, frames, frametime, caption):
+    """Speelt de sprite-strip af met precies de snelheid die het spel gebruikt."""
+    uri = data_uri(name, B.BLOCK_DIR)
+    disp = 128
+    dur = round(frames * frametime * 0.05, 2)      # 1 tick = 1/20 seconde
+    style = (f"width:{disp}px;height:{disp}px;background-image:url({uri});"
+             f"background-size:{disp}px auto;"
+             f"animation-duration:{dur}s;--frames:{frames};"
+             f"--strip:-{disp * frames}px")
+    return (
+        f'<figure class="tile stile" data-name="{html.escape(name)}">'
+        f'<div class="aslot" style="{style}"></div>'
+        f'<code>{html.escape(name)}.png</code>'
+        f'<p class="cap">{caption} <b>{frames} frames</b>, {dur}s per ronde.</p>'
+        f'<div class="verdict" role="group" aria-label="oordeel {html.escape(name)}">'
+        f'<button type="button" class="v v-ok" data-v="ok">goed</button>'
+        f'<button type="button" class="v v-fix" data-v="fix">anders</button></div>'
+        f'<input class="note" id="note-{html.escape(name)}" type="text" hidden '
+        f'placeholder="wat moet er anders?" autocomplete="off"></figure>'
+    )
+
+
 BLOCK_BLURBS = {
     "Planken": "Vier lange gangen met doorlopende nerf. Trappen, treden, hekken en deurpanelen erven deze texture automatisch.",
     "Stammen & stengels": "Bast aan de zijkant, jaarringen aan de kop. Berk heeft zijn zwarte streepjes gehouden.",
@@ -136,7 +197,12 @@ def build_html():
             f'<section class="grp"><h3>{title}</h3><p class="blurb">{blurb}</p>'
             f'<div class="bgrid">{cards}</div></section>')
 
-    total = len(palette.TIER_ORDER) * len(tools) + sum(len(g[2]) for g in GROUPS) + n_blocks
+    sky_html = ("".join(sky_tile(*t) for t in SKY_STATIC)
+                + "".join(anim_tile(*t) for t in SKY_ANIMATED))
+    n_sky = len(SKY_STATIC) + len(SKY_ANIMATED)
+
+    total = (len(palette.TIER_ORDER) * len(tools) + sum(len(g[2]) for g in GROUPS)
+             + n_blocks + n_sky)
 
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "review_template.html"),
               encoding="utf-8") as f:
@@ -147,6 +213,7 @@ def build_html():
             .replace("@@GROUPS@@", "".join(groups))
             .replace("@@BLOCKS@@", "".join(bsections))
             .replace("@@NBLOCKS@@", str(n_blocks))
+            .replace("@@SKY@@", sky_html)
             .replace("@@TOTAL@@", str(total)))
 
 
