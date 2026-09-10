@@ -8,10 +8,39 @@ de hele set één consistente stijl en één palet deelt.
 
 | Deel | Inhoud | Status |
 |---|---|---|
-| 1 | Items, gereedschap & wapens | **klaar — ter beoordeling** |
-| 2 | Blokken (aarde, steen, hout, blad, erts, …) | wacht op akkoord op deel 1 |
-| 3 | Lucht (zon, maan, wolken, end-sky) | gepland |
-| 4 | Geluiden (zachte natuurklanken) | gepland |
+| 1 | Items, gereedschap & wapens (selectie van 65) | **klaar — ter beoordeling** |
+| 2 | Bouwblokken, daarna survivalblokken | wacht op akkoord op deel 1 |
+| 3 | Lucht — vanilla-only | gepland |
+| 4 | Geluiden | gepland |
+| 5 | Dieren (geen monsters) | gepland |
+| — | Resterende items (harnas, schild, gereedschap, potions, …) | volgt na akkoord |
+
+## Afgesproken scope
+
+Vastgelegd na de eerste keuringsronde:
+
+**Lucht — alleen vanilla.** Er komt geen OptiFine- of FabricSkyBoxes-laag. Dat
+betekent concreet: `sun.png`, `moon_phases.png`, `clouds.png` en `end_sky.png`
+krijgen een natuurbehandeling. Bergen, vogels en gelaagde wolken aan de hemel
+kunnen daarmee niet — een vanilla-resourcepack kan de skybox zelf niet
+vervangen. De lucht blijft dus subtiel: warmere zon, zachtere maan, organischere
+wolkenvorm.
+
+**Geluid — drie groepen, geen mobs.**
+
+1. Gevecht & totem: zwaardhits, kritieke treffers, totem-pop, schade, level-up.
+2. Voetstappen & blokken: gras, steen, hout, zand; plaatsen en breken.
+3. Sfeer & omgeving: regen, donder, deuren, kisten, water, grot-ambience.
+
+Mobgeluiden blijven vanilla. Alle klanken worden gesynthetiseerd (ruisfilters
+voor blad en wind, toonvegen voor water en vogels, houtklopjes voor hits) en
+geleverd als mono OGG Vorbis via `sounds.json`. Dit werkt zonder mods.
+
+**Blokken — bouwblokken eerst.** Planken, bakstenen, beton, wol, glas, trappen
+en muren gaan voor op aarde, steen, erts en zand.
+
+**Dieren wel, monsters niet.** Koeien, schapen, varkens, kippen en papegaaien
+komen in het natuurthema; monster-texturen blijven vanilla.
 
 ## Prestaties
 
