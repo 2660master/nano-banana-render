@@ -13,6 +13,7 @@ from PIL import Image
 import palette
 import render
 import blocks
+import leaf_icon
 import sky
 import sound_catalog
 import sound_events
@@ -27,7 +28,7 @@ import sprites_tools
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-PACK = os.path.join(ROOT, "Verdant")
+PACK = os.path.join(ROOT, "NTCL")
 ITEM_DIR = os.path.join(PACK, "assets", "minecraft", "textures", "item")
 BLOCK_DIR = os.path.join(PACK, "assets", "minecraft", "textures", "block")
 ENV_DIR = os.path.join(PACK, "assets", "minecraft", "textures", "environment")
@@ -43,7 +44,14 @@ PACK_FORMAT = 75          # Minecraft 1.21.11
 MIN_FORMAT = 64           # 1.21.7 / 1.21.8
 MAX_FORMAT = 75
 
-DESCRIPTION = "§2Verdant §r§7– natuur-texturepack\n§8Items · blokken · lucht · geluid · dieren  §a16x"
+def description(n_tex, n_snd):
+    """De twee regels naast de packnaam in de lijst.
+
+    Paragraafteken plus letter is een kleurcode: 2 is donkergroen, a is
+    fel groen, l maakt vet, 8 grijs en r zet alles weer terug.
+    """
+    return ("§2§lN§a§lT§2§lC§a§lL §r§aNatuur texturepack\n"
+            f"§8{n_tex} texturen · {n_snd} geluiden · §a16x §8· 1.21.11")
 
 
 # --------------------------------------------------------------- boog-frames
@@ -149,7 +157,9 @@ def build():
         "pack": {
             "pack_format": PACK_FORMAT,
             "supported_formats": {"min_inclusive": MIN_FORMAT, "max_inclusive": MAX_FORMAT},
-            "description": DESCRIPTION,
+            "description": description(
+                len(written) + len(blocks_written) + len(env_written) + len(ent_written),
+                len(snd_written)),
         }
     }
     with open(os.path.join(PACK, "pack.mcmeta"), "w", encoding="utf-8") as f:
@@ -160,7 +170,7 @@ def build():
     make_icon().save(os.path.join(PACK, "pack.png"))
 
     # 10. zip
-    zip_path = os.path.join(DIST, "Verdant-1.21.11.zip")
+    zip_path = os.path.join(DIST, "NTCL-1.21.11.zip")
     if os.path.exists(zip_path):
         os.remove(zip_path)
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
@@ -230,19 +240,8 @@ def build_sky():
 
 
 def make_icon(size=128):
-    """Pack-icoon: bosgradient met het dauwkristal-zwaard."""
-    ico = Image.new("RGBA", (size, size))
-    px = ico.load()
-    top, bot = (94, 154, 96), (26, 46, 32)
-    for y in range(size):
-        t = y / (size - 1)
-        col = tuple(int(top[i] + (bot[i] - top[i]) * t) for i in range(3))
-        for x in range(size):
-            px[x, y] = col + (255,)
-    pal = palette.material_palette("diamond")
-    sw = render.render(sprites_tools.SWORD, pal, "icon").resize((size, size), Image.NEAREST)
-    ico.alpha_composite(sw)
-    return ico
+    """Pack-icoon: een blad, zie leaf_icon.py."""
+    return leaf_icon.leaf(size)
 
 
 if __name__ == "__main__":

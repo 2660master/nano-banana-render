@@ -1,4 +1,4 @@
-# Verdant — natuur-texturepack voor Minecraft 1.21.11
+# NTCL — natuur-texturepack voor Minecraft 1.21.11
 
 Een 16×16 resourcepack in een natuurthema (bos, blad, steen, hars, dauw, wortel).
 Alle texturen worden **procedureel gegenereerd** uit tekenkaarten in `tools/`, zodat
@@ -54,9 +54,9 @@ op FPS en VRAM nul.
 
 ## Installeren
 
-1. Pak `dist/Verdant-1.21.11.zip`.
+1. Pak `dist/NTCL-1.21.11.zip`.
 2. Zet het bestand in `.minecraft/resourcepacks/`.
-3. In Minecraft: **Options → Resource Packs** → Verdant naar rechts schuiven.
+3. In Minecraft: **Options → Resource Packs** → NTCL naar rechts schuiven.
 
 Vereist Minecraft Java **1.21.11** (`pack_format` 75). Het pack draait ook op
 1.21.7–1.21.10 via `supported_formats`.
@@ -66,7 +66,7 @@ Vereist Minecraft Java **1.21.11** (`pack_format` 75). Het pack draait ook op
 ```bash
 pip install Pillow
 cd texturepack/tools
-python3 build.py           # schrijft ../Verdant/ en ../dist/*.zip
+python3 build.py           # schrijft ../NTCL/ en ../dist/*.zip
 python3 preview.py         # overzichtsplaat items
 python3 preview_blocks.py  # overzichtsplaat blokken
 python3 make_review_page.py  # keuringspagina
@@ -76,7 +76,7 @@ python3 make_review_page.py  # keuringspagina
 
 ```
 texturepack/
-├── Verdant/            het pack zelf (uitgepakt)
+├── NTCL/            het pack zelf (uitgepakt)
 ├── dist/               zip + previewplaat
 └── tools/
     ├── palette.py      kleuren per materiaal-tier
@@ -101,7 +101,7 @@ texturepack/
 Elke vanilla-tier is hertaald naar een natuurmateriaal, met dezelfde steel en
 hetzelfde blaadje op elk stuk gereedschap:
 
-| Vanilla | Verdant | Kleur |
+| Vanilla | NTCL | Kleur |
 |---|---|---|
 | wood | Twijghout | licht, warm hout |
 | stone | Moskei | grijze kei met mosspikkels |
@@ -333,3 +333,26 @@ het ruisrooster niet meer rond op de textuurbreedte en zie je een
 verticale naad in de lucht. `value_noise2` neemt in plaats daarvan minder
 cellen in x dan in y: hetzelfde uitgerekte effect, en het wrapt weer
 netjes. Gemeten verschil op de naad: 0, tegen 4 binnenin de texture.
+
+
+## Naam en icoon
+
+De pack heet **NTCL**. De regel in de packlijst gebruikt Minecraft's eigen
+kleurcodes: `§2` donkergroen, `§a` fel groen, `§l` vet, `§8` grijs, `§r`
+terug naar normaal. De naam wisselt daardoor per letter tussen donker- en
+lichtgroen:
+
+```
+§2§lN§a§lT§2§lC§a§lL §r§aNatuur texturepack
+§8596 texturen · 73 geluiden · §a16x §8· 1.21.11
+```
+
+Het aantal texturen wordt bij het bouwen geteld, dus dat klopt altijd met
+wat er daadwerkelijk in zit.
+
+`pack.png` is een blad, getekend in `leaf_icon.py`: bladschijf met
+middennerf, schuine zijnerven en een licht gekartelde rand, met een steel
+en een zachte gloed erachter. Het wordt op vier keer de eindmaat getekend
+en daarna verkleind, zodat de randen glad worden. Dit plaatje staat alleen
+naast de packnaam en komt nooit in de wereld terecht, dus hier mag het glad
+zijn in plaats van pixelig.
