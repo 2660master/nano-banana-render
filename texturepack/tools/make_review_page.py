@@ -69,6 +69,12 @@ BLOCK_BLURBS = {
     "Betonpoeder": "Korreliger en iets lichter, zodat je poeder en blok uit elkaar houdt.",
     "Terracotta": "Horizontale sliblagen, zoals in gebakken klei.",
     "Glas": "Doorlopende rand per blok en twee lichtvegen. Getint glas is bewust bijna dicht.",
+    "Aarde & ondergrond": "Aarde, gras, zand, ijs en de nether-bodems. De graskraag zit op de zijkant, precies zoals vanilla het opbouwt.",
+    "Bladeren": "Let op: eik, spar, berk, jungle, acacia, donkere eik en mangrove zien er hier bleek uit. Dat hoort zo — het spél kleurt ze in met de biome-kleur, dus een groene texture zou in-game veel te donker worden. Kers, azalea en pale oak hebben wél een vaste kleur; die zie je hier zoals ze in het spel worden.",
+    "Ertsen": "De klodders hebben exact de kleuren van de items uit deel 1: amber voor goud, dauwkristal voor diamant, berksteen voor ijzer. Zo hoort erts bij wat je eruit haalt.",
+    "Planten": "Ook deze worden door het spel ingekleurd, dus ze staan bewust bleek. In het spel krijgen ze de kleur van de biome waar ze groeien.",
+    "Bloemen": "Vaste kleuren, deze worden niet ingekleurd. Elke bloem staat op dezelfde steel met hetzelfde blaadje.",
+    "Gewassen": "Alle groeistadia. De stengels groeien mee en krijgen pas laat hun aar of vrucht, zodat je van een afstand ziet of iets oogstbaar is.",
 }
 
 

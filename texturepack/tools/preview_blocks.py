@@ -5,6 +5,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 import build as B
 import sprites_blocks
+import sprites_plants
 
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 FONT_B = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
@@ -12,6 +13,8 @@ BG, FG, DIM, ACC = (24, 30, 26), (226, 234, 222), (140, 156, 140), (140, 197, 94
 S, T, COLS = 3, 2, 12
 CELL, PAD, LAB = 16 * S * T, 12, 15
 
+ORES = ["coal", "iron", "copper", "gold", "redstone", "lapis",
+        "diamond", "emerald"]
 WOODS = ["oak", "spruce", "birch", "jungle", "acacia", "dark_oak",
          "mangrove", "cherry", "pale_oak", "crimson", "warped"]
 
@@ -46,6 +49,29 @@ def groups():
         ("Betonpoeder", [f"{d}_concrete_powder" for d in dyes]),
         ("Terracotta", ["terracotta"] + [f"{d}_terracotta" for d in dyes]),
         ("Glas", ["glass", "tinted_glass"] + [f"{d}_stained_glass" for d in dyes]),
+        ("Aarde & ondergrond", [
+            "dirt", "coarse_dirt", "rooted_dirt", "grass_block_top",
+            "grass_block_side", "grass_block_side_overlay", "grass_block_snow",
+            "podzol_top", "podzol_side", "mycelium_top", "mycelium_side",
+            "farmland", "farmland_moist", "dirt_path_top", "dirt_path_side",
+            "mud", "muddy_mangrove_roots_side", "muddy_mangrove_roots_top",
+            "sand", "red_sand", "gravel", "clay", "snow", "powder_snow",
+            "ice", "packed_ice", "blue_ice", "netherrack", "soul_sand",
+            "soul_soil", "basalt_side", "basalt_top", "magma", "end_stone",
+            "moss_block", "pale_moss_block", "amethyst_block"]),
+        ("Bladeren", [
+            "oak_leaves", "spruce_leaves", "birch_leaves", "jungle_leaves",
+            "acacia_leaves", "dark_oak_leaves", "mangrove_leaves",
+            "cherry_leaves", "pale_oak_leaves", "azalea_leaves",
+            "flowering_azalea_leaves"]),
+        ("Ertsen", [f"{o}_ore" for o in ORES] +
+                   [f"deepslate_{o}_ore" for o in ORES] +
+                   ["nether_gold_ore", "nether_quartz_ore",
+                    "ancient_debris_side", "ancient_debris_top"]),
+        ("Planten", [n for n, _r, _p in sprites_plants.PLANTS]),
+        ("Bloemen", [n for n, _r, _a, _b in sprites_plants.FLOWERS]),
+        ("Gewassen", [f"{c}_stage{i}" for c, _s, _h, n in sprites_plants.CROPS
+                      for i in range(n)]),
     ]
 
 

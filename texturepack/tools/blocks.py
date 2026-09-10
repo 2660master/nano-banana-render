@@ -313,3 +313,129 @@ def powder(base, seed):
             v = noise(x, y, seed) * 0.7 + noise(x // 2, y // 2, seed + 3) * 0.3
             px[x, y] = mul(base, 1.02 - 0.13 + v * 0.26)
     return im
+
+
+# --------------------------------------------------------- natuur & ondergrond
+def leaves(base, seed, hole=0.12, dark=0.26, clusters=15):
+    """Bladeren: overlappende blaadjesclusters met gaten om doorheen te kijken.
+
+    Let op: oak/spruce/birch/jungle/acacia/dark_oak/mangrove worden door het
+    spel met de biome-kleur vermenigvuldigd. Die krijgen dus een ontzadigde
+    basis, anders komen ze in-game veel te donker uit.
+    """
+    im = img()
+    px = im.load()
+    for y in range(N):                              # donkere onderlaag
+        for x in range(N):
+            px[x, y] = mul(base, 0.58 + noise(x, y, seed) * 0.12)
+    for k in range(clusters):                       # blaadjes erbovenop
+        cx = int(noise(k, 0, seed) * N)
+        cy = int(noise(k, 1, seed) * N)
+        r = 1.5 + noise(k, 2, seed) * 1.2
+        f = 0.84 + noise(k, 3, seed) * 0.36
+        for dy in range(-3, 4):
+            for dx in range(-3, 4):
+                d = (dx * dx + dy * dy) ** 0.5
+                if d <= r:
+                    lit = 1.16 if (dx <= 0 and dy <= 0 and d < r * 0.7) else 1.0
+                    px[(cx + dx) % N, (cy + dy) % N] = mul(base, f * lit)
+    n_holes = max(1, int(hole * 40))
+    for k in range(n_holes):                        # gaten in het bladerdek
+        hx0 = int(noise(k, 10, seed) * N)
+        hy0 = int(noise(k, 11, seed) * N)
+        px[hx0, hy0] = (0, 0, 0, 0)
+        if noise(k, 12, seed) < 0.55:
+            px[(hx0 + 1) % N, hy0] = (0, 0, 0, 0)
+        if noise(k, 13, seed) < 0.35:
+            px[hx0, (hy0 + 1) % N] = (0, 0, 0, 0)
+    return im
+
+
+def ore(host, gem, seed, blobs=4, spread=1.1):
+    """Erts: klodders in het gastgesteente, lichte kern en donkere rand."""
+    im = host.copy()
+    px = im.load()
+    for k in range(blobs):
+        cx = int(noise(k, 0, seed) * N)
+        cy = int(noise(k, 1, seed) * N)
+        r = spread + noise(k, 2, seed) * 1.3
+        for dy in range(-3, 4):
+            for dx in range(-3, 4):
+                d = (dx * dx + dy * dy) ** 0.5
+                if d <= r:
+                    f = 1.14 if d < r * 0.45 else (0.80 if d > r * 0.78 else 1.0)
+                    px[(cx + dx) % N, (cy + dy) % N] = mul(gem, f)
+    return im
+
+
+def sand(base, seed, contrast=0.15):
+    """Zand: fijne korrel zonder grote vlekken."""
+    im = img()
+    px = im.load()
+    for y in range(N):
+        for x in range(N):
+            v = noise(x, y, seed)
+            c = mul(base, 1.0 - contrast / 2 + v * contrast)
+            if noise(x, y, seed + 7) > 0.96:
+                c = mul(c, 1.10)               # glinsterend korreltje
+            px[x, y] = c
+    return im
+
+
+def grass_top(seed, lo=142, hi=214):
+    """Grijswaarden — het spel vermenigvuldigt dit met de biome-kleur."""
+    im = img()
+    px = im.load()
+    for y in range(N):
+        for x in range(N):
+            v = 0.5 * noise(x, y, seed) + 0.5 * noise(x // 2, y // 2, seed + 3)
+            g = int(lo + v * (hi - lo))
+            px[x, y] = (g, g, g, 255)
+    return im
+
+
+def _fringe_height(x, seed):
+    return 2 + int(noise(x, 7, seed) * 4)
+
+
+def grass_overlay(seed):
+    """De getinte graskraag langs de zijkant, in grijswaarden met alpha."""
+    im = img()
+    px = im.load()
+    for x in range(N):
+        for y in range(_fringe_height(x, seed)):
+            g = int(150 + noise(x, y, seed + 2) * 80)
+            px[x, y] = (g, g, g, 255)
+    return im
+
+
+def grass_side(dirt_col, fringe_col, seed):
+    """Aardezijde met een kraag erbovenop (sneeuw, podzol, mycelium, gras)."""
+    im = stone(dirt_col, seed, contrast=0.26)
+    px = im.load()
+    for x in range(N):
+        for y in range(_fringe_height(x, seed)):
+            px[x, y] = mul(fringe_col, 0.86 + noise(x, y, seed + 2) * 0.30)
+    return im
+
+
+def ice(tint, seed, alpha=200, cracks=4):
+    """IJs: doorschijnend met een paar scheuren."""
+    im = img()
+    px = im.load()
+    for y in range(N):
+        for x in range(N):
+            v = 0.6 * noise(x // 2, y // 2, seed) + 0.4 * noise(x, y, seed + 2)
+            c = mul(tint, 0.92 + v * 0.18)
+            px[x, y] = (c[0], c[1], c[2], alpha)
+    for k in range(cracks):
+        x = int(noise(k, 20, seed) * N)
+        y = int(noise(k, 21, seed) * N)
+        for _ in range(3 + int(noise(k, 22, seed) * 7)):
+            c = px[x % N, y % N]
+            px[x % N, y % N] = mul(c, 0.84)
+            if noise(x, y, seed + 30) < 0.55:
+                x += 1
+            else:
+                y += 1
+    return im

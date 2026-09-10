@@ -9,11 +9,11 @@ de hele set één consistente stijl en één palet deelt.
 | Deel | Inhoud | Status |
 |---|---|---|
 | 1 | Items, gereedschap & wapens (selectie van 65) | goedgekeurd |
-| 2 | Bouwblokken (202 texturen) | **klaar — ter beoordeling** |
-| 2b | Overige survivalblokken (aarde, gras, blad, erts, zand) | volgt |
-| 3 | Lucht — vanilla-only | gepland |
-| 4 | Geluiden | gepland |
-| 5 | Dieren (geen monsters) | gepland |
+| 2 | Bouwblokken | goedgekeurd |
+| 3 | Natuurblokken: aarde, gras, blad, erts, zand, planten, gewassen | **klaar — ter beoordeling** |
+| 4 | Lucht — vanilla-only | gepland |
+| 5 | Geluiden | gepland |
+| 6 | Dieren (geen monsters) | gepland |
 | — | Resterende items (harnas, schild, gereedschap, potions, …) | volgt na akkoord |
 
 ## Afgesproken scope
@@ -123,3 +123,21 @@ wordt met modulo-rekenen op 16 gelegd en de ruis is puur een functie van
 | `clay` | terracotta met horizontale sliblagen |
 | `glass` | ruit met doorlopende rand en instelbare dichtheid |
 | `moss_over` | mos in plukken over kei en metselwerk, sterker naar boven |
+| `leaves` | overlappende blaadjesclusters met gaten in het bladerdek |
+| `ore` | ertsklodders in het gastgesteente, lichte kern en donkere rand |
+| `sand` / `grass_top` / `grass_side` | zand, graskop en de kraag op de blokzijde |
+| `ice` | doorschijnend ijs met scheuren |
+
+## Texturen die het spel zelf inkleurt
+
+Een paar texturen worden door Minecraft met de biome-kleur vermenigvuldigd.
+Die staan hier bewust bleek en bijna neutraal — een verzadigd groene texture
+zou in-game veel te donker uitkomen.
+
+| Texture | Wordt ingekleurd |
+|---|---|
+| `grass_block_top`, `grass_block_side_overlay` | ja, grijswaarden |
+| `oak/spruce/birch/jungle/acacia/dark_oak/mangrove_leaves` | ja, ontzadigd |
+| `short_grass`, `fern`, `tall_grass_*`, `large_fern_*`, `vine`, `sugar_cane` | ja, bleek grijsgroen |
+| `cherry_leaves`, `azalea_leaves`, `pale_oak_leaves` | nee, vaste kleur |
+| bloemen, gewassen, mos, glow lichen | nee, vaste kleur |

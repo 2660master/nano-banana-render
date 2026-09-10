@@ -7,6 +7,8 @@ zachter, warmer en met mos of korstmos waar dat logisch is.
 from PIL import Image
 
 import blocks as G
+import render
+import sprites_plants as P
 from palette import hx
 
 # ------------------------------------------------------------------ houtsoorten
@@ -141,5 +143,93 @@ def catalog():
     add("glass",        lambda: G.glass(hx("C6DCC6"), 1100))
     add("glass_pane_top", lambda: G.solid(hx("DCE8DC")))
     add("tinted_glass", lambda: G.glass(hx("2A2430"), 1101, frame=hx("463E50"), alpha=215))
+
+    # -- aarde, gras en ondergrond -------------------------------------------
+    DIRT = hx("7A5A3C")
+    add("dirt",            lambda: G.stone(DIRT, 60, contrast=0.28))
+    add("coarse_dirt",     lambda: G.stone(hx("6E5236"), 61, contrast=0.36))
+    add("rooted_dirt",     lambda: G.stone(hx("8A6746"), 62, contrast=0.30))
+    add("grass_block_top", lambda: G.grass_top(63))
+    add("grass_block_side_overlay", lambda: G.grass_overlay(63))
+    add("grass_block_side", lambda: G.grass_side(DIRT, hx("8C9E76"), 63))
+    add("grass_block_snow", lambda: G.grass_side(DIRT, hx("F0F4F6"), 63))
+    add("podzol_top",      lambda: G.stone(hx("7A5424"), 64, contrast=0.34))
+    add("podzol_side",     lambda: G.grass_side(DIRT, hx("8A5E28"), 64))
+    add("mycelium_top",    lambda: G.stone(hx("7C6E76"), 65, contrast=0.30))
+    add("mycelium_side",   lambda: G.grass_side(DIRT, hx("8E7E86"), 65))
+    add("farmland",        lambda: G.stone(hx("6A4A2E"), 66, contrast=0.24))
+    add("farmland_moist",  lambda: G.stone(hx("4A3220"), 67, contrast=0.24))
+    add("dirt_path_top",   lambda: G.stone(hx("97794A"), 68, contrast=0.22))
+    add("dirt_path_side",  lambda: G.grass_side(DIRT, hx("97794A"), 68))
+    add("mud",             lambda: G.stone(hx("4A3E3A"), 69, contrast=0.22))
+    add("muddy_mangrove_roots_side", lambda: G.log_side(hx("4E4038"), 70))
+    add("muddy_mangrove_roots_top",  lambda: G.stone(hx("4A3E3A"), 71, contrast=0.30))
+    add("sand",            lambda: G.sand(hx("E0D2A2"), 72))
+    add("red_sand",        lambda: G.sand(hx("BC6428"), 73))
+    add("gravel",          lambda: G.cobble(hx("86837E"), 74, cells=8, mortar_f=0.72))
+    add("clay",            lambda: G.stone(hx("A6AABA"), 75, contrast=0.16))
+    add("snow",            lambda: G.sand(hx("F2F6F8"), 76, contrast=0.08))
+    add("powder_snow",     lambda: G.sand(hx("F6F8FA"), 77, contrast=0.06))
+    add("ice",             lambda: G.ice(hx("9CC4EE"), 78, alpha=190))
+    add("packed_ice",      lambda: G.ice(hx("A6C8EC"), 79, alpha=255))
+    add("blue_ice",        lambda: G.ice(hx("7EAEEE"), 80, alpha=255))
+    add("netherrack",      lambda: G.stone(hx("6A2A2A"), 81, contrast=0.34))
+    add("soul_sand",       lambda: G.stone(hx("52413A"), 82, contrast=0.30))
+    add("soul_soil",       lambda: G.stone(hx("4A3A32"), 83, contrast=0.26))
+    add("basalt_side",     lambda: G.log_side(hx("4C4A50"), 84))
+    add("basalt_top",      lambda: G.stone(hx("54525A"), 85, contrast=0.24))
+    add("magma",           lambda: G.ore(G.stone(hx("4A2416"), 86, contrast=0.26),
+                                         hx("D9701E"), 87, blobs=3, spread=0.9))
+    add("end_stone",       lambda: G.stone(hx("DCDFA8"), 88, contrast=0.18))
+    add("moss_block",      lambda: G.stone(hx("5C8A3A"), 89, contrast=0.32))
+    add("pale_moss_block", lambda: G.stone(hx("9AA88E"), 90, contrast=0.30))
+    add("amethyst_block",  lambda: G.stone(hx("9A6FC4"), 91, contrast=0.34))
+
+    # -- bladeren -------------------------------------------------------------
+    # Deze zeven worden door het spel met de biome-kleur vermenigvuldigd en
+    # staan daarom bewust bleek. De rest heeft een vaste kleur.
+    for i, w in enumerate(["oak", "jungle", "acacia", "dark_oak", "mangrove"]):
+        add(f"{w}_leaves", lambda i=i: G.leaves(hx("B4BCA8"), 120 + i))
+    add("spruce_leaves", lambda: G.leaves(hx("A0A894"), 130, hole=0.08))
+    add("birch_leaves",  lambda: G.leaves(hx("BCC2AC"), 131))
+    add("cherry_leaves", lambda: G.leaves(hx("E8A8C0"), 132, hole=0.10))
+    add("pale_oak_leaves", lambda: G.leaves(hx("C8CCB8"), 133))
+    add("azalea_leaves", lambda: G.leaves(hx("5C8A3A"), 134))
+    add("flowering_azalea_leaves",
+        lambda: G.ore(G.leaves(hx("5C8A3A"), 134), hx("D98CC4"), 135, blobs=5, spread=1.0))
+
+    # -- ertsen: zelfde kleuren als de items uit deel 1 ------------------------
+    GEMS = [
+        ("coal", "2A2A2A"), ("iron", "C6CDC6"), ("copper", "C87F52"),
+        ("gold", "F2B93F"), ("redstone", "C4362E"), ("lapis", "3E63C9"),
+        ("diamond", "93E9DD"), ("emerald", "3FCB6A"),
+    ]
+    for i, (o, col) in enumerate(GEMS):
+        add(f"{o}_ore",
+            lambda col=col, i=i: G.ore(G.stone(hx("7C8078"), 11, contrast=0.34), hx(col), 140 + i))
+        add(f"deepslate_{o}_ore",
+            lambda col=col, i=i: G.ore(G.log_side(hx("50505A"), 25), hx(col), 160 + i))
+    add("nether_gold_ore",
+        lambda: G.ore(G.stone(hx("6A2A2A"), 81, contrast=0.34), hx("F2B93F"), 180))
+    add("nether_quartz_ore",
+        lambda: G.ore(G.stone(hx("6A2A2A"), 81, contrast=0.34), hx("E4DED4"), 181))
+    add("ancient_debris_side",
+        lambda: G.ore(G.stone(hx("5A4038"), 182, contrast=0.26), hx("4A3B34"), 183, blobs=3, spread=2.0))
+    add("ancient_debris_top",
+        lambda: G.ore(G.stone(hx("5A4038"), 184, contrast=0.26), hx("70594E"), 185, blobs=2, spread=2.4))
+
+    # -- planten, bloemen en gewassen -----------------------------------------
+    for name, rows, pal in P.PLANTS:
+        add(name, lambda rows=rows, pal=pal, name=name:
+            render.render(rows, pal, name, outline=False, rim=False))
+    for name, rows, petal, centre in P.FLOWERS:
+        pal = P.flower_palette(petal, centre)
+        add(name, lambda rows=rows, pal=pal, name=name:
+            render.render(rows, pal, name, outline=False, rim=False))
+    for ci, (crop, stalk, head, stages) in enumerate(P.CROPS):
+        for st in range(stages):
+            add(f"{crop}_stage{st}",
+                lambda stalk=stalk, head=head, st=st, stages=stages, ci=ci:
+                    P.crop(hx(stalk), hx(head), st, stages, 190 + ci))
 
     return out
