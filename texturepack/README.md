@@ -284,3 +284,32 @@ papegaaien, een vleermuis en een allay in het pack.
 
 De vogels op `verdant-lucht-foto.png` zijn onderdeel van die tekening, niet
 van het pack.
+
+
+## CPvP, item voor item gekozen
+
+Elk stuk is als vier varianten voorgelegd en één is gekozen:
+
+| Item | Keuze |
+|---|---|
+| End crystal | groen, geslepen facetten |
+| Respawn anchor | groen venster dat volloopt |
+| Mace | geflensde kop met verticale ribben |
+| Drietand | groen kristal, dikke tanden |
+| Kruisboog | donker hout |
+| Elytra | donker blad met felgroene nerf |
+| Schild | mossteen |
+| Obsidian | zwart-paars (bestaande won) |
+| Crying obsidian | veel kleine paarse tranen |
+| Glowstone | honingkleurig |
+| Enderkist | donker met groen slot (bestaande won) |
+| Aambeeld | mossteen |
+| Betoveringstafel | groen-donker met lichtgroene runen |
+| Breeze rod | amber |
+| Totem, wind charge, heavy core | vanilla |
+
+**Vanilla laten staan** gebeurt via de `VANILLA`-lijst in `build.py`: die
+namen slaan we over bij het schrijven, en wat niet in het pack zit haalt
+Minecraft uit zijn eigen bestanden. Dat is de nette manier om een item
+onaangeroerd te laten — een kopie van de originele texture meeleveren zou
+dat ook doen, maar dan sleep je andermans werk mee.
