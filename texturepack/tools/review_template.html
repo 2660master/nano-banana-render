@@ -164,6 +164,44 @@ figcaption{font-size:13px; color:var(--ink); text-align:center; line-height:1.25
 .stile[data-state="ok"] .sslot,.stile[data-state="ok"] .aslot{outline:2px solid var(--moss); outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.aslot{animation:none}}
 
+/* ---------- geluid ---------- */
+.slist{margin-top:14px; display:flex; flex-direction:column; gap:2px}
+.srow{
+  display:grid; grid-template-columns:auto 1fr auto auto auto; gap:14px;
+  align-items:center; padding:7px 10px; border-radius:8px;
+}
+.srow:nth-child(odd){background:var(--sunk)}
+.play{
+  width:34px; height:34px; flex:none; border-radius:50%; cursor:pointer;
+  border:1px solid var(--moss-line); background:var(--moss-soft); color:var(--moss);
+  display:grid; place-items:center; padding:0;
+}
+.play:hover{background:var(--moss); color:var(--panel)}
+.tri{
+  width:0; height:0; margin-left:2px;
+  border-left:9px solid currentColor; border-top:6px solid transparent;
+  border-bottom:6px solid transparent;
+}
+.play.on .tri{
+  margin-left:0; border:0; width:9px; height:11px;
+  background:linear-gradient(currentColor,currentColor) left/3px 100% no-repeat,
+             linear-gradient(currentColor,currentColor) right/3px 100% no-repeat;
+}
+.sname{display:flex; flex-direction:column; line-height:1.25; min-width:0}
+.sname b{font-size:14px}
+.sname code{font-size:10.5px; color:var(--ink3); overflow-wrap:anywhere; text-align:left}
+.wave{color:var(--moss-line); flex:none}
+.srow.playing .wave{color:var(--moss)}
+.dur{font-family:"JetBrains Mono",monospace; font-size:11.5px; color:var(--ink3);
+     font-variant-numeric:tabular-nums}
+.srow[data-state="ok"]{box-shadow:inset 3px 0 0 var(--moss)}
+.srow[data-state="fix"]{box-shadow:inset 3px 0 0 var(--amber)}
+.srow .note{max-width:none; grid-column:1/-1}
+@media (max-width:700px){
+  .srow{grid-template-columns:auto 1fr auto; gap:10px}
+  .srow .wave{display:none}
+}
+
 /* ---------- volgende stappen ---------- */
 .next{
   margin-top:56px; background:var(--panel); border:1px solid var(--line);
@@ -192,8 +230,8 @@ figcaption{font-size:13px; color:var(--ink); text-align:center; line-height:1.25
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">Verdant · deel 1 tot en met 4</div>
-  <h1>Items, blokken, lucht &amp; water</h1>
+  <div class="eyebrow">Verdant · deel 1 tot en met 5</div>
+  <h1>Items, blokken, lucht &amp; geluid</h1>
   <p class="lede">@@TOTAL@@ texturen, allemaal 16×16 — precies de vanilla-resolutie, dus geen extra kosten voor FPS of VRAM. Loop ze langs en zet per stuk <b>goed</b> of <b>anders</b>. Wat je hier aanklikt lees ik terug, dus je hoeft niets over te typen.</p>
   <div class="meta">
     <span>Minecraft 1.21.11</span><span>pack_format 75</span><span>16×16</span>
@@ -243,10 +281,15 @@ figcaption{font-size:13px; color:var(--ink); text-align:center; line-height:1.25
   <div class="skygrid">@@SKY@@</div>
 </section>
 
+<section class="block">
+  <h2>Geluid</h2>
+  <p class="blurb">@@NSOUNDS@@ klanken, allemaal van nul opgebouwd uit ruis en toon — er zitten geen samples in. Mono en 44100 Hz, want Minecraft plaatst alleen mono-geluid echt in de ruimte; stereo klinkt overal even hard. Klik op het driehoekje om te luisteren. <b>Ik kan ze zelf niet horen</b>, dus jij bent hier de oren.</p>
+  @@SOUNDS@@
+</section>
+
 <section class="next">
   <h2>Wat er hierna komt</h2>
   <ol class="steps">
-    <li><span class="n">05</span><div><b>Geluid</b><p>Gevecht en totem, voetstappen en blokken, en sfeer. Mobgeluiden blijven vanilla.</p></div></li>
     <li><span class="n">06</span><div><b>Dieren</b><p>Koeien, schapen, varkens, kippen en papegaaien in het thema. Monsters blijven vanilla.</p></div></li>
     <li><span class="n">07</span><div><b>Resterende items</b><p>Harnas, schild, elytra, vishengel, schaar, boeken en de rest. Die vul ik aan als de stijl staat.</p></div></li>
   </ol>
@@ -337,6 +380,35 @@ figcaption{font-size:13px; color:var(--ink); text-align:center; line-height:1.25
     document.body.classList.toggle("dark-slots", b.dataset.slot === "dark");
     this.querySelectorAll("button").forEach(function(x){
       x.setAttribute("aria-pressed", String(x === b));
+    });
+  });
+
+  // --- afspelen: er speelt er altijd maar één tegelijk
+  var audio = new Audio();
+  var current = null;
+  function stop(){
+    audio.pause();
+    if (current){
+      current.classList.remove("on");
+      current.closest(".srow").classList.remove("playing");
+      current = null;
+    }
+  }
+  audio.addEventListener("ended", stop);
+  document.addEventListener("click", function(e){
+    var b = e.target.closest(".play");
+    if (!b) return;
+    var was = current === b;
+    stop();
+    if (was) return;
+    audio.src = b.dataset.src;
+    audio.currentTime = 0;
+    audio.play().then(function(){
+      current = b;
+      b.classList.add("on");
+      b.closest(".srow").classList.add("playing");
+    }).catch(function(){
+      setStatus("afspelen lukt niet in deze browser", true);
     });
   });
 

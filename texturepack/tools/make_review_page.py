@@ -7,6 +7,7 @@ import os
 import build as B
 import palette
 import preview_blocks
+import sound_preview
 import sprites_blocks
 import sprites_tools
 
@@ -197,12 +198,13 @@ def build_html():
             f'<section class="grp"><h3>{title}</h3><p class="blurb">{blurb}</p>'
             f'<div class="bgrid">{cards}</div></section>')
 
+    sound_html, n_sounds = sound_preview.build()
     sky_html = ("".join(sky_tile(*t) for t in SKY_STATIC)
                 + "".join(anim_tile(*t) for t in SKY_ANIMATED))
     n_sky = len(SKY_STATIC) + len(SKY_ANIMATED)
 
     total = (len(palette.TIER_ORDER) * len(tools) + sum(len(g[2]) for g in GROUPS)
-             + n_blocks + n_sky)
+             + n_blocks + n_sky + n_sounds)
 
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "review_template.html"),
               encoding="utf-8") as f:
@@ -214,6 +216,8 @@ def build_html():
             .replace("@@BLOCKS@@", "".join(bsections))
             .replace("@@NBLOCKS@@", str(n_blocks))
             .replace("@@SKY@@", sky_html)
+            .replace("@@SOUNDS@@", sound_html)
+            .replace("@@NSOUNDS@@", str(n_sounds))
             .replace("@@TOTAL@@", str(total)))
 
 

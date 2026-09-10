@@ -11,8 +11,8 @@ de hele set één consistente stijl en één palet deelt.
 | 1 | Items, gereedschap & wapens (selectie van 65) | goedgekeurd |
 | 2 | Bouwblokken | goedgekeurd |
 | 3 | Natuurblokken: aarde, gras, blad, erts, zand, planten, gewassen | goedgekeurd |
-| 4 | Lucht, weer, water en lava | **klaar — ter beoordeling** |
-| 5 | Geluiden | gepland |
+| 4 | Lucht, weer, water en lava | goedgekeurd |
+| 5 | Geluiden (73 klanken) | **klaar — ter beoordeling** |
 | 6 | Dieren (geen monsters) | gepland |
 | — | Resterende items (harnas, schild, gereedschap, potions, …) | volgt na akkoord |
 
@@ -86,6 +86,10 @@ texturepack/
     ├── build.py        bouwt pack + zip
     ├── preview.py      overzichtsplaat items
     ├── sky.py         lucht, weer, water en lava
+    ├── sounds.py      synthese-gereedschap (ruis, filters, tonen, enveloppen)
+    ├── sound_catalog.py  het geluidsontwerp zelf
+    ├── sound_events.py   koppeling naar Minecraft-gebeurtenissen
+    ├── sound_preview.py  geluidsgedeelte van de keuringspagina
     ├── preview_blocks.py  overzichtsplaat blokken
     └── make_review_page.py  keuringspagina
 ```
@@ -167,3 +171,32 @@ dus het laatste frame sluit exact aan op het eerste en de lus springt nooit.
 `clouds.png` met alpha > 0. Meer wolk is dus letterlijk meer geometrie. De
 dekking blijft daarom rond de 34%, ongeveer vanilla, en de alpha is hard
 afgesneden op 0 of 255 — zachte randen zouden alleen maar extra dozen opleveren.
+
+
+## Geluid
+
+73 klanken, van nul gesynthetiseerd uit ruis en toon — er zitten geen samples
+in het pack. Mono, 44100 Hz, OGG Vorbis. **Mono is niet optioneel**: Minecraft
+plaatst alleen mono-geluiden in de ruimte. Een stereobestand klinkt overal
+even hard, waar de bron ook staat.
+
+`assets/minecraft/sounds.json` koppelt 53 gebeurtenissen aan die bestanden,
+elk met `"replace": true` zodat de vanilla-varianten er niet doorheen blijven
+spelen, en met de vanilla subtitle-sleutels zodat ondertiteling blijft werken.
+
+| Groep | Klankidee |
+|---|---|
+| Gevecht | hout op hout, met een wolk ritselend blad eroverheen |
+| Totem | lage bonk, opbloeiend groot akkoord, vogels die opvliegen |
+| Voetstappen | kort en zacht, vier varianten per ondergrond tegen het ratelen |
+| Breken | dezelfde klankwereld, langer en met meer lichaam |
+| Weer | regen met trage golving, donder als scheur plus wegzakkende rommel |
+| Grot | lage bromtoon van twee ontstemde sinussen, met een druppel in de verte |
+| Scharnieren | stijgende toon met beving, plus een houten rand |
+
+De bouwstenen staan in `sounds.py`: gefilterde ruis, onharmonische partialen
+voor hout en steen, toonvegen voor vogels en water, en een biquad voor de
+band- en laagdoorlaatfilters.
+
+**Prestaties.** Geluid draait op de audio-thread, niet op de renderthread.
+Het pack voegt hier dus niets toe aan de frametijd.

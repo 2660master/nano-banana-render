@@ -13,6 +13,8 @@ from PIL import Image
 import palette
 import render
 import sky
+import sound_catalog
+import sound_events
 import sprites_blocks
 import sprites_items
 import sprites_tools
@@ -23,6 +25,7 @@ PACK = os.path.join(ROOT, "Verdant")
 ITEM_DIR = os.path.join(PACK, "assets", "minecraft", "textures", "item")
 BLOCK_DIR = os.path.join(PACK, "assets", "minecraft", "textures", "block")
 ENV_DIR = os.path.join(PACK, "assets", "minecraft", "textures", "environment")
+SOUND_DIR = os.path.join(PACK, "assets", "minecraft", "sounds")
 DIST = os.path.join(ROOT, "dist")
 
 PACK_FORMAT = 75          # Minecraft 1.21.11
@@ -108,7 +111,10 @@ def build():
     # 5. lucht, weer, water en lava
     env_written = build_sky()
 
-    # 6. pack.mcmeta
+    # 6. geluiden
+    snd_written = build_sounds()
+
+    # 7. pack.mcmeta
     meta = {
         "pack": {
             "pack_format": PACK_FORMAT,
@@ -120,10 +126,10 @@ def build():
         json.dump(meta, f, indent=2, ensure_ascii=False)
         f.write("\n")
 
-    # 7. pack-icoon
+    # 8. pack-icoon
     make_icon().save(os.path.join(PACK, "pack.png"))
 
-    # 8. zip
+    # 9. zip
     zip_path = os.path.join(DIST, "Verdant-1.21.11.zip")
     if os.path.exists(zip_path):
         os.remove(zip_path)
@@ -136,8 +142,9 @@ def build():
     print(f"{len(written)} item-texturen -> {os.path.relpath(ITEM_DIR, ROOT)}")
     print(f"{len(blocks_written)} blok-texturen -> {os.path.relpath(BLOCK_DIR, ROOT)}")
     print(f"{len(env_written)} lucht-, weer- en vloeistoftexturen")
+    print(f"{len(snd_written)} geluiden -> {os.path.relpath(SOUND_DIR, ROOT)}")
     print(f"zip -> {os.path.relpath(zip_path, ROOT)}")
-    return written + blocks_written + env_written
+    return written + blocks_written + env_written + snd_written
 
 
 # Geanimeerde texturen: frametime is hoeveel ticks een frame blijft staan.
@@ -147,6 +154,24 @@ ANIMATED = {
     "lava_still": (sky.lava_still, 2),
     "lava_flow": (sky.lava_flow, 3),
 }
+
+
+def build_sounds():
+    """Schrijft mono OGG Vorbis plus de sounds.json die ze aan events koppelt."""
+    import soundfile as sf
+
+    done = []
+    for path, make in sound_catalog.catalog().items():
+        full = os.path.join(SOUND_DIR, path + ".ogg")
+        os.makedirs(os.path.dirname(full), exist_ok=True)
+        sf.write(full, make(), 44100, format="OGG", subtype="VORBIS")
+        done.append(path)
+
+    meta = os.path.join(PACK, "assets", "minecraft", "sounds.json")
+    with open(meta, "w", encoding="utf-8") as f:
+        json.dump(sound_events.sounds_json(), f, indent=2, ensure_ascii=False)
+        f.write("\n")
+    return done
 
 
 def build_sky():
