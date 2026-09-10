@@ -9,18 +9,18 @@ from sprites_items import P, S
 
 MACE = S(
     "",
-    "......111111",
+    "....1111111111",
+    "....1211211211",
+    "....1211211211",
+    "....1211211211",
+    "....1211211211",
+    "....1211211211",
+    "....1111111111",
     ".....11111111",
-    "....1122222111",
-    "....1123322111",
-    "....1123322111",
-    "....1122222111",
-    ".....11111111",
-    "......111111",
     ".......WW",
     "......WW",
-    "....vWW",
-    "...vVW",
+    ".....WW",
+    "....WW",
     "...WW",
     "..cW",
     "..cc",
@@ -128,8 +128,8 @@ def items():
     """naam -> (vorm, palet)."""
     out = {}
     # de kop van de mace deelt het sintelwortel-palet met netherite
-    # donkere kop met een groene kern, zodat hij bij de crystal hoort
-    out["mace"] = (MACE, {"1": hx("2E2A2E"), "2": hx("4A4650"), "3": hx("46A85E")})
+    # geflensde kop: verticale ribben, door jou gekozen uit vier varianten
+    out["mace"] = (MACE, {"1": hx("34343C"), "2": hx("56565E")})
     out["trident"] = (TRIDENT, P("BCC8C0", "7E8A84"))
     wood = P("A07B4E", "6B4F2C", "6E7075", "C4362E")
     out["crossbow_standby"] = (crossbow(0), wood)
