@@ -28,11 +28,11 @@ MACE = S(
 
 TRIDENT = S(
     "",
-    "...........1.1.1",
-    "...........1.1.1",
-    "...........11111",
-    "............111",
-    "...........12",
+    "........11.11.11",
+    "........11.11.11",
+    "........11111111",
+    ".........111111",
+    "..........1112",
     "..........12",
     ".........12",
     "........12",
@@ -130,7 +130,8 @@ def items():
     # de kop van de mace deelt het sintelwortel-palet met netherite
     # geflensde kop: verticale ribben, door jou gekozen uit vier varianten
     out["mace"] = (MACE, {"1": hx("34343C"), "2": hx("56565E")})
-    out["trident"] = (TRIDENT, P("BCC8C0", "7E8A84"))
+    # groen kristal, door jou gekozen uit vier varianten
+    out["trident"] = (TRIDENT, P("6ED184", "2A6B3E"))
     wood = P("A07B4E", "6B4F2C", "6E7075", "C4362E")
     out["crossbow_standby"] = (crossbow(0), wood)
     for i in range(3):
