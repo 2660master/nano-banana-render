@@ -236,8 +236,9 @@ def catalog():
     add("obsidian",        lambda: G.stone(hx("14101F"), 700, contrast=0.40))
     add("crying_obsidian", lambda: G.ore(G.stone(hx("140F22"), 700, contrast=0.36),
                                          hx("8A3ACC"), 701, blobs=5, spread=0.9))
-    add("glowstone",       lambda: G.ore(G.stone(hx("9A7A3A"), 702, contrast=0.26),
-                                         hx("F4DE8A"), 703, blobs=6, spread=1.2))
+    # honingkleurig, door jou gekozen uit vier varianten
+    add("glowstone",       lambda: G.ore(G.stone(hx("A8722A"), 762, contrast=0.24),
+                                         hx("FFD87A"), 763, blobs=7, spread=1.1))
     add("netherite_block", lambda: G.stone(hx("40332C"), 704, contrast=0.28))
     add("enchanting_table_top",    lambda: G.stone(hx("3A2E4A"), 720, contrast=0.28))
     add("enchanting_table_side",   lambda: G.stone(hx("2E2438"), 721, contrast=0.30))
