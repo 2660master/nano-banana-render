@@ -35,6 +35,10 @@ SOUND_DIR = os.path.join(PACK, "assets", "minecraft", "sounds")
 TEX_DIR = os.path.join(PACK, "assets", "minecraft", "textures")
 DIST = os.path.join(ROOT, "dist")
 
+# Texturen die we bewust NIET meeleveren. Wat niet in het pack zit, pakt
+# Minecraft uit zijn eigen bestanden — zo blijft dit item gewoon vanilla.
+VANILLA = {"totem_of_undying"}
+
 PACK_FORMAT = 75          # Minecraft 1.21.11
 MIN_FORMAT = 64           # 1.21.7 / 1.21.8
 MAX_FORMAT = 75
@@ -102,6 +106,8 @@ def build():
     all_items.update(sprites_items2.ITEMS2)
     all_items.update(sprites_cpvp.items())
     for name, (rows, pal) in all_items.items():
+        if name in VANILLA:
+            continue
         render.render(rows, pal, name).save(os.path.join(ITEM_DIR, name + ".png"))
         written.append(name)
 
