@@ -8,6 +8,17 @@ DYES = [d for d, _c in I2.DYES]
 
 
 def groups():
+    """De indeling, zonder de items die we bewust vanilla laten.
+
+    build.VANILLA bevat de namen die niet in het pack terechtkomen; die
+    horen dus ook niet in het overzicht of op de keuringspagina.
+    """
+    import build
+    return [(t, b, [n for n in names if n not in build.VANILLA])
+            for t, b, names in _all()]
+
+
+def _all():
     return [
         ("Voedsel & oogst",
          "Wat je eet en oogst — hier telt of de kleur eetbaar oogt.",

@@ -106,7 +106,7 @@ def main():
 
     canvas = Image.new("RGBA", (W, H + 40), BG + (255,))
     d = ImageDraw.Draw(canvas)
-    d.text((36, 32), "Verdant — bouwblokken", font=f_title, fill=FG)
+    d.text((36, 32), "NTCL — bouwblokken", font=f_title, fill=FG)
     d.text((38, 74), "Deel 2 · %d blok-texturen · elk blok staat 2×2 getegeld, "
                      "zodat je meteen ziet of het naadloos herhaalt"
            % sum(len(n) for _t, n in gs), font=f_small, fill=ACC)
@@ -122,7 +122,7 @@ def main():
             d.text((cx, cy + CELL + 3), n[:22], font=f_tiny, fill=DIM)
         y += ((len(names) + COLS - 1) // COLS) * (CELL + PAD + LAB) + 8
 
-    out = os.path.join(B.DIST, "verdant-blocks-preview.png")
+    out = os.path.join(B.DIST, "ntcl-blokken-preview.png")
     canvas.convert("RGB").save(out, quality=95)
     print("preview ->", out, canvas.size)
 

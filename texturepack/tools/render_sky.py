@@ -218,7 +218,7 @@ def main():
         d.text((PAD, y - 24), name, font=f_l, fill=(232, 240, 228))
         canvas.paste(im.convert("RGB"), (PAD, y))
         y += H + 46
-    out = os.path.join(B.DIST, "verdant-lucht-foto.png")
+    out = os.path.join(B.DIST, "ntcl-lucht-foto.png")
     canvas.save(out, quality=95)
     print("geschreven:", out, canvas.size)
 

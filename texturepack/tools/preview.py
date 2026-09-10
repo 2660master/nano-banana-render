@@ -58,7 +58,7 @@ def main():
     canvas = Image.new("RGBA", (W, H), BG + (255,))
     d = ImageDraw.Draw(canvas)
 
-    d.text((36, 34), "Verdant — natuur-texturepack", font=f_title, fill=FG)
+    d.text((36, 34), "NTCL — natuur-texturepack", font=f_title, fill=FG)
     d.text((38, 78), "Deel 1: items & gereedschap  ·  Minecraft 1.21.11  ·  16×16 (vanilla resolutie, 0 FPS-kosten)",
            font=f_small, fill=ACC)
 
@@ -87,7 +87,7 @@ def main():
            "Nog niet in deel 1: blokken, mobs, lucht en geluiden — die komen na jouw akkoord op deze stijl.",
            font=f_small, fill=DIM)
 
-    out = os.path.join(B.DIST, "verdant-items-preview.png")
+    out = os.path.join(B.DIST, "ntcl-items-preview.png")
     canvas.convert("RGB").save(out, quality=95)
     print("preview ->", out, canvas.size)
 
