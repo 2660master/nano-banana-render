@@ -134,10 +134,11 @@ def end_sky(size=16):
         for x in range(size):
             v = fbm(x, y, size, 23, octaves=3, cells=2)
             px[x, y] = mul(base, 0.7 + v * 0.8)
-    for k in range(10):                      # sporen die licht vangen
+    for k in range(4):                       # sporen die licht vangen
         sx = int(noise(k, 50, 23) * size)
         sy = int(noise(k, 51, 23) * size)
-        g = mix(hx("7FB58A"), hx("D6EFCF"), noise(k, 52, 23))
+        # gedempt: bij vier sporen per tegel valt de herhaling nog niet op
+        g = mix(hx("3E5E4A"), hx("8FC49A"), noise(k, 52, 23))
         px[sx, sy] = g
     return im
 

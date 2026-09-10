@@ -15,6 +15,7 @@ de hele set één consistente stijl en één palet deelt.
 | 5 | Geluiden (73 klanken) | goedgekeurd |
 | 6 | Resterende items (225 in totaal) | **klaar — ter beoordeling** |
 | 7 | Boerderijdieren en wolven | **klaar — moet in het spel gecheckt** |
+| 8 | CPvP: mace, drietand, kruisboog, elytra, schild, end crystal, obsidian, respawn anchor | **klaar** |
 | — | Overige dieren (paard, vos, papegaai, bij, …) | wacht op bevestiging dat de uitvouwing klopt |
 
 ## Afgesproken scope
@@ -227,3 +228,29 @@ gevuld: valt de uitvouwing een paar pixels anders uit, dan zie je dat aan
 een egale vacht nauwelijks. **Alleen de gezichten moeten kloppen, en die
 moeten in het spel gecontroleerd worden.** Klopt het, dan volgen de
 overige dieren; klopt het niet, dan is er één getal per dier dat verschuift.
+
+
+## CPvP-uitrusting
+
+De mace gebruikt dezelfde bast-steel, touwgreep en rank als het gereedschap
+uit deel 1, zodat hij bij de rest van het pack hoort. De kop deelt het
+sintelwortel-palet met netherite.
+
+De kruisboog wordt met één functie gebouwd, `sprites_cpvp.crossbow(pull, ammo)`:
+`pull` schuift de pees omlaag (0 t/m 3), `ammo` tekent wat er op de kolf ligt.
+Zo blijven de acht standen — standby, drie spanstanden, pijl en vuurwerk —
+gegarandeerd identiek op de pees en de lading na.
+
+Verder: obsidiaan, huilend obsidiaan, glowstone, netherite-blok, respawn
+anchor in alle vijf de laadstanden, betoveringstafel en aambeeld.
+
+Elytra, drietand, schild, end crystal en de enderkist zijn uitgevouwen
+modellen, net als de dieren. Die vellen zijn volledig gevuld, dus een
+verschuiving in de uitvouwing valt daar nauwelijks op.
+
+## Beeld van de lucht
+
+`tools/render_sky.py` zet zon, maan en wolken in perspectief op een vlak
+boven de speler, zoals het spel dat ook doet, en zet er een blokkig
+heuvelsilhouet onder. Zo zie je hoe de lucht er echt uit gaat zien in
+plaats van alleen de platte bestanden.

@@ -112,6 +112,13 @@ def anim_tile(name, fw, frames, frametime, caption):
 
 
 ANIMAL_CAPTION = {
+    "entity/elytra": "Bladvleugels met nerven.",
+    "entity/trident": "Bleek been met nerf.",
+    "entity/shield_base": "Bast met een metalen knop.",
+    "entity/shield_base_nopattern": "Zelfde schild, zonder wapen.",
+    "entity/end_crystal/end_crystal": "Dauwkristal.",
+    "entity/end_crystal/end_crystal_beam": "De straal naar de draak.",
+    "entity/chest/ender": "Donker hout met een groen slot.",
     "entity/cow/cow": "Donkere huid met roomkleurige vlekken.",
     "entity/cow/red_mooshroom": "Roodbruin, met een lichtere aftekening.",
     "entity/cow/brown_mooshroom": "Warmer bruin dan de gewone koe.",

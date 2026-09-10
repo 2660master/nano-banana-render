@@ -89,6 +89,22 @@ def face(im, rect, eye=hx("1E1A18"), eye_white=None, muzzle=None,
             dot(im, nx, my + max(0, mh // 2), mul(muzzle, 0.55))
 
 
+
+def veined(w, h, base, vein, seed, density=0.16):
+    """Bladachtig vel: vacht als basis, met nerven die er doorheen lopen."""
+    im = hide(w, h, base, seed, fur=0.16)
+    px = im.load()
+    for y in range(h):
+        for x in range(w):
+            # schuine nerven, met wat ruis zodat ze niet kaarsrecht lopen
+            t = (x * 0.6 + y * 1.0 + noise(x // 3, y // 3, seed + 5) * 4) % 7
+            if t < 1.0:
+                px[x, y] = mul(vein, 0.92 + noise(x, y, seed + 9) * 0.16)
+            elif noise(x, y, seed + 21) < density * 0.3:
+                px[x, y] = mul(base, 1.14)
+    return im
+
+
 # Kop-dozen uit de standaardmodellen: (u, v, breedte, hoogte, diepte)
 HEADS = {
     "cow":     (0, 0, 8, 8, 6),
@@ -144,5 +160,24 @@ def build():
         face(w, box_uv(*HEADS["wolf"])["front"], eye=hx(eye_col),
              muzzle=hx("E4E0D6"), eye_row=0.28)
         out[f"entity/wolf/{name}"] = w
+
+    # -- elytra: bladvleugels met nerven --------------------------------------
+    out["entity/elytra"] = veined(64, 32, hx("5E8A4A"), hx("36542C"), 910)
+
+    # -- drietand en schild ---------------------------------------------------
+    out["entity/trident"] = veined(32, 32, hx("BCC8C0"), hx("7E8A84"), 911, density=0.10)
+    shield = hide(64, 64, hx("7A5A38"), 912, hx("5A4128"), 0.30, patch_scale=7)
+    fill(shield, (0, 0, 12, 22), hx("6B4F2C"))          # greep
+    fill(shield, (26, 22, 12, 12), hx("CBD2CA"))        # metalen knop
+    fill(shield, (28, 24, 8, 8), hx("9CA69D"))
+    out["entity/shield_base"] = shield
+    out["entity/shield_base_nopattern"] = shield.copy()
+
+    # -- end crystal en enderkist --------------------------------------------
+    out["entity/end_crystal/end_crystal"] = veined(64, 32, hx("93E9DD"), hx("2F8981"), 913, density=0.08)
+    out["entity/end_crystal/end_crystal_beam"] = veined(16, 16, hx("D8FFF6"), hx("7FCFC4"), 914)
+    ender = hide(64, 64, hx("2A3A34"), 915, hx("1A2620"), 0.30, patch_scale=6)
+    fill(ender, (0, 0, 14, 14), hx("4E8A6A"))           # slot
+    out["entity/chest/ender"] = ender
 
     return out

@@ -232,4 +232,25 @@ def catalog():
                 lambda stalk=stalk, head=head, st=st, stages=stages, ci=ci:
                     P.crop(hx(stalk), hx(head), st, stages, 190 + ci))
 
+    # -- CPvP-blokken ---------------------------------------------------------
+    add("obsidian",        lambda: G.stone(hx("14101F"), 700, contrast=0.40))
+    add("crying_obsidian", lambda: G.ore(G.stone(hx("140F22"), 700, contrast=0.36),
+                                         hx("8A3ACC"), 701, blobs=5, spread=0.9))
+    add("glowstone",       lambda: G.ore(G.stone(hx("9A7A3A"), 702, contrast=0.26),
+                                         hx("F4DE8A"), 703, blobs=6, spread=1.2))
+    add("netherite_block", lambda: G.stone(hx("40332C"), 704, contrast=0.28))
+    add("respawn_anchor_top",     lambda: G.ore(G.stone(hx("2A2438"), 705, contrast=0.24),
+                                                hx("8A3ACC"), 706, blobs=4, spread=1.1))
+    add("respawn_anchor_top_off", lambda: G.stone(hx("241E30"), 707, contrast=0.24))
+    add("respawn_anchor_bottom",  lambda: G.stone(hx("14101F"), 708, contrast=0.36))
+    for lvl in range(5):
+        add(f"respawn_anchor_side{lvl}",
+            lambda lvl=lvl: G.ore(G.stone(hx("1E1A2C"), 709, contrast=0.30),
+                                  hx("8A3ACC"), 710 + lvl, blobs=lvl, spread=1.0))
+    add("enchanting_table_top",    lambda: G.stone(hx("3A2E4A"), 720, contrast=0.28))
+    add("enchanting_table_side",   lambda: G.stone(hx("2E2438"), 721, contrast=0.30))
+    add("enchanting_table_bottom", lambda: G.stone(hx("14101F"), 722, contrast=0.34))
+    add("anvil",       lambda: G.stone(hx("4A4A4E"), 723, contrast=0.24))
+    add("anvil_top",   lambda: G.stone(hx("56565A"), 724, contrast=0.22))
+
     return out

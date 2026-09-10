@@ -70,6 +70,13 @@ def groups():
                     "ancient_debris_side", "ancient_debris_top"]),
         ("Planten", [n for n, _r, _p in sprites_plants.PLANTS]),
         ("Bloemen", [n for n, _r, _a, _b in sprites_plants.FLOWERS]),
+        ("CPvP-blokken", [
+            "obsidian", "crying_obsidian", "glowstone", "netherite_block",
+            "respawn_anchor_top", "respawn_anchor_top_off", "respawn_anchor_bottom",
+            "respawn_anchor_side0", "respawn_anchor_side1", "respawn_anchor_side2",
+            "respawn_anchor_side3", "respawn_anchor_side4",
+            "enchanting_table_top", "enchanting_table_side",
+            "enchanting_table_bottom", "anvil", "anvil_top"]),
         ("Gewassen", [f"{c}_stage{i}" for c, _s, _h, n in sprites_plants.CROPS
                       for i in range(n)]),
     ]

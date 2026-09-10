@@ -18,6 +18,7 @@ import sound_events
 import sprites_armor
 import sprites_entity
 import sprites_blocks
+import sprites_cpvp
 import sprites_items
 import sprites_items2
 import sprites_tools
@@ -97,6 +98,7 @@ def build():
     all_items = {n: (v[0], v[1]) for n, v in sprites_items.ITEMS.items()}
     all_items.update(sprites_armor.items())
     all_items.update(sprites_items2.ITEMS2)
+    all_items.update(sprites_cpvp.items())
     for name, (rows, pal) in all_items.items():
         render.render(rows, pal, name).save(os.path.join(ITEM_DIR, name + ".png"))
         written.append(name)
