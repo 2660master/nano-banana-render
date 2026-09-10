@@ -37,7 +37,7 @@ DIST = os.path.join(ROOT, "dist")
 
 # Texturen die we bewust NIET meeleveren. Wat niet in het pack zit, pakt
 # Minecraft uit zijn eigen bestanden — zo blijft dit item gewoon vanilla.
-VANILLA = {"totem_of_undying"}
+VANILLA = {"totem_of_undying", "wind_charge"}
 
 PACK_FORMAT = 75          # Minecraft 1.21.11
 MIN_FORMAT = 64           # 1.21.7 / 1.21.8
