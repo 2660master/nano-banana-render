@@ -41,3 +41,23 @@ MACE = S(
     "..GG",
     ".GG",
 )
+
+# Vanilla-silhouet: drie tanden rechtsboven, lange schacht naar linksonder.
+TRIDENT = S(
+    "",
+    "........LL.LL.LL",
+    "........LL.LL.LL",
+    "........LLLLLLLL",
+    ".........MMMMMM",
+    "..........MMMD",
+    "..........MD",
+    ".........MD",
+    "........MD",
+    ".......MD",
+    "......MD",
+    ".....MD",
+    "....MD",
+    "...MD",
+    "..MD",
+    ".MD",
+)
