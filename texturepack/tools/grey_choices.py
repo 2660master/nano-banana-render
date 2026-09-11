@@ -52,6 +52,7 @@ GEKOZEN = {
     "end_lucht": "sterren + planeten: end_sky(stars=280, nebula=0.55,"
                  " vijf planeten, geen zwart gat)",
     "totem": "vanilla - we leveren geen eigen totem",
+    "ender_pearl": "vanilla",
 }
 
 # Nog te doen, in volgorde.
