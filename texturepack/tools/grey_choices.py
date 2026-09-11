@@ -23,6 +23,8 @@ GEKOZEN = {
     "respawn_anchor": "wit, witte gloed in de cirkel, bovenkant 5 ringen",
     "stone": "licht en glad: layered('989EA4', 13, cells=6, pebble=0.26,"
              " blotch=0.07, grain=0.07)",
+    "deepslate": "bijna zwart: layered('343940', 23, cells=7, pebble=0.34,"
+                 " blotch=0.07, grain=0.10)",
 }
 
 # Nog te doen, in volgorde.
