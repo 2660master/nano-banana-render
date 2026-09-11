@@ -14,11 +14,12 @@ VANILLA = {
 # Wat al vastligt.
 GEKOZEN = {
     "netherite_sword": "grijs met witte gloed van boven naar beneden",
+    "trident": "donker grijs, vanilla-silhouet",
 }
 
 # Nog te doen, in volgorde.
 TE_DOEN = [
-    "drietand", "rest van de netherite set", "overige pvp items",
+    "rest van de netherite set", "overige pvp items",
     "natuurlijke blokken", "end crystal", "respawn anchor",
     "lucht dag", "lucht nacht", "totem",
 ]
