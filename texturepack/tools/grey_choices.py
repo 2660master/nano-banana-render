@@ -54,6 +54,7 @@ GEKOZEN = {
     "totem": "vanilla - we leveren geen eigen totem",
     "ender_pearl": "vanilla",
     "bow": "donker grijs: NETHERITE-palet, witte pees",
+    "crossbow": "donker grijs met witte gloed van boven naar beneden",
 }
 
 # Nog te doen, in volgorde.

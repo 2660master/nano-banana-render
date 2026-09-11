@@ -225,3 +225,24 @@ def crossbow_rows(pull=0.0):
 CROSSBOW = crossbow_rows(0.0)
 CROSSBOW_PULL_1 = crossbow_rows(1.4)
 CROSSBOW_PULL_2 = crossbow_rows(2.6)
+
+
+# De appel: 'v' is het blaadje, dat krijgt geen randschaduw.
+APPLE = S(
+    "",
+    "........K.......",
+    ".......KvK......",
+    "....LLLKvKDD....",
+    "...LLMMMMMMMDD..",
+    "..LLMMMMMMMMMDD.",
+    "..LMMMMMMMMMMMD.",
+    "..LMMMMMMMMMMMD.",
+    "..LMMMMMMMMMMMD.",
+    "..LMMMMMMMMMMMD.",
+    "...LMMMMMMMMMD..",
+    "...LMMMMMMMMMD..",
+    "....LMMMMMMMD...",
+    ".....LMMMMMD....",
+    "......DDDDD.....",
+    "",
+)
