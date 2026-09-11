@@ -49,6 +49,8 @@ GEKOZEN = {
            " rim='FFD48A')",
     "maan": "wit met veel kraters: moon_phases(base='E2E8EE', sea='A8B2BC',"
             " craters=30)",
+    "end_lucht": "sterren + planeten: end_sky(stars=280, nebula=0.55,"
+                 " vijf planeten, geen zwart gat)",
 }
 
 # Nog te doen, in volgorde.
