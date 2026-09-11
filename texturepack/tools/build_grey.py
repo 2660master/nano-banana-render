@@ -19,6 +19,7 @@ from PIL import Image
 import anchor_grey
 import blocks as B
 import crystal_grey
+import extra_grey as EX
 import grey
 import ground_real as GR
 import items_grey
@@ -104,6 +105,11 @@ def items():
 
     appel = dict(NETH)
     appel.update(BLAD)
+    out["potion"] = EX.potion()
+    out["splash_potion"] = EX.potion(kurk="4A5157")
+    out["lingering_potion"] = EX.potion(kurk="9AA2A8")
+    out["potion_overlay"] = EX.potion_overlay()
+
     out["golden_apple"] = item(S.APPLE, appel, "apple")
     out["enchanted_golden_apple"] = grey.sheen(
         item(S.APPLE, appel, "apple"), top=1.45, bottom=0.70)
@@ -246,6 +252,14 @@ def build():
     SG.end_sky(256, seed=6, stars=280, nebula=0.55,
                planets=planeten).save(os.path.join(ENV, "end_sky.png"))
     namen += ["sun", "moon_phases", "clouds", "end_sky"]
+
+    # entity-vellen: dekkend getekend omdat de UV-indeling hier onbekend is
+    EX.shield().save(os.path.join(ENTITY, "shield_base_nopattern.png"))
+    EX.shield().save(os.path.join(ENTITY, "shield_base.png"))
+    EX.elytra().save(os.path.join(ENTITY, "elytra.png"))
+    os.makedirs(os.path.join(ENTITY, "chest"), exist_ok=True)
+    EX.ender_chest().save(os.path.join(ENTITY, "chest", "ender.png"))
+    namen += ["shield_base", "shield_base_nopattern", "elytra", "ender_chest"]
 
     # end crystal: alleen de buitenste lagen, het midden is doorzichtig
     crystal_grey.cage(thickness=1).save(
