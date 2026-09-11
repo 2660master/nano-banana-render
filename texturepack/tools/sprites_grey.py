@@ -20,3 +20,41 @@ SWORD = S(
     ".GG",
     "GG",
 )
+
+MACE = S(
+    "",
+    "..LLLLLLLL",
+    ".LMMMMMMMMD",
+    ".LMMMMMMMMD",
+    ".LMMMMMMMMD",
+    ".LMMMMMMMMD",
+    ".LMMMMMMMMD",
+    ".DDDDDDDDDD",
+    "......GG",
+    "......GG",
+    ".....GG",
+    ".....GG",
+    "....GG",
+    "....GG",
+    "...GG",
+    "...GG",
+)
+
+MACE_RIB = S(
+    "",
+    "..LLLLLLLL",
+    ".LMHMMHMMHD",
+    ".LMHMMHMMHD",
+    ".LMHMMHMMHD",
+    ".LMHMMHMMHD",
+    ".LMHMMHMMHD",
+    ".DDDDDDDDDD",
+    "......GG",
+    "......GG",
+    ".....GG",
+    ".....GG",
+    "....GG",
+    "....GG",
+    "...GG",
+    "...GG",
+)
