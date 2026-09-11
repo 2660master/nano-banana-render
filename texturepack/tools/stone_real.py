@@ -112,3 +112,61 @@ def streaked(base, seed, streak=0.30, cells=7, pebble=0.30, grain=0.10,
             t = rows[y] * streak * 0.55 + wob * streak
             px[x, y] = mul(px[x, y], 1.0 + t)
     return im
+
+
+def _two_nearest(cells, seed):
+    """Per pixel: (afstand dichtstbijzijnde, afstand tweede, cel-toon).
+
+    Het verschil tussen die twee afstanden is klein op de grens tussen
+    twee kiemen — precies waar de voeg van cobblestone hoort.
+    """
+    pts = _points(cells, seed)
+    out = [[(1.0, 1.0, 0.5)] * N for _ in range(N)]
+    for y in range(N):
+        for x in range(N):
+            f1, f2, tone = 1e9, 1e9, 0.5
+            for (px, py, cx, cy) in pts:
+                dx = abs(x + 0.5 - px)
+                dy = abs(y + 0.5 - py)
+                if dx > N / 2:
+                    dx = N - dx
+                if dy > N / 2:
+                    dy = N - dy
+                d = (dx * dx + dy * dy) ** 0.5
+                if d < f1:
+                    f2 = f1
+                    f1 = d
+                    tone = noise(cx, cy, seed + 17)
+                elif d < f2:
+                    f2 = d
+            out[y][x] = (f1, f2, tone)
+    return out
+
+
+def cobble(base, seed, cells=4, spread=0.30, grain=0.10, mortar=0.9,
+           gap=0.62, dark=None, light=None):
+    """Keien met een donkere voeg ertussen.
+
+    Elke kei krijgt een eigen tint en een bolle vorm. Waar de twee
+    dichtstbijzijnde kiemen even ver weg zijn ligt de grens tussen twee
+    keien; die lijn wordt in één keer donker gezet, niet uitgesmeerd —
+    een zachte voeg leest als ruis, een harde leest als steen.
+    """
+    im = Image.new("RGBA", (N, N))
+    px = im.load()
+    b = hx(base)
+    d = hx(dark) if dark else mul(b, 0.56)
+    l = hx(light) if light else mul(b, 1.34)
+    cel = _two_nearest(cells, seed)
+    reach = N / cells * 1.5
+    for y in range(N):
+        for x in range(N):
+            f1, f2, tone = cel[y][x]
+            bump = 1.0 - min(1.0, f1 / reach)               # bolle kei
+            t = (tone - 0.5) * spread + (bump - 0.55) * spread * 0.9 \
+                + (noise(x, y, seed + 23) - 0.5) * grain
+            c = mix(b, l, t * 1.8) if t > 0 else mix(b, d, -t * 1.8)
+            if f2 - f1 < mortar:                            # harde voeg
+                c = mul(c, gap)
+            px[x, y] = c
+    return im
