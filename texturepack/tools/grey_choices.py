@@ -45,6 +45,8 @@ GEKOZEN = {
                   " pebble=0.42, blotch=0.14, grain=0.16)",
     "wolken": "dunne slierten: clouds(coverage=0.40, lump=6, wisp=0.55,"
               " wind=3.0)",
+    "zon": "warm oranje: sun(64, disc=0.54, corona=0.98, core='FFFBEC',"
+           " rim='FFD48A')",
 }
 
 # Nog te doen, in volgorde.
