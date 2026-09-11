@@ -73,3 +73,38 @@ def tint(im, colour="91BD59"):
             r, g, b, a = px[x, y]
             op[x, y] = (r * c[0] // 255, g * c[1] // 255, b * c[2] // 255, a)
     return out
+
+
+def leaves(seed, base="9A9A9A", spread=0.28, holes=0.16, clump=4,
+           shadow=0.30):
+    """Bladerdek, ook weer grijs omdat het spel er de biome-kleur op legt.
+
+    Bladeren zitten in plukjes: een grove ruis bepaalt waar het dicht is
+    en waar je erdoorheen kijkt. Onder elk gat komt een donkere pixel,
+    zodat het dek diepte krijgt in plaats van plat te ogen.
+    """
+    im = Image.new("RGBA", (N, N))
+    px = im.load()
+    b = hx(base)
+    d = mul(b, 0.62)
+    l = mul(b, 1.32)
+    clumps = [[fbm2(x, y, N, seed + 3, octaves=2, cells_x=clump, cells_y=clump)
+               for x in range(N)] for y in range(N)]
+    for y in range(N):
+        for x in range(N):
+            t = (clumps[y][x] - 0.5) * spread \
+                + (noise(x, y, seed + 21) - 0.5) * spread * 0.9
+            px[x, y] = mix(b, l, t * 2.0) if t > 0 else mix(b, d, -t * 2.0)
+    if holes:
+        gat = []
+        for y in range(N):
+            for x in range(N):
+                if noise(x, y, seed + 47) < holes and clumps[y][x] < 0.56:
+                    gat.append((x, y))
+        for (x, y) in gat:
+            px[x, y] = (0, 0, 0, 0)
+        for (x, y) in gat:                                  # schaduw eronder
+            below = (x, (y + 1) % N)
+            if px[below] != (0, 0, 0, 0):
+                px[below] = mul(px[below], 1.0 - shadow)
+    return im

@@ -34,6 +34,8 @@ GEKOZEN = {
                    " spread=0.26, grain=0.09)",
     "obsidian": "zwart en glad: layered('15171A', 71, cells=7, pebble=0.26,"
                 " blotch=0.06, grain=0.06)",
+    "end_stone": "vanilla geel-wit: layered('DCD8A8', 84, cells=6,"
+                 " pebble=0.24, blotch=0.06, grain=0.07)",
 }
 
 # Nog te doen, in volgorde.
