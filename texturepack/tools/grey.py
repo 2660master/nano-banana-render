@@ -18,16 +18,16 @@ GREY = {
 
 # netherite: zelfde grijs, maar met de witte gloed eroverheen (zie sheen)
 NETHERITE = {
-    "L": hx("F2F6F8"),
-    "M": hx("B4BCC1"),
-    "D": hx("727A80"),
-    "K": hx("3E4448"),
-    "H": hx("5E666B"),
-    "G": hx("3E4448"),
+    "L": hx("C6CED4"),
+    "M": hx("767F88"),
+    "D": hx("434A51"),
+    "K": hx("22272B"),
+    "H": hx("3A4046"),
+    "G": hx("23282D"),
 }
 
 
-def sheen(im, top=1.60, bottom=0.42, gamma=1.05):
+def sheen(im, top=1.62, bottom=0.30, gamma=1.00):
     """Witte gloed die van boven naar beneden uitdooft.
 
     Boven vangt het volle licht, onderin zakt het weg. Het verloop gaat

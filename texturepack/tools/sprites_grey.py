@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Strakke PvP-vormen: geen blaadjes, geen bast, alleen metaal en greep."""
+"""Strakke PvP-vormen voor het grijze pack.
+
+Vanilla-silhouetten, zonder de blaadjes en bast van het natuurpack.
+Legenda: L hoogsel, M basis, D schaduw, K outline, H pareerstang, G greep.
+"""
 from sprites_items import S
 
 SWORD = S(
@@ -21,8 +25,7 @@ SWORD = S(
     "GG",
 )
 
-# De vanilla-vorm: zware kop rechtsboven met een lichte kern erin, korte
-# steel naar linksonder. Alleen de kleuren zijn hier grijs en wit.
+# Zware kop rechtsboven met een lichte kern, korte steel naar linksonder.
 MACE = S(
     "",
     ".......KKKKKK",
@@ -42,7 +45,6 @@ MACE = S(
     ".GG",
 )
 
-# Vanilla-silhouet: drie tanden rechtsboven, lange schacht naar linksonder.
 TRIDENT = S(
     "",
     "........LL.LL.LL",
@@ -62,7 +64,6 @@ TRIDENT = S(
     ".MD",
 )
 
-# Vanilla-silhouetten, alleen zonder de natuur-versieringen.
 PICKAXE = S(
     "",
     ".....LLLLLL",
@@ -82,21 +83,22 @@ PICKAXE = S(
     "...GG",
 )
 
+# Wig met een inspringing onder de kop; dat is wat een bijl als bijl laat lezen.
 AXE = S(
     "",
-    "..LLLLL",
-    "..LLMMMM",
-    "..LLMMMMMGG",
-    "..LLMMMMGG",
-    "..LLMMMDGG",
-    "...LLMDGG",
-    "....LDDGG",
+    "..LLLLLL",
+    "..LMMMMMKGG",
+    "..LMMMMMKGG",
+    "..LMMMMKGG",
+    "..LMMMDKGG",
+    "...LMDKGG",
+    "....DDKGG",
+    ".......GG",
     "......GG",
     "......GG",
     ".....GG",
     ".....GG",
     "....GG",
     "....GG",
-    "...GG",
     "...GG",
 )
