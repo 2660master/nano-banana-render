@@ -32,6 +32,8 @@ GEKOZEN = {
     "hout": "eik licht: bark('6E5134', 51), log_top/planks('B08E5C', 51)",
     "cobblestone": "normale keien: cobble('8C9096', 62, cells=4,"
                    " spread=0.26, grain=0.09)",
+    "obsidian": "zwart en glad: layered('15171A', 71, cells=7, pebble=0.26,"
+                " blotch=0.06, grain=0.06)",
 }
 
 # Nog te doen, in volgorde.
