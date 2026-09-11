@@ -115,16 +115,16 @@ def streaked(base, seed, streak=0.30, cells=7, pebble=0.30, grain=0.10,
 
 
 def _two_nearest(cells, seed):
-    """Per pixel: (afstand dichtstbijzijnde, afstand tweede, cel-toon).
+    """Per pixel: (afstand eerste kiem, afstand tweede, toon, buurtoon).
 
     Het verschil tussen die twee afstanden is klein op de grens tussen
     twee kiemen — precies waar de voeg van cobblestone hoort.
     """
     pts = _points(cells, seed)
-    out = [[(1.0, 1.0, 0.5)] * N for _ in range(N)]
+    out = [[(1.0, 1.0, 0.5, 0.5)] * N for _ in range(N)]
     for y in range(N):
         for x in range(N):
-            f1, f2, tone = 1e9, 1e9, 0.5
+            f1, f2, tone, near = 1e9, 1e9, 0.5, 0.5
             for (px, py, cx, cy) in pts:
                 dx = abs(x + 0.5 - px)
                 dy = abs(y + 0.5 - py)
@@ -136,10 +136,12 @@ def _two_nearest(cells, seed):
                 if d < f1:
                     f2 = f1
                     f1 = d
+                    near = tone
                     tone = noise(cx, cy, seed + 17)
                 elif d < f2:
                     f2 = d
-            out[y][x] = (f1, f2, tone)
+                    near = noise(cx, cy, seed + 17)
+            out[y][x] = (f1, f2, tone, near)
     return out
 
 
@@ -161,12 +163,45 @@ def cobble(base, seed, cells=4, spread=0.30, grain=0.10, mortar=0.9,
     reach = N / cells * 1.5
     for y in range(N):
         for x in range(N):
-            f1, f2, tone = cel[y][x]
+            f1, f2, tone, _ = cel[y][x]
             bump = 1.0 - min(1.0, f1 / reach)               # bolle kei
             t = (tone - 0.5) * spread + (bump - 0.55) * spread * 0.9 \
                 + (noise(x, y, seed + 23) - 0.5) * grain
             c = mix(b, l, t * 1.8) if t > 0 else mix(b, d, -t * 1.8)
             if f2 - f1 < mortar:                            # harde voeg
                 c = mul(c, gap)
+            px[x, y] = c
+    return im
+
+
+def facets(base, seed, cells=4, spread=0.26, grain=0.06, edge=1.42,
+           edge_width=0.9, sheen=0.0, sparkle=0.0, dark=None, light=None):
+    """Kristalvlakken: platte facetten met een lichte rand ertussen.
+
+    Hetzelfde kiempatroon als cobble, maar de grens wordt juist lichter in
+    plaats van donkerder — zo leest het als gebroken glas of obsidiaan.
+    `sparkle` strooit er losse lichte pixels in, zoals glans op een
+    breukvlak. `sheen` legt een lichtval van boven naar beneden overheen —
+    let op dat die per blok herhaalt, dus een muur krijgt dan banden.
+    """
+    im = Image.new("RGBA", (N, N))
+    px = im.load()
+    b = hx(base)
+    d = hx(dark) if dark else mul(b, 0.52)
+    l = hx(light) if light else mul(b, 1.70)
+    cel = _two_nearest(cells, seed)
+    for y in range(N):
+        for x in range(N):
+            f1, f2, tone, near = cel[y][x]
+            t = (tone - 0.5) * spread + (noise(x, y, seed + 23) - 0.5) * grain
+            c = mix(b, l, t * 1.6) if t > 0 else mix(b, d, -t * 1.6)
+            if f2 - f1 < edge_width:
+                # alleen de lichtste kant van een grens krijgt de glans,
+                # anders wordt het hele blok een net van lichte lijnen
+                c = mul(c, edge if tone > near else 0.80)
+            if sheen:
+                c = mul(c, 1.0 + sheen * (0.5 - y / (N - 1.0)))
+            if sparkle and noise(x, y, seed + 37) > 1.0 - sparkle:
+                c = mix(c, hx("FFFFFF"), 0.42)
             px[x, y] = c
     return im

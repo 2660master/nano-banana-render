@@ -30,6 +30,8 @@ GEKOZEN = {
     "gras": "grof met contrast: blades(44, spread=0.40, fine=0.18,"
             " length=3), rand depth=7",
     "hout": "eik licht: bark('6E5134', 51), log_top/planks('B08E5C', 51)",
+    "cobblestone": "normale keien: cobble('8C9096', 62, cells=4,"
+                   " spread=0.26, grain=0.09)",
 }
 
 # Nog te doen, in volgorde.
