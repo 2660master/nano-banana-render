@@ -27,6 +27,8 @@ GEKOZEN = {
                  " blotch=0.07, grain=0.10)",
     "dirt": "donker bruin: layered('5E452E', 32, cells=5, pebble=0.50,"
             " blotch=0.12, grain=0.18)",
+    "gras": "grof met contrast: blades(44, spread=0.40, fine=0.18,"
+            " length=3), rand depth=7",
 }
 
 # Nog te doen, in volgorde.
