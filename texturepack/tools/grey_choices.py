@@ -41,6 +41,8 @@ GEKOZEN = {
             " blotch=0.05, grain=0.12)",
     "grind": "vanilla tint: cobble('878B90', 101, cells=6, spread=0.30,"
              " grain=0.12, gap=0.66)",
+    "netherrack": "vanilla rood: layered('7A3A38', 111, cells=5,"
+                  " pebble=0.42, blotch=0.14, grain=0.16)",
 }
 
 # Nog te doen, in volgorde.
