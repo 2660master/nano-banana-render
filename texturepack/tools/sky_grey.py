@@ -173,3 +173,99 @@ def _halo(sheet, size, strength):
                     if a > 0:
                         op[ox + x, oy + y] = (226, 234, 244, a)
     return out
+
+
+def end_sky(size=256, seed=5, stars=260, nebula=0.55, planets=(),
+            hole=None, base="05070C", neb1="1A2030", neb2="0E1626"):
+    """De End-lucht: het enige vel waar planeten en een zwart gat kunnen.
+
+    Let op hoe het spel dit vel gebruikt: het wordt over elk vlak van de
+    hemelkoepel zestien keer naast elkaar gelegd. Wat hier één planeet is,
+    staan er in het spel dus honderden — precies goed voor "heel veel
+    planeten", maar één enkel zwart gat bestaat niet; ook dat herhaalt.
+
+    Het is een gewone platte texture, geen geometrie, dus de grootte kost
+    geen frametijd.
+    """
+    im = Image.new("RGBA", (size, size), (0, 0, 0, 255))
+    px = im.load()
+    b, n1, n2 = hx(base), hx(neb1), hx(neb2)
+    for y in range(size):
+        for x in range(size):
+            a = fbm2(x, y, size, seed, octaves=4, cells_x=2, cells_y=2)
+            c = fbm2(x, y, size, seed + 8, octaves=4, cells_x=5, cells_y=3)
+            col = mix(b, n1, max(0.0, a - 0.48) * 2.0 * nebula)
+            col = mix(col, n2, max(0.0, c - 0.55) * 1.8 * nebula)
+            px[x, y] = col
+
+    for k in range(stars):
+        sx = int(noise(k, 50, seed) * size)
+        sy = int(noise(k, 51, seed) * size)
+        b2 = noise(k, 52, seed)
+        col = mix(hx("6C7688"), hx("FFFFFF"), b2 ** 1.6)
+        px[sx, sy] = col
+        if b2 > 0.90:                                  # heldere ster straalt
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx, ny = (sx + dx) % size, (sy + dy) % size
+                px[nx, ny] = mix(px[nx, ny], col, 0.50)
+
+    for (cx, cy, r, light, dark, ring) in planets:
+        _planet(px, size, cx, cy, r, light, dark, ring, seed)
+
+    if hole:
+        _black_hole(px, size, *hole)
+    return im
+
+
+def _planet(px, size, cx, cy, r, light, dark, ring, seed):
+    """Bol met licht van linksboven en eventueel een ring."""
+    l, d = hx(light), hx(dark)
+    if ring:
+        rr = hx(ring)
+        for y in range(int(cy - r * 2.4), int(cy + r * 2.4) + 1):
+            for x in range(int(cx - r * 2.4), int(cx + r * 2.4) + 1):
+                if not (0 <= x < size and 0 <= y < size):
+                    continue
+                u = (x - cx) / (r * 2.2)
+                v = (y - cy) / (r * 0.62)
+                e = (u * u + v * v) ** 0.5
+                if 0.80 < e < 1.0:
+                    px[x, y] = mix(px[x, y], rr, 0.75)
+    for y in range(int(cy - r) - 1, int(cy + r) + 2):
+        for x in range(int(cx - r) - 1, int(cx + r) + 2):
+            if not (0 <= x < size and 0 <= y < size):
+                continue
+            dx, dy = x + 0.5 - cx, y + 0.5 - cy
+            e = (dx * dx + dy * dy) ** 0.5 / r
+            if e > 1.0:
+                continue
+            # licht uit linksboven, en banden zoals een gasplaneet
+            lam = max(0.0, (-dx * 0.6 - dy * 0.6) / r * 0.5 + 0.55)
+            band = noise(0, int(y - cy + r), seed + 71) * 0.30
+            col = mix(d, l, min(1.0, lam + band))
+            if e > 0.92:
+                col = mul(col, 0.72)
+            px[x, y] = col
+
+
+def _black_hole(px, size, cx, cy, r, disc="C8D4E4"):
+    """Zwarte schijf met een gloeiende schijf eromheen."""
+    dc = hx(disc)
+    for y in range(int(cy - r * 3.2), int(cy + r * 3.2) + 1):
+        for x in range(int(cx - r * 3.2), int(cx + r * 3.2) + 1):
+            if not (0 <= x < size and 0 <= y < size):
+                continue
+            dx, dy = x + 0.5 - cx, y + 0.5 - cy
+            e = (dx * dx + dy * dy) ** 0.5 / r
+            if e <= 1.0:                               # de horizon zelf
+                px[x, y] = (0, 0, 0, 255)
+                continue
+            # de schijf: een platte ellips die er omheen draait
+            u, v = dx / (r * 3.0), dy / (r * 0.85)
+            f = (u * u + v * v) ** 0.5
+            if f < 1.0:
+                t = 1.0 - abs(f - 0.66) / 0.66
+                if t > 0:
+                    px[x, y] = mix(px[x, y], dc, min(1.0, t * 1.15))
+            if 1.0 < e < 1.45:                         # lichtring op de rand
+                px[x, y] = mix(px[x, y], dc, (1.45 - e) / 0.45 * 0.9)

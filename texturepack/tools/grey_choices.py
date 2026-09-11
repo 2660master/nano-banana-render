@@ -47,6 +47,8 @@ GEKOZEN = {
               " wind=3.0)",
     "zon": "warm oranje: sun(64, disc=0.54, corona=0.98, core='FFFBEC',"
            " rim='FFD48A')",
+    "maan": "wit met veel kraters: moon_phases(base='E2E8EE', sea='A8B2BC',"
+            " craters=30)",
 }
 
 # Nog te doen, in volgorde.
