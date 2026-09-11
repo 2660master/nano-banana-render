@@ -111,3 +111,66 @@ def totem(size=64, gold="E8B93C", gold_d="A8791C", gold_l="FFE08A",
     ell(29, 56, 32, 59, gold_l)
 
     return im.resize((size, size), Image.LANCZOS)
+
+
+# --------------------------------------------------------------- grijze totem
+# De vorm die de gebruiker aanwees: het vanilla-silhouet, maar dan grijs.
+# Hoofd met kap, armen wijd, smal lijf, brede voet. Rechts valt de schaduw.
+#   L hoogsel   M basis   D schaduw   K outline/donker
+TOTEM_GREY = (
+    "................",
+    ".....LLLLLL.....",
+    "....LLMMMMDK....",
+    "....LMKMMKDK....",
+    "....LMMMMMDK....",
+    "....LMMMMMDK....",
+    ".....LMMMDK.....",
+    "...LLLMMMDDK....",
+    ".LLLMMMMMMMDKK..",
+    "LLMMMMMMMMMMDKK.",
+    "LMMMMMMMMMMMDKK.",
+    "KKKMMMMMMMDKKK..",
+    "....KLMMMDK.....",
+    ".....LMMMDK.....",
+    "....KKKKKKKK....",
+    "....KKKKKKKK....",
+)
+
+GREY_PAL = {"L": "D6DCE1", "M": "9AA2A8", "D": "5E666C", "K": "22272B"}
+
+
+def grey_pixels(size=16, pal=None, rows=TOTEM_GREY):
+    """De totem als losse pixels, precies zoals op het plaatje."""
+    from palette import hx
+
+    p = dict(GREY_PAL if pal is None else pal)
+    im = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    px = im.load()
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch != ".":
+                px[x, y] = hx(p[ch])
+    if size != 16:
+        im = im.resize((size, size), Image.NEAREST)
+    return im
+
+
+def grey_smooth(size=64, pal=None, rows=TOTEM_GREY, soft=2):
+    """Zelfde vorm, maar de trapjes weggewerkt.
+
+    De pixels worden vergroot, licht vervaagd en daarna weer hard
+    afgesneden op alpha. Zo blijft het silhouet hetzelfde en worden alleen
+    de randen rond — precies het verschil tussen blokkerig en scherp.
+    """
+    from PIL import ImageFilter
+
+    big = grey_pixels(16, pal, rows).resize((size * 4, size * 4),
+                                            Image.NEAREST)
+    big = big.filter(ImageFilter.GaussianBlur(soft * size / 32.0))
+    out = big.resize((size, size), Image.LANCZOS)
+    px = out.load()
+    for y in range(size):
+        for x in range(size):
+            r, g, b, a = px[x, y]
+            px[x, y] = (r, g, b, 255 if a > 110 else 0)
+    return out
