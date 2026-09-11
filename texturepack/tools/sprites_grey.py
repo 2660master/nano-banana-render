@@ -163,7 +163,7 @@ BOW_PULL_3 = bow_rows(4.6)
 # Zelfde aanpak als de boog: rekenen in plaats van tellen. De kolf loopt
 # schuin van linksonder naar de kop; de bogen zijn een boog die naar voren
 # bolt, zodat de pees er als rechte koorde achter valt.
-def crossbow_rows(pull=0.0):
+def crossbow_rows(pull=0.0, arrow=None):
     """Kruisboog, recht van voren gezien.
 
     Schuin leggen zoals de boog werkte niet: op zestien pixels lopen de
@@ -218,6 +218,18 @@ def crossbow_rows(pull=0.0):
         t = a0 + (a1 - a0) * (i / 319.0)
         put(cx + (r - 1.0) * math.cos(t), cy + (r - 1.0) * math.sin(t),
             "L", ".")
+
+    if arrow:
+        # de pijl ligt in de goot van de kolf en steekt er bovenuit
+        line(7, 1, 7, 11, "L", ".vMD")
+        put(7, 0, "L", ".")
+        if arrow == "pijl":
+            put(6, 2, "D", ".")
+            put(8, 2, "D", ".")
+        else:                                   # vuurwerk: dikke kop
+            for y in (1, 2, 3):
+                put(6, y, "L", ".vMD")
+                put(8, y, "L", ".vMD")
 
     return ["".join(row) for row in g]
 

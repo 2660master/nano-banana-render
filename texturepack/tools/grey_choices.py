@@ -55,6 +55,7 @@ GEKOZEN = {
     "ender_pearl": "vanilla",
     "bow": "donker grijs: NETHERITE-palet, witte pees",
     "crossbow": "donker grijs met witte gloed van boven naar beneden",
+    "golden_apple": "donker grijs",
 }
 
 # Nog te doen, in volgorde.

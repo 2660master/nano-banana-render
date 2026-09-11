@@ -1,0 +1,10 @@
+{
+  "pack": {
+    "pack_format": 75,
+    "supported_formats": {
+      "min_inclusive": 64,
+      "max_inclusive": 75
+    },
+    "description": "§7§lN§f§lT§7§lC§f§lL §r§fCPvP grijs\n§8101 texturen · §f16x §8· 1.21.11"
+  }
+}
