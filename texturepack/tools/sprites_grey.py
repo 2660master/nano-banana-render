@@ -21,40 +21,23 @@ SWORD = S(
     "GG",
 )
 
+# De vanilla-vorm: zware kop rechtsboven met een lichte kern erin, korte
+# steel naar linksonder. Alleen de kleuren zijn hier grijs en wit.
 MACE = S(
     "",
-    "..LLLLLLLL",
-    ".LMMMMMMMMD",
-    ".LMMMMMMMMD",
-    ".LMMMMMMMMD",
-    ".LMMMMMMMMD",
-    ".LMMMMMMMMD",
-    ".DDDDDDDDDD",
-    "......GG",
-    "......GG",
-    ".....GG",
-    ".....GG",
-    "....GG",
-    "....GG",
-    "...GG",
-    "...GG",
-)
-
-MACE_RIB = S(
-    "",
-    "..LLLLLLLL",
-    ".LMHMMHMMHD",
-    ".LMHMMHMMHD",
-    ".LMHMMHMMHD",
-    ".LMHMMHMMHD",
-    ".LMHMMHMMHD",
-    ".DDDDDDDDDD",
-    "......GG",
+    ".......KKKKKK",
+    "......KDDDDDDK",
+    ".....KDDMMMMDDK",
+    ".....KDMLLLLMDK",
+    ".....KDMLLLLMDK",
+    ".....KDDMMMMDDK",
+    "......KDDDDDDK",
+    ".......KKKKKK",
+    ".......GG",
     "......GG",
     ".....GG",
-    ".....GG",
-    "....GG",
     "....GG",
     "...GG",
-    "...GG",
+    "..GG",
+    ".GG",
 )
