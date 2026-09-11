@@ -19,6 +19,7 @@ GEKOZEN = {
     "trident": "donker grijs, vanilla-silhouet",
     "netherite_pickaxe": "donker grijs met gloed",
     "netherite_axe": "donker grijs met gloed, vlakke bovenkant",
+    "end_crystal": "wit, dunne rand per vlak, midden doorzichtig",
 }
 
 # Nog te doen, in volgorde.
