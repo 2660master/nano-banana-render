@@ -37,6 +37,10 @@ GEKOZEN = {
     "end_stone": "vanilla geel-wit: layered('DCD8A8', 84, cells=6,"
                  " pebble=0.24, blotch=0.06, grain=0.07)",
     "bladeren": "veel gaten: leaves(92, spread=0.30, holes=0.26, clump=4)",
+    "zand": "vanilla tint: layered('DBCB9A', 101, cells=8, pebble=0.16,"
+            " blotch=0.05, grain=0.12)",
+    "grind": "vanilla tint: cobble('878B90', 101, cells=6, spread=0.30,"
+             " grain=0.12, gap=0.66)",
 }
 
 # Nog te doen, in volgorde.
