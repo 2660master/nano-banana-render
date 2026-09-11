@@ -25,6 +25,8 @@ GEKOZEN = {
              " blotch=0.07, grain=0.07)",
     "deepslate": "bijna zwart: layered('343940', 23, cells=7, pebble=0.34,"
                  " blotch=0.07, grain=0.10)",
+    "dirt": "donker bruin: layered('5E452E', 32, cells=5, pebble=0.50,"
+            " blotch=0.12, grain=0.18)",
 }
 
 # Nog te doen, in volgorde.
