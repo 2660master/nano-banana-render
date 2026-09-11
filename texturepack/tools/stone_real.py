@@ -15,7 +15,7 @@ from PIL import Image
 
 from blocks import mix, mul, noise
 from palette import hx
-from sky import fbm
+from sky import fbm, fbm2
 
 N = 16
 
@@ -89,4 +89,26 @@ def layered(base, seed, blotch=0.18, grain=0.12, cracks=0, cells=5,
                 cx += 1
             else:
                 cy += 1
+    return im
+
+
+def streaked(base, seed, streak=0.30, cells=7, pebble=0.30, grain=0.10,
+             dark=None, light=None):
+    """Deepslate-achtig: horizontale banden over de korrel heen.
+
+    De banden komen uit ruis die per rij verschilt maar per kolom traag
+    varieert, dus ze lopen zichtbaar horizontaal zonder een streepjespatroon
+    te worden.
+    """
+    im = layered(base, seed, blotch=0.08, grain=grain, cells=cells,
+                 pebble=pebble, dark=dark, light=light)
+    px = im.load()
+    rows = [noise(0, y, seed + 41) - 0.5 for y in range(N)]
+    rows = [(rows[(y - 1) % N] + rows[y] * 2 + rows[(y + 1) % N]) / 4.0
+            for y in range(N)]                              # zachte overgang
+    for y in range(N):
+        for x in range(N):
+            wob = fbm2(x, y, N, seed + 53, octaves=2, cells_x=2, cells_y=5) - 0.5
+            t = rows[y] * streak * 0.55 + wob * streak
+            px[x, y] = mul(px[x, y], 1.0 + t)
     return im

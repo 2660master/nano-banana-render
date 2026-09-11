@@ -21,6 +21,8 @@ GEKOZEN = {
     "netherite_axe": "donker grijs met gloed, vlakke bovenkant",
     "end_crystal": "wit, dunne rand per vlak, midden doorzichtig",
     "respawn_anchor": "wit, witte gloed in de cirkel, bovenkant 5 ringen",
+    "stone": "licht en glad: layered('989EA4', 13, cells=6, pebble=0.26,"
+             " blotch=0.07, grain=0.07)",
 }
 
 # Nog te doen, in volgorde.
