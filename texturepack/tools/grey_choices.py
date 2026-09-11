@@ -43,6 +43,8 @@ GEKOZEN = {
              " grain=0.12, gap=0.66)",
     "netherrack": "vanilla rood: layered('7A3A38', 111, cells=5,"
                   " pebble=0.42, blotch=0.14, grain=0.16)",
+    "wolken": "dunne slierten: clouds(coverage=0.40, lump=6, wisp=0.55,"
+              " wind=3.0)",
 }
 
 # Nog te doen, in volgorde.
