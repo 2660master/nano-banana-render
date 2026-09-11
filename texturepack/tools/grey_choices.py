@@ -9,6 +9,8 @@ blijven hangen maar in het pack terechtkomen.
 # Minecraft uit zijn eigen bestanden.
 VANILLA = {
     "mace",
+    "netherite_helmet", "netherite_chestplate",
+    "netherite_leggings", "netherite_boots",
 }
 
 # Wat al vastligt.
@@ -19,7 +21,7 @@ GEKOZEN = {
 
 # Nog te doen, in volgorde.
 TE_DOEN = [
-    "rest van de netherite set", "overige pvp items",
+    "netherite gereedschap", "overige pvp items",
     "natuurlijke blokken", "end crystal", "respawn anchor",
     "lucht dag", "lucht nacht", "totem",
 ]

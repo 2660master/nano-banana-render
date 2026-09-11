@@ -61,3 +61,42 @@ TRIDENT = S(
     "..MD",
     ".MD",
 )
+
+# Vanilla-silhouetten, alleen zonder de natuur-versieringen.
+PICKAXE = S(
+    "",
+    ".....LLLLLL",
+    "...LLLLMMMMMM",
+    ".LLLLMMMMMDDDDD",
+    ".MD.....GG...DD",
+    ".D......GG....D",
+    ".......GG",
+    ".......GG",
+    "......GG",
+    "......GG",
+    ".....GG",
+    ".....GG",
+    "....GG",
+    "....GG",
+    "...GG",
+    "...GG",
+)
+
+AXE = S(
+    "",
+    "..LLLLL",
+    "..LLMMMM",
+    "..LLMMMMMGG",
+    "..LLMMMMGG",
+    "..LLMMMDGG",
+    "...LLMDGG",
+    "....LDDGG",
+    "......GG",
+    "......GG",
+    ".....GG",
+    ".....GG",
+    "....GG",
+    "....GG",
+    "...GG",
+    "...GG",
+)
