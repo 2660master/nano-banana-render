@@ -53,6 +53,7 @@ GEKOZEN = {
                  " vijf planeten, geen zwart gat)",
     "totem": "vanilla - we leveren geen eigen totem",
     "ender_pearl": "vanilla",
+    "bow": "donker grijs: NETHERITE-palet, witte pees",
 }
 
 # Nog te doen, in volgorde.
