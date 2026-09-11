@@ -26,6 +26,8 @@ import items_grey
 import render as R
 import sky_grey as SG
 import sprites_grey as S
+import tools_grey as TG
+import totem as TOT
 import stone_real as ST
 import wood_real as W
 from palette import hx
@@ -45,7 +47,7 @@ PACK_FORMAT, MIN_FORMAT, MAX_FORMAT = 75, 64, 75
 # Wat hier niet in zit, pakt Minecraft uit zijn eigen bestanden. Dat is
 # geen omissie maar de afspraak: deze wilde de gebruiker vanilla houden.
 VANILLA = {
-    "mace", "totem_of_undying", "ender_pearl",
+    "mace", "ender_pearl",
     "netherite_helmet", "netherite_chestplate",
     "netherite_leggings", "netherite_boots",
 }
@@ -80,10 +82,9 @@ def blok(im):
 def items():
     out = {}
     tool = dict(NETH)
-    out["netherite_sword"] = item(S.SWORD, tool, "sword", (1.55, 0.45))
-    out["netherite_pickaxe"] = item(S.PICKAXE, tool, "pickaxe", (1.55, 0.45))
-    out["netherite_axe"] = item(S.AXE, tool, "axe", (1.55, 0.45))
-    out["trident"] = item(S.TRIDENT, tool, "trident")
+    for naam, vorm in TG.ALLES.items():
+        out[naam] = item(vorm(), tool, naam, (1.55, 0.45))
+    out["spear"] = out["copper_spear"]
 
     bow = dict(tool)
     bow.update(PEES)
@@ -105,6 +106,8 @@ def items():
 
     appel = dict(NETH)
     appel.update(BLAD)
+    out["totem_of_undying"] = TOT.grey_pixels(16)
+
     out["potion"] = EX.potion()
     out["splash_potion"] = EX.potion(kurk="4A5157")
     out["lingering_potion"] = EX.potion(kurk="9AA2A8")
@@ -257,6 +260,9 @@ def build():
     EX.shield().save(os.path.join(ENTITY, "shield_base_nopattern.png"))
     EX.shield().save(os.path.join(ENTITY, "shield_base.png"))
     EX.elytra().save(os.path.join(ENTITY, "elytra.png"))
+    for naam in ("trident", "copper_spear", "spear"):
+        EX.metaal().save(os.path.join(ENTITY, naam + ".png"))
+    namen += ["trident (in de hand)", "copper_spear (in de hand)"]
     os.makedirs(os.path.join(ENTITY, "chest"), exist_ok=True)
     EX.ender_chest().save(os.path.join(ENTITY, "chest", "ender.png"))
     namen += ["shield_base", "shield_base_nopattern", "elytra", "ender_chest"]

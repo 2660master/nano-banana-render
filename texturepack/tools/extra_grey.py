@@ -130,3 +130,14 @@ def potion_overlay(vocht="E4E9EC", diep="B4BCC1", niveau=9):
             if ch == "g":
                 px[x, y] = hx(vocht) if y < niveau + 2 else hx(diep)
     return im
+
+
+def metaal(w=32, h=32, base="3A4046", licht="9AA4AC", donker="171B1F",
+           seed=91):
+    """Doorlopend donker metaal voor de trident en de speer in de hand.
+
+    Dit zijn entity-vellen: het model knipt er stukken uit op plekken die
+    we zonder de vanilla-vellen niet kennen. Dekkend tekenen betekent dat
+    elk stuk dat het model pakt grijs is, waar de snede ook valt.
+    """
+    return _plaat(w, h, base, licht, donker, seed, korrel=0.14, band=0.24)
