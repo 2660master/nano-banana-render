@@ -5,7 +5,7 @@ Resourcepack met twee onderdelen:
 | Onderdeel | Nodig |
 |---|---|
 | Oranje pompoen-glint (items + harnas) | alleen vanilla |
-| Halloween sky "Kerkhof Nacht" | mod [Nuit](https://modrinth.com/mod/nuit) (Fabric of NeoForge) |
+| Halloween sky "De Wachter" | mod [Nuit](https://modrinth.com/mod/nuit) (Fabric of NeoForge) |
 
 `pack_format: 75` (= 1.21.11). Via `supported_formats` laadt de pack ook op oudere/nieuwere
 versies zonder "incompatible"-waarschuwing.
@@ -19,16 +19,25 @@ Zonder Nuit werkt de glint gewoon; de sky wordt dan simpelweg genegeerd.
 
 ---
 
-## De sky — "Kerkhof Nacht"
+## De sky — "De Wachter"
 
 ```
-assets/nuit/sky/graveyard_night.json              <- Nuit laadt alles uit assets/nuit/sky/
-assets/halloween/textures/sky/graveyard_night.png <- 3072x2048 (6 vlakken van 1024)
+assets/nuit/sky/watcher.json              <- Nuit laadt alles uit assets/nuit/sky/
+assets/halloween/textures/sky/watcher.png <- 3072x2048 (6 vlakken van 1024)
 ```
 
-Giftig groene horizongloed met grondmist, een ring van kale bomen, grafstenen en kruisen, twee
-kerktorens, zestien zwevende jack-o'-lanterns, vleermuizen rond een bleke maan in het noordwesten,
-en een donkerblauwe sterrenhemel erboven.
+Geen maan: in het noordwesten hangt een kolossaal oog dat op je neerkijkt, met een roodbruine iris,
+adertjes en een vaste catchlight. De lucht is bijna zwart paars met tentakelachtige nevelslierten
+(ridged noise), en er gaan zesentwintig kleinere ogen open, verspreid tot hoog boven je hoofd.
+
+Aan de horizon staat een kerkhof in twee dieptelagen: smeedijzeren hekken, grafstenen met scheve
+kruisen, kale bomen, skelethanden die uit de grond klauwen, een galg met strop, twee
+vogelverschrikkers met gloeiende ogen, een kerktoren, een spookhuis met verlichte ramen, kraaien
+in de takken en paren ogen die vanuit het donker tussen de bomen kijken. Daar drijven tien
+jack-o'-lanterns en zes geesten tussendoor, boven een laag grondmist.
+
+Het oog valt precies op de hoek tussen *top*, *west* en *north* in het 3×2 vel en loopt over alle
+drie de vlakken naadloos door — zie de face-layout hieronder.
 
 ### Face-layout
 
@@ -48,7 +57,7 @@ dus een boom of maan die over een rand valt loopt naadloos door.
 ### Twee dingen die je misschien wilt aanpassen
 
 **1. Alleen 's nachts halloween.** Nu staat de sky altijd aan (eeuwige halloween-nacht). Voor
-dag/nacht-wisseling zet je een fade in `properties` van `graveyard_night.json`:
+dag/nacht-wisseling zet je een fade in `properties` van `watcher.json`:
 
 ```json
 "fade": {
@@ -110,7 +119,7 @@ Alles is procedureel gegenereerd; `generator/` bevat de bronscripts (Python + Pi
 ```bash
 pip install pillow numpy
 cd generator
-python3 build_sky.py graveyard 1024 ../assets/halloween/textures/sky/graveyard_night.png
+python3 build_sky.py s_watcher 1024 ../assets/halloween/textures/sky/watcher.png
 python3 glint.py    ../assets/minecraft/textures/misc
 python3 pack_icon.py ../pack.png
 python3 preview.py  .        # previews van alle vijf de sky-concepten
@@ -118,9 +127,27 @@ python3 preview.py  .        # previews van alle vijf de sky-concepten
 
 * `skylib.py` — ruis, sterrenvelden, sprites (pompoen, maan, vleermuis, boom) en de kubus-/
   equirect-/perspectiefprojecties.
-* `concepts.py` — de vijf sky-ontwerpen; `graveyard` is degene die in de pack zit.
+* `concepts.py` — de vijf eerste sky-ontwerpen.
 * `build_sky.py` — rendert een concept naar het 3×2 vel en controleert de naden.
 * `glint.py` — de twee glint-sheets.
 
-De andere vier concepten (Bloedmaan, Pompoen Nevel, Heksenuur, De Leegte) staan er nog in:
-`python3 build_sky.py witching 1024 uit.png` bouwt er zo een andere uit.
+* `scary.py` — de horror-props (kraaien, galg, skelethanden, hek, vogelverschrikker, spookhuis,
+  ogen, geesten, spinnenweb, bliksem), de donkere manen en de vijf enge varianten.
+
+Alle tien de sky-ontwerpen zitten er nog in. `python3 preview.py .` rendert previews van
+allemaal, of geef slugs mee voor een paar: `python3 preview.py . s_blood s_eclipse`. Een andere
+sky in de pack zetten is één commando plus de bestandsnaam in de JSON aanpassen:
+
+| slug | sky |
+|---|---|
+| `s_watcher` | De Wachter *(zit nu in de pack)* |
+| `s_blood` / `s_eclipse` / `s_skull` / `s_storm` | Bloedmaan, Verduistering, Schedelmaan, Onweer |
+| `graveyard` | Kerkhof Nacht (de eerste, rustigere versie) |
+| `bloodmoon` / `nebula` / `witching` / `void` | de vier niet-kerkhof concepten |
+
+```bash
+python3 build_sky.py s_storm 1024 ../assets/halloween/textures/sky/storm.png
+```
+
+Zet daarna maar één `.json` in `assets/nuit/sky/` — Nuit laadt ze namelijk allemaal, en dan
+renderen ze over elkaar heen.
