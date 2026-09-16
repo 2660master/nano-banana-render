@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "type": "overworld",
+  "properties": {
+    "layer": 0
+  },
+  "conditions": {
+    "dimensions": {
+      "entries": [
+        "minecraft:overworld"
+      ]
+    }
+  }
+}

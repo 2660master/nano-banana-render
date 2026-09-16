@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "type": "square-textured",
+  "texture": "kerstsky:textures/sky/kerstmarkt_sky.png",
+  "blend": {
+    "type": "normal"
+  },
+  "properties": {
+    "layer": 10,
+    "fade": {
+      "duration": 24000,
+      "keyFrames": {
+        "0": 0.0,
+        "11200": 0.0,
+        "13400": 1.0,
+        "22200": 1.0,
+        "23600": 0.0
+      }
+    },
+    "transitionInDuration": 40,
+    "transitionOutDuration": 40,
+    "sunSkyTint": false,
+    "rotation": {
+      "skyboxRotation": true,
+      "speed": 0.0
+    }
+  },
+  "conditions": {
+    "dimensions": {
+      "entries": [
+        "minecraft:overworld"
+      ]
+    }
+  }
+}

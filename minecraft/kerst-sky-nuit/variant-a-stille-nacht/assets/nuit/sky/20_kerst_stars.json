@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "type": "square-textured",
+  "texture": "kerstsky:textures/sky/stille_nacht_stars.png",
+  "blend": {
+    "type": "add"
+  },
+  "properties": {
+    "layer": 20,
+    "fade": {
+      "duration": 24000,
+      "keyFrames": {
+        "0": 0.0,
+        "11200": 0.0,
+        "13400": 1.0,
+        "22200": 1.0,
+        "23600": 0.0
+      }
+    },
+    "transitionInDuration": 40,
+    "transitionOutDuration": 40,
+    "sunSkyTint": false,
+    "rotation": {
+      "skyboxRotation": false,
+      "speed": 1.0,
+      "axis": {
+        "0": [
+          90.0,
+          0.0,
+          0.0
+        ]
+      }
+    }
+  },
+  "conditions": {
+    "dimensions": {
+      "entries": [
+        "minecraft:overworld"
+      ]
+    }
+  }
+}
