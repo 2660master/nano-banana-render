@@ -233,21 +233,50 @@ def shade_nebula(col, d, cfg, aa, over=False):
     return col
 
 
+def _silhouette(phi, seed, amount, harmonics=8, facets=0):
+    """Wobble the radius of a disc so it reads as a rock, not a circle.
+
+    ``facets`` interpolates linearly between a ring of random radii, which
+    leaves straight edges and sharp corners - what broken rock looks like.
+    Without it the outline is a sum of sines: smooth lumps, right for a
+    body big enough for gravity to have rounded it off.
+    """
+    rng = np.random.default_rng(seed)
+    if facets:
+        radii = rng.uniform(-1.0, 1.0, facets).astype(np.float32)
+        k = (phi / (2 * np.pi) + 0.5) * facets
+        i0 = np.floor(k).astype(np.int32) % facets
+        t = k - np.floor(k)
+        return amount * (radii[i0] * (1 - t) + radii[(i0 + 1) % facets] * t)
+
+    out = np.zeros_like(phi)
+    weight = 0.0
+    for k in range(2, 2 + harmonics):
+        amp = rng.uniform(0.45, 1.0) / (k - 1) ** 0.6
+        out += amp * np.sin(k * phi + rng.uniform(0.0, 2 * np.pi))
+        weight += amp
+    return amount * out / weight
+
+
 def shade_moon(col, d, moon, aa):
     md = normalize(moon["dir"])
-    c = np.clip(d @ md, -1.0, 1.0)
-    ang = np.arccos(c)
+    c = d @ md
     r = math.radians(moon["radius"])
-
     glow = moon.get("glow", 0.0)
+
+    # Everything this moon can touch lies within `reach`. Most row blocks are
+    # nowhere near it, and skipping them is what makes a debris field of
+    # dozens of chunks affordable.
+    reach = r * (moon.get("glow_size", 6.0) * 2.6 if glow else 2.0) + 4 * aa
+    if float(c.max()) < math.cos(min(reach, math.pi)):
+        return col
+
+    ang = np.arccos(np.clip(c, -1.0, 1.0))
+
     if glow:
         halo = np.exp(-((ang / (r * moon.get("glow_size", 6.0))) ** 1.6)) * glow
         halo += np.exp(-((ang / (r * 1.8)) ** 2)) * glow * 1.7
         col += halo[..., None] * srgb_to_linear(moon.get("glow_color", moon["color"]))
-
-    disc = smoothstep(r + aa, r - aa, ang)
-    if not np.any(disc > 0.001):
-        return col
 
     up = np.array([0.0, 1.0, 0.0], np.float32)
     if abs(float(md @ up)) > 0.95:
@@ -256,12 +285,50 @@ def shade_moon(col, d, moon, aa):
     vax = np.cross(md, uax)
 
     sr = math.sin(r)
-    u = np.clip((d @ uax) / sr, -1.0, 1.0)
-    v = np.clip((d @ vax) / sr, -1.0, 1.0)
-    nz = np.sqrt(np.clip(1.0 - u * u - v * v, 0.0, 1.0))
-    nrm = uax * u[..., None] + vax * v[..., None] + md * nz[..., None]
+    u = (d @ uax) / sr
+    v = (d @ vax) / sr
 
-    shade = np.ones_like(u)
+    rad = 1.0
+    if moon.get("irregular"):
+        rad = 1.0 + _silhouette(np.arctan2(v, u), moon["seed"],
+                                moon["irregular"],
+                                facets=moon.get("facets", 0))
+
+    disc = smoothstep(r * rad + aa, r * rad - aa, ang)
+    if not np.any(disc > 0.001):
+        return col
+
+    un = np.clip(u / rad, -1.0, 1.0)
+    vn = np.clip(v / rad, -1.0, 1.0)
+    nz = np.sqrt(np.clip(1.0 - un * un - vn * vn, 0.0, 1.0))
+    nrm = uax * un[..., None] + vax * vn[..., None] + md * nz[..., None]
+
+    # Relief comes from bump mapping, not from painting light and dark on a
+    # smooth ball: craters only read as craters when their rims catch the
+    # light and their floors fall into shadow.
+    bump = moon.get("bump", 0.0)
+    if bump:
+        hs = moon.get("bump_scale", 14.0)
+        oct_ = moon.get("bump_octaves", 3)
+        # The finite difference has to stay well inside one cell of the
+        # finest octave, otherwise the two samples are uncorrelated and the
+        # "gradient" is just per-pixel noise. Dividing by hs keeps `bump`
+        # meaning the same thing at any feature size.
+        eps = 0.35 / (hs * 2 ** (oct_ - 1))
+        # A low gain keeps the big shapes in charge of the gradient. At
+        # gain 0.5 every octave contributes the same slope and the relief
+        # turns into sand.
+        hg = moon.get("bump_gain", 0.30)
+        rg = moon.get("bump_ridged", False)
+        kw = dict(octaves=oct_, gain=hg, ridged=rg)
+        h0 = fbm(nrm * hs, moon["seed"] + 91, **kw)
+        hu = fbm((nrm + uax * eps) * hs, moon["seed"] + 91, **kw)
+        hv = fbm((nrm + vax * eps) * hs, moon["seed"] + 91, **kw)
+        grad = ((hu - h0)[..., None] * uax + (hv - h0)[..., None] * vax) / eps
+        nrm = nrm - (bump / hs) * grad
+        nrm /= np.linalg.norm(nrm, axis=-1, keepdims=True)
+
+    shade = np.ones_like(un)
     if moon.get("light") is not None:  # crescent / gibbous terminator
         ld = normalize(moon["light"])
         shade = smoothstep(-0.12, 0.25, nrm @ ld)
@@ -273,10 +340,16 @@ def shade_moon(col, d, moon, aa):
     if tex:
         craters = fbm(nrm * moon.get("texture_scale", 9.0), moon["seed"], octaves=5)
         shade *= 1.0 - tex * (1.0 - craters)
+    fine = moon.get("fine_texture", 0.0)
+    if fine:  # the pitting you only see once the moon is big on screen
+        f2 = fbm(nrm * moon.get("fine_scale", 30.0), moon["seed"] + 7, octaves=4)
+        shade *= 1.0 - fine * (1.0 - f2)
     maria = moon.get("maria", 0.0)
     if maria:  # big dark seas, the shapes you read from the ground
         m = fbm(nrm * moon.get("maria_scale", 2.0), moon["seed"] + 55, octaves=3)
         shade *= 1.0 - maria * smoothstep(0.44, 0.74, m)
+
+    cr = None
     cracks = moon.get("cracks", 0.0)
     if cracks:
         cr = fbm(nrm * moon.get("crack_scale", 5.0), moon["seed"] + 21,
@@ -286,7 +359,51 @@ def shade_moon(col, d, moon, aa):
     body = (disc * shade * moon.get("brightness", 1.0))[..., None] * srgb_to_linear(
         moon["color"]
     )
+    emit = moon.get("crack_glow", 0.0)
+    if emit and cr is not None:  # light still leaking out of the fractures
+        core = smoothstep(0.80, 0.99, cr) * disc * emit
+        body = body + core[..., None] * srgb_to_linear(
+            moon.get("crack_color", (168, 140, 255))
+        )
     return col * (1.0 - disc[..., None]) + body
+
+
+def debris_field(centre, count, seed, inner=1.5, outer=7.0, size=(0.22, 2.0),
+                 spread=1.7, flatten=0.5, **common):
+    """Chunks scattered around a broken moon, thinning out with distance.
+
+    ``inner`` and ``outer`` are degrees from the moon's centre, so ``inner``
+    has to clear the moon's own radius or the chunks end up painted on top
+    of its face. ``flatten`` squashes the field across one axis, which reads
+    as debris strung out along the orbit rather than a uniform halo.
+
+    Each chunk is an ordinary moon dict, so it picks up the same lighting,
+    cratering and irregular silhouette as the body it came off.
+    """
+    rng = np.random.default_rng(seed)
+    cd = normalize(centre)
+    up = np.array([0.0, 1.0, 0.0], np.float32)
+    if abs(float(cd @ up)) > 0.95:
+        up = np.array([0.0, 0.0, 1.0], np.float32)
+    uax = normalize(np.cross(up, cd))
+    vax = np.cross(cd, uax)
+
+    out = []
+    for _ in range(count):
+        phi = rng.uniform(0.0, 2 * math.pi)
+        squash = math.hypot(math.cos(phi), flatten * math.sin(phi))
+        dist = math.radians(
+            inner + (outer - inner) * rng.random() ** spread * squash)
+        off = uax * math.cos(phi) + vax * math.sin(phi)
+        chunk = dict(common)
+        chunk["dir"] = normalize(cd * math.cos(dist) + off * math.sin(dist))
+        chunk["radius"] = size[0] + (size[1] - size[0]) * rng.random() ** 2.4
+        chunk["seed"] = int(rng.integers(1, 10 ** 6))
+        chunk["irregular"] = float(rng.uniform(0.16, 0.34))
+        chunk["facets"] = int(rng.integers(6, 11))
+        chunk["brightness"] = common.get("brightness", 1.0) * rng.uniform(0.8, 1.15)
+        out.append(chunk)
+    return out
 
 
 def shade_aurora(col, d, lat, lon, cfg):
@@ -613,15 +730,30 @@ CONCEPTS["shattered"] = {
          "lo": 0.50, "hi": 0.93, "power": 2.0, "strength": 0.15,
          "color": (48, 20, 104), "color2": (142, 76, 220),
          "coverage_scale": 0.8, "cov_lo": 0.48, "cov_hi": 0.84},
+        # wisps riding on the big masses, so the gas keeps reading as gas
+        # when the player looks straight at it
+        {"seed": 211, "scale": 5.2, "warp": 0.35, "octaves": 4, "gain": 0.42,
+         "ridged": True, "lo": 0.54, "hi": 0.94, "power": 2.2, "strength": 0.10,
+         "color": (70, 34, 150), "color2": (186, 132, 255),
+         "coverage_scale": 0.9, "cov_lo": 0.50, "cov_hi": 0.86},
         # the galactic band: bright core, cold edges
         {"seed": 241, "scale": 2.4, "warp": 0.30, "octaves": 4, "gain": 0.48,
          "band_axis": (0.86, 0.22, -0.46), "band_width": 0.30,
          "lo": 0.44, "hi": 0.90, "power": 1.6, "strength": 0.26,
          "color": (58, 52, 138), "color2": (192, 176, 255)},
+        # unresolved stars: fine grain inside the band, not a smooth wash
+        {"seed": 261, "scale": 30.0, "octaves": 3, "gain": 0.55,
+         "band_axis": (0.86, 0.22, -0.46), "band_width": 0.24,
+         "lo": 0.50, "hi": 0.84, "power": 1.5, "strength": 0.11,
+         "color": (120, 122, 170), "color2": (216, 220, 255)},
         # dust lanes cutting through the band
         {"seed": 281, "scale": 3.6, "warp": 0.45, "octaves": 4, "mode": "mul",
          "band_axis": (0.86, 0.22, -0.46), "band_width": 0.20,
          "lo": 0.46, "hi": 0.90, "strength": 0.65},
+        # finer dark filaments across the band, breaking the big lanes up
+        {"seed": 287, "scale": 8.0, "warp": 0.40, "octaves": 4, "mode": "mul",
+         "band_axis": (0.86, 0.22, -0.46), "band_width": 0.22,
+         "lo": 0.54, "hi": 0.94, "strength": 0.45},
         # low violet haze, no heavy deck - this sky should feel empty
         {"seed": 291, "scale": 2.6, "warp": 0.45, "octaves": 5, "gain": 0.5,
          "mode": "cloud", "over": True, "lo": 0.52, "hi": 0.86,
@@ -631,27 +763,27 @@ CONCEPTS["shattered"] = {
          "rim": 0.14, "rim_size": 60, "rim_color": (176, 150, 255)},
     ],
     "moons": [
-        {"dir": direction(30, -24), "radius": 9.0, "color": (206, 196, 240),
-         "brightness": 1.10, "glow": 0.16, "glow_size": 4.5,
-         "glow_color": (110, 96, 190), "texture": 0.45, "texture_scale": 8.0, "maria": 0.30,
-         "cracks": 0.80, "crack_scale": 4.0, "light": direction(22, -50),
-         "ambient": 0.10, "seed": 3},
-        {"dir": direction(37, -12), "radius": 1.5, "color": (190, 178, 226),
-         "brightness": 1.1, "glow": 0.05, "glow_size": 4.0, "texture": 0.5,
-         "light": direction(22, -50), "ambient": 0.08, "seed": 4},
-        {"dir": direction(23, -36), "radius": 2.1, "color": (186, 174, 224),
-         "brightness": 1.1, "glow": 0.05, "glow_size": 4.0, "texture": 0.5,
-         "light": direction(22, -50), "ambient": 0.08, "seed": 5},
-        {"dir": direction(18, -16), "radius": 1.0, "color": (180, 170, 220),
-         "brightness": 1.0, "texture": 0.5, "light": direction(22, -50),
-         "ambient": 0.08, "seed": 6},
-        {"dir": direction(41, -33), "radius": 0.8, "color": (180, 170, 220),
-         "brightness": 1.0, "texture": 0.5, "light": direction(22, -50),
-         "ambient": 0.08, "seed": 7},
-    ],
+        # the broken body itself: lumpy rim, deep fissures, and light still
+        # bleeding out of the core through them
+        {"dir": direction(30, -24), "radius": 9.0, "color": (172, 166, 202),
+         "brightness": 0.68, "glow": 0.13, "glow_size": 2.6,
+         "glow_color": (110, 96, 190), "texture": 0.18, "texture_scale": 8.0,
+         "fine_texture": 0.10, "fine_scale": 34.0, "maria": 0.34,
+         "bump": 0.52, "bump_scale": 7.5, "bump_octaves": 3, "bump_gain": 0.26,
+         "irregular": 0.05, "cracks": 0.72, "crack_scale": 3.0,
+         "crack_glow": 0.85, "crack_color": (182, 150, 255),
+         "light": direction(22, -50), "ambient": 0.10, "seed": 3},
+    ] + debris_field(
+        direction(30, -24), 54, seed=4242, inner=5.5, outer=42.0,
+        size=(0.16, 2.3), spread=1.35, flatten=0.45,
+        color=(150, 144, 178), brightness=0.62, texture=0.22,
+        texture_scale=9.0, fine_texture=0.14, fine_scale=30.0,
+        bump=0.50, bump_scale=9.0, bump_octaves=3, bump_gain=0.28,
+        light=direction(22, -50), ambient=0.05, limb=0.30,
+    ),
     "horizon_glow": {"color": (52, 34, 110), "height": 0.11, "strength": 0.11,
                      "patchy": True, "patch_scale": 1.0, "seed": 29},
-    "stars": {"count": 11000, "brightness": 1.0, "falloff": 3.4, "size": 0.44,
+    "stars": {"count": 15000, "brightness": 1.0, "falloff": 3.6, "size": 0.40,
               "warm": (255, 214, 176), "cool": (172, 198, 255), "warm_bias": 2.4,
               "bright_frac": 0.005, "spikes": 0.65,
               "cluster_axis": (0.86, 0.22, -0.46), "cluster_width": 0.30,

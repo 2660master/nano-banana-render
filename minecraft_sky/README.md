@@ -24,8 +24,19 @@ projected onto cube faces. Nothing is painted by hand:
 * **Cloud decks** are banded around an elevation, occlude what is behind
   them, and pick up rim light from the sky's key light. Decks flagged
   `over` are drawn after the moons, so a bank of ash can veil the moon.
-* **Moons** are analytic: limb darkening, crater and mare texture, optional
-  phase terminator and cracks.
+* **Moons** are analytic: limb darkening, maria, phase terminator, cracks
+  that still leak light, and bump-mapped relief. The relief is a real
+  finite-difference gradient of a height field, so craters catch the light
+  on one rim and fall into shadow on the other instead of being painted on.
+  Two details matter when tuning it: the difference step has to stay well
+  inside one cell of the finest octave, and the height field wants a low
+  `bump_gain` or every octave contributes the same slope and the surface
+  turns to sand.
+* **Debris fields** (`debris_field`) scatter chunks around a broken moon.
+  Each chunk is an ordinary moon dict, so it inherits the same lighting and
+  relief, with a faceted outline instead of a smooth one. Note that a
+  chunk's normal space is a full sphere no matter how small it looks, so
+  its texture scales belong in the same range as the moon's.
 * **Stars** are splatted with latitude-compensated kernels, so they stay
   round after the cube projection instead of smearing near the poles.
 
@@ -64,6 +75,26 @@ so check yours before shipping and rotate if needed.
 ```bash
 python3 test_cube_seams.py
 ```
+
+A body near the corner of a face looks stretched when you open the PNG on
+its own. That is the cube projection doing its job - the skybox undoes it
+and the moon is round again in game.
+
+## Shipped assets
+
+`previews/shattered/` holds the chosen sky as six 1024px cube faces, and
+`previews/shattered_panorama_4096.jpg` is the same sky as one panorama.
+Everything is reproducible from the generator, which is why the lossless
+panorama is not committed:
+
+```bash
+python3 sky_generator.py shattered --width 4096 --faces --face-size 2048
+```
+
+Face size is a judgement call rather than a quality ceiling: at 1024 the
+moon lands about 230px across, at 2048 about 460px, and the relief and the
+fissures are worth the bigger faces only if the moon is meant to be looked
+at rather than glanced at.
 
 ## Tuning
 
