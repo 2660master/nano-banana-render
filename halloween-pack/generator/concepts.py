@@ -139,6 +139,35 @@ def nebula(d):
 
 
 # =========================================================== 3. GRAVEYARD ==
+def grave_sprite(S=256, col=(7, 8, 12)):
+    """A small cluster of headstones + a leaning cross, standing on the canvas floor."""
+    F = 2; C = S * F
+    img = Image.new("RGBA", (C, C), (0, 0, 0, 0))
+    dr = ImageDraw.Draw(img)
+    g = C * 0.5
+    dr.rectangle([g - C * 0.115, C * 0.52, g + C * 0.115, C], fill=col + (255,))
+    dr.ellipse([g - C * 0.115, C * 0.44, g + C * 0.115, C * 0.60], fill=col + (255,))
+    dr.rectangle([g - C * 0.315, C * 0.66, g - C * 0.165, C], fill=col + (255,))
+    dr.polygon([(g - C * 0.325, C * 0.66), (g - C * 0.155, C * 0.66), (g - C * 0.240, C * 0.575)],
+               fill=col + (255,))
+    for (ox, w, h, lean) in [(0.255, 0.030, 0.30, 0.055)]:
+        x = g + C * ox
+        dr.polygon([(x - C * w, C), (x + C * w, C),
+                    (x + C * (w + lean), C * (1 - h)), (x - C * (w - lean), C * (1 - h))],
+                   fill=col + (255,))
+        dr.polygon([(x + C * (lean * 0.55) - C * 0.095, C * (1 - h * 0.78)),
+                    (x + C * (lean * 0.55) + C * 0.095, C * (1 - h * 0.82)),
+                    (x + C * (lean * 0.55) + C * 0.095, C * (1 - h * 0.70)),
+                    (x + C * (lean * 0.55) - C * 0.095, C * (1 - h * 0.66))], fill=col + (255,))
+    dr.rectangle([0, C * 0.965, C, C], fill=col + (255,))
+    return np.asarray(img.resize((S, S), Image.LANCZOS)).astype(np.float64)
+
+
+def _ground(size, sink=3.0):
+    """Altitude that puts a sprite's floor just under the horizon."""
+    return 0.48 * size - sink
+
+
 def graveyard(d):
     y = d[..., 1]
     rgb = grad(y, [(-1.0, (0.009, 0.013, 0.013)), (-0.06, (0.032, 0.056, 0.050)),
@@ -149,35 +178,60 @@ def graveyard(d):
     rgb += np.array([0.50, 0.60, 0.58]) * (hal ** 34)[..., None] * 0.26
     rgb += starfield(d, 54, 0.16, 0.095, seed=17, warm=0.1, bright=0.78) * \
         np.clip(1.15 - hal * 0.8, 0, 1)[..., None]
+    rgb += starfield(d, 104, 0.12, 0.055, seed=61, warm=0.0, bright=0.40)
     glow = np.zeros_like(rgb)
     m, mg = moon_sprite(512, col=(226, 236, 222), tint=(0.92, 1.0, 0.94))
     splat(rgb, glow, d, m, mc, 11.0, glow=mg, glow_scale=2.6, glow_strength=0.42)
+    # thin cloud veils drifting past the moon
     c = clouds(d, 2.6, 2.2, seed=71)
     veil = smooth(c, 0.46, 0.78) * (1 - smooth(y, 0.55, 0.95))
     rgb = rgb * (1 - veil[..., None] * 0.40) + \
         grad(y, [(-0.1, (0.042, 0.080, 0.070)), (0.5, (0.028, 0.046, 0.066))]) * (veil[..., None] * 0.40)
+    # ground mist
     mist = np.exp(-((y + 0.005) / 0.075) ** 2) * (0.45 + 0.75 * fbm3(d * 5.2, 5, seed=94))
     rgb += np.array([0.10, 0.26, 0.21]) * np.clip(mist, 0, 1.3)[..., None] * 0.80
     rng = np.random.default_rng(4)
-    trees = [tree_sprite(440, seed=s) for s in range(6)]
-    for k in range(28):
-        az = k * (360 / 28) + rng.uniform(-5, 5)
-        size = rng.uniform(14, 32)
-        alt = -size * 0.5 + rng.uniform(1.2, 4.2)
-        splat(rgb, glow, d, trees[k % 6], dirv(az, alt), size)
-    sp = spire_sprite(520)
-    splat(rgb, glow, d, sp, dirv(305, 8.0), 34.0)
-    splat(rgb, glow, d, spire_sprite(420), dirv(96, 4.5), 22.0)
-    pks = [pumpkin_sprite(300, face_style=i % 3, body=(206, 100, 24), dark=(112, 46, 12),
+    # --- far silhouette ring: hazy, mist-tinted, sits low -----------------
+    far_trees = [tree_sprite(340, col=(21, 44, 42), seed=s) for s in range(4)]
+    for k in range(30):
+        az = k * (360 / 30) + rng.uniform(-5, 5)
+        size = rng.uniform(9, 15)
+        splat(rgb, glow, d, far_trees[k % 4], dirv(az, _ground(size, 4.5)), size, opacity=0.62)
+    far_graves = grave_sprite(240, col=(24, 48, 45))
+    for k in range(14):
+        size = rng.uniform(5, 8)
+        splat(rgb, glow, d, far_graves, dirv(rng.uniform(0, 360), _ground(size, 3.0)),
+              size, opacity=0.55)
+    splat(rgb, glow, d, spire_sprite(420, col=(20, 42, 40), win=(180, 120, 46)),
+          dirv(96, _ground(20.0, 5.0)), 20.0, opacity=0.70)
+    # --- near silhouette ring: solid black, taller ------------------------
+    near_graves = grave_sprite(280, col=(6, 8, 11))
+    for k in range(16):
+        size = rng.uniform(7, 13)
+        splat(rgb, glow, d, near_graves, dirv(rng.uniform(0, 360), _ground(size, 2.2)), size)
+    trees = [tree_sprite(460, col=(6, 8, 12), seed=s) for s in range(6)]
+    for k in range(24):
+        az = k * (360 / 24) + rng.uniform(-6, 6)
+        size = rng.uniform(16, 30)
+        splat(rgb, glow, d, trees[k % 6], dirv(az, _ground(size, 3.2)), size)
+    splat(rgb, glow, d, spire_sprite(560), dirv(305, _ground(34.0, 4.0)), 34.0)
+    # --- floating jack-o-lanterns ----------------------------------------
+    pks = [pumpkin_sprite(320, face_style=i % 3, body=(206, 100, 24), dark=(112, 46, 12),
                           glowcol=(255, 214, 128), halo=(255, 124, 30)) for i in range(3)]
-    spots = [(12, 7.5, 7.5), (58, 11.0, 5.2), (96, 5.5, 6.4), (143, 13.5, 4.4),
-             (188, 6.5, 8.0), (222, 12.0, 4.8), (263, 8.0, 6.0), (300, 15.0, 3.8),
-             (338, 6.0, 5.4), (75, 19.0, 3.0), (250, 21.0, 2.6), (170, 23.0, 2.2),
-             (20, 17.0, 3.4), (120, 9.0, 4.0)]
+    spots = [(12, 9.5, 7.5), (58, 13.0, 5.2), (96, 7.5, 6.4), (143, 15.5, 4.4),
+             (188, 8.5, 8.0), (222, 14.0, 4.8), (263, 10.0, 6.0), (300, 17.0, 3.8),
+             (338, 8.0, 5.4), (75, 21.0, 3.0), (250, 23.0, 2.6), (170, 25.0, 2.2),
+             (20, 19.0, 3.4), (120, 11.0, 4.0), (285, 5.5, 4.6), (208, 30.0, 2.0)]
     for i, (az, alt, s) in enumerate(spots):
         p, pg = pks[i % 3]
         splat(rgb, glow, d, p, dirv(az, alt), s, roll_deg=(i * 37) % 21 - 10,
               glow=pg, glow_scale=2.5, glow_strength=0.62)
+    # --- bats around the moon --------------------------------------------
+    bat = bat_sprite(224)
+    for az, alt, s, r in [(311, 42, 4.6, -12), (327, 29, 3.6, 10), (298, 27, 3.0, 18),
+                          (336, 45, 2.6, -8), (283, 38, 2.2, 14), (346, 34, 2.0, -18),
+                          (45, 26, 2.4, 9), (152, 31, 2.1, -14), (232, 35, 1.9, 6)]:
+        splat(rgb, glow, d, bat, dirv(az, alt), s, roll_deg=r, opacity=0.95)
     return rgb + glow
 
 

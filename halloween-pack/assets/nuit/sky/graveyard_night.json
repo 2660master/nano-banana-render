@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "type": "square-textured",
+  "texture": "halloween:textures/sky/graveyard_night.png",
+  "properties": {
+    "layer": 0,
+    "transitionInDuration": 20,
+    "transitionOutDuration": 20,
+    "sunSkyTint": false,
+    "visibleUnderwater": false
+  },
+  "conditions": {
+    "dimensions": {
+      "entries": ["minecraft:overworld"]
+    }
+  },
+  "blend": {
+    "type": "normal"
+  }
+}

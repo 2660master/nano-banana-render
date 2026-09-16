@@ -2,19 +2,76 @@
 
 Resourcepack met twee onderdelen:
 
-| Onderdeel | Status | Nodig |
-|---|---|---|
-| Oranje pompoen-glint (items + harnas) | klaar | alleen vanilla |
-| Halloween sky | concept gekozen → wordt toegevoegd | mod [Nuit](https://modrinth.com/mod/nuit) |
+| Onderdeel | Nodig |
+|---|---|
+| Oranje pompoen-glint (items + harnas) | alleen vanilla |
+| Halloween sky "Kerkhof Nacht" | mod [Nuit](https://modrinth.com/mod/nuit) (Fabric of NeoForge) |
 
-`pack_format: 75` (= 1.21.11). Via `supported_formats` laadt de pack ook op 1.21.6 t/m nieuwere versies
-zonder "incompatible"-waarschuwing.
+`pack_format: 75` (= 1.21.11). Via `supported_formats` laadt de pack ook op oudere/nieuwere
+versies zonder "incompatible"-waarschuwing.
 
 ## Installeren
 
-Kopieer de map `halloween-pack` naar `.minecraft/resourcepacks/` (of zip 'm en zet de zip daar neer —
-`pack.mcmeta` moet in de wortel van de zip staan, niet in een extra submap). Activeer de pack in
-*Options → Resource Packs*.
+Kopieer de map `halloween-pack` naar `.minecraft/resourcepacks/` (of zip 'm — `pack.mcmeta` moet
+dan in de wortel van de zip staan, niet in een extra submap). Activeer in *Options → Resource Packs*.
+
+Zonder Nuit werkt de glint gewoon; de sky wordt dan simpelweg genegeerd.
+
+---
+
+## De sky — "Kerkhof Nacht"
+
+```
+assets/nuit/sky/graveyard_night.json              <- Nuit laadt alles uit assets/nuit/sky/
+assets/halloween/textures/sky/graveyard_night.png <- 3072x2048 (6 vlakken van 1024)
+```
+
+Giftig groene horizongloed met grondmist, een ring van kale bomen, grafstenen en kruisen, twee
+kerktorens, zestien zwevende jack-o'-lanterns, vleermuizen rond een bleke maan in het noordwesten,
+en een donkerblauwe sterrenhemel erboven.
+
+### Face-layout
+
+Nuit's `square-textured` leest één textuur als een 3×2 raster. De volgorde komt uit
+`Utils.TEXTURE_FACES` in de broncode (branch `1.21.11/dev`):
+
+| | kolom 0 | kolom 1 | kolom 2 |
+|---|---|---|---|
+| **rij 0** | bottom | top | south |
+| **rij 1** | west | north | east |
+
+De zijkanten staan rechtop en lopen rond als N → O → Z → W. `build_sky.py` controleert na het
+renderen alle 12 kubusranden: elke rand moet door precies twee vlakken gedeeld worden en de
+pixelrijen langs die rand moeten dezelfde kleur hebben. Objecten worden gnomonisch geprojecteerd,
+dus een boom of maan die over een rand valt loopt naadloos door.
+
+### Twee dingen die je misschien wilt aanpassen
+
+**1. Alleen 's nachts halloween.** Nu staat de sky altijd aan (eeuwige halloween-nacht). Voor
+dag/nacht-wisseling zet je een fade in `properties` van `graveyard_night.json`:
+
+```json
+"fade": {
+  "duration": 24000,
+  "keyFrames": { "11800": 0.0, "13500": 1.0, "22200": 1.0, "23600": 0.0 }
+}
+```
+
+**2. De zon terug.** Nuit annuleert de vanilla sky-pass zodra er een skybox actief is, dus zon,
+maan en sterren zijn weg (die van deze sky zitten in de textuur). Wil je de echte zon erbij, zet
+er dan een tweede bestand naast, `assets/nuit/sky/decorations.json`:
+
+```json
+{
+  "schemaVersion": 1,
+  "type": "decorations",
+  "properties": { "layer": 1 },
+  "showSun": true,
+  "blend": { "type": "decorations" }
+}
+```
+
+---
 
 ## De glint
 
@@ -24,22 +81,24 @@ Kopieer de map `halloween-pack` naar `.minecraft/resourcepacks/` (of zip 'm en z
 | `assets/minecraft/textures/misc/enchanted_glint_armor.png` | 1024×1024 | dicht veld kleine pompoenen |
 
 Waarom twee verschillende ontwerpen: Minecraft schuift de glint over het model met een
-texture-matrix, en de schaal daarvan verschilt per soort.
+texture-matrix, en de schaal daarvan verschilt per rendertype.
 
 * **Items** gebruiken schaal `8.0`: de textuur wordt 8× herhaald over een sprite van 16 px, dus één
   tegel is ~2 item-pixels breed. Details zijn daar fysiek niet zichtbaar — je ziet een oranje
   schittering die over je zwaard schuift. Daarom staan er juist *grote* vormen op: die geven de
   variatie die je wél ziet.
 * **Gedragen harnas** gebruikt schaal `0.16`: over een borststuk zie je maar ~2 % van de textuur,
-  dus die wordt enorm uitvergroot. Daar staan daarom kleine pompoenen op (~1,7 % van de breedte),
-  die op het harnas als grote gloeiende koppen voorbij komen.
+  enorm uitvergroot. Daar staan daarom kleine pompoenen op (~1,7 % van de breedte), die als grote
+  gloeiende koppen over je harnas trekken.
 
-Beide bestanden tegelen naadloos (de strepen komen uit band-gefilterde ruis in het frequentiedomein,
-de pompoenen worden met wrap-around gestempeld). De `.png.mcmeta` zet `blur: true`, net als vanilla,
-zodat de sterk uitvergrote harnas-glint glad blijft.
+Beide bestanden tegelen naadloos (strepen uit band-gefilterde ruis in het frequentiedomein,
+pompoenen met wrap-around gestempeld). De `.png.mcmeta` zet `blur: true`, net als vanilla, zodat
+de sterk uitvergrote harnas-glint glad blijft.
 
-De glint wordt additief gemengd met `SRC_COLOR, ONE` — de kleur wordt dus effectief gekwadrateerd.
-Daarom is zwart in de textuur "onzichtbaar" en is de rest ruim helder gehouden.
+De glint mengt additief met `SRC_COLOR, ONE` — de kleur wordt dus effectief gekwadrateerd. Daarom
+is zwart in de textuur "onzichtbaar" en is de rest ruim helder gehouden.
+
+---
 
 ## Zelf aanpassen
 
@@ -48,12 +107,17 @@ Alles is procedureel gegenereerd; `generator/` bevat de bronscripts (Python + Pi
 ```bash
 pip install pillow numpy
 cd generator
-python3 glint.py  ../assets/minecraft/textures/misc   # glint-textures
-python3 pack_icon.py ../pack.png                      # pack-icoon
-python3 preview.py .                                  # sky-concept previews
+python3 build_sky.py graveyard 1024 ../assets/halloween/textures/sky/graveyard_night.png
+python3 glint.py    ../assets/minecraft/textures/misc
+python3 pack_icon.py ../pack.png
+python3 preview.py  .        # previews van alle vijf de sky-concepten
 ```
 
-* `skylib.py` — ruis, sterrenvelden, pompoen-/maan-/vleermuis-/boom-sprites, en de kubus-projectie
-  (gnomonisch, dus vormen lopen naadloos door over de randen van de skybox).
-* `concepts.py` — de vijf sky-ontwerpen.
+* `skylib.py` — ruis, sterrenvelden, sprites (pompoen, maan, vleermuis, boom) en de kubus-/
+  equirect-/perspectiefprojecties.
+* `concepts.py` — de vijf sky-ontwerpen; `graveyard` is degene die in de pack zit.
+* `build_sky.py` — rendert een concept naar het 3×2 vel en controleert de naden.
 * `glint.py` — de twee glint-sheets.
+
+De andere vier concepten (Bloedmaan, Pompoen Nevel, Heksenuur, De Leegte) staan er nog in:
+`python3 build_sky.py witching 1024 uit.png` bouwt er zo een andere uit.
