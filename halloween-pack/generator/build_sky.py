@@ -65,11 +65,11 @@ def check_seams(faces, size, tol_dir=0.01):
 
 
 if __name__ == "__main__":
-    import concepts
+    import concepts, scary
     slug = sys.argv[1]
     size = int(sys.argv[2])
     out = sys.argv[3]
-    fn = {c[2]: c[3] for c in concepts.CONCEPTS}[slug]
+    fn = {c[2]: c[3] for c in concepts.CONCEPTS + scary.SCARY}[slug]
     print(f"rendering '{slug}' at {size}px/face")
     faces = render_faces(fn, size)
     print("verifying seams")

@@ -1,13 +1,15 @@
 import sys, time
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-import skylib, concepts
+import skylib, concepts, scary
 
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 FONTB = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
 CAM = {"bloodmoon": (168, 26, 86), "nebula": (112, 27, 100), "graveyard": (312, 16, 88),
-       "witching": (268, 28, 92), "void": (250, 16, 90)}
+       "witching": (268, 28, 92), "void": (250, 16, 90),
+       "s_blood": (318, 25, 90), "s_eclipse": (318, 27, 92), "s_skull": (318, 15, 88),
+       "s_storm": (24, 26, 94), "s_watcher": (318, 27, 96)}
 
 def tonemap(rgb):
     """Luminance-based rolloff: keeps colour in the bright cores instead of clipping to white."""
@@ -54,8 +56,11 @@ def compose(cid, name, desc, persp, pano):
 
 if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else "."
+    only = set(sys.argv[2:])
     sheets = []
-    for cid, name, slug, fn, desc in concepts.CONCEPTS:
+    for cid, name, slug, fn, desc in concepts.CONCEPTS + scary.SCARY:
+        if only and slug not in only:
+            continue
         t = time.time()
         persp, pano = render(slug, fn)
         img = compose(cid, name, desc, persp, pano)
