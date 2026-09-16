@@ -77,7 +77,7 @@ if __name__ == "__main__":
     fb = ImageFont.truetype(FONTB, 22); f = ImageFont.truetype(FONT, 15)
     fs = ImageFont.truetype(FONTB, 15)
     dr.text((26, 20), "ORANJE POMPOEN-GLINT", font=ImageFont.truetype(FONTB, 30), fill=(255, 158, 44))
-    dr.text((28, 58), "enchanted_glint_item.png (256px)  +  enchanted_glint_armor.png (1024px) - beide naadloos tilebaar",
+    dr.text((28, 58), "enchanted_glint_item.png (512px)  +  enchanted_glint_armor.png (1024px) - beide naadloos tilebaar",
             font=f, fill=(180, 172, 190))
     y0 = 100
     c.paste(Image.fromarray((it * 255).astype(np.uint8)).resize((250, 250), Image.LANCZOS), (26, y0))

@@ -216,14 +216,14 @@ def graveyard(d):
         splat(rgb, glow, d, trees[k % 6], dirv(az, _ground(size, 3.2)), size)
     splat(rgb, glow, d, spire_sprite(560), dirv(305, _ground(34.0, 4.0)), 34.0)
     # --- floating jack-o-lanterns ----------------------------------------
-    pks = [pumpkin_sprite(320, face_style=i % 3, body=(206, 100, 24), dark=(112, 46, 12),
-                          glowcol=(255, 214, 128), halo=(255, 124, 30)) for i in range(3)]
+    pks = [pumpkin_sprite(320, face_style=i, body=(206, 100, 24), dark=(112, 46, 12),
+                          glowcol=(255, 214, 128), halo=(255, 124, 30), seed=i) for i in range(5)]
     spots = [(12, 9.5, 7.5), (58, 13.0, 5.2), (96, 7.5, 6.4), (143, 15.5, 4.4),
              (188, 8.5, 8.0), (222, 14.0, 4.8), (263, 10.0, 6.0), (300, 17.0, 3.8),
              (338, 8.0, 5.4), (75, 21.0, 3.0), (250, 23.0, 2.6), (170, 25.0, 2.2),
              (20, 19.0, 3.4), (120, 11.0, 4.0), (285, 5.5, 4.6), (208, 30.0, 2.0)]
     for i, (az, alt, s) in enumerate(spots):
-        p, pg = pks[i % 3]
+        p, pg = pks[i % 5]
         splat(rgb, glow, d, p, dirv(az, alt), s, roll_deg=(i * 37) % 21 - 10,
               glow=pg, glow_scale=2.5, glow_strength=0.62)
     # --- bats around the moon --------------------------------------------

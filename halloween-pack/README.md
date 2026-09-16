@@ -77,20 +77,23 @@ er dan een tweede bestand naast, `assets/nuit/sky/decorations.json`:
 
 | Bestand | Formaat | Waarom |
 |---|---|---|
-| `assets/minecraft/textures/misc/enchanted_glint_item.png` | 256×256 | grote pompoenen + brede strepen |
-| `assets/minecraft/textures/misc/enchanted_glint_armor.png` | 1024×1024 | dicht veld kleine pompoenen |
+| `assets/minecraft/textures/misc/enchanted_glint_item.png` | 512×512 | losjes gestrooid veld kleine lantaarns |
+| `assets/minecraft/textures/misc/enchanted_glint_armor.png` | 1024×1024 | dicht veld nog kleinere lantaarns |
 
 Waarom twee verschillende ontwerpen: Minecraft schuift de glint over het model met een
 texture-matrix, en de schaal daarvan verschilt per rendertype.
 
 * **Items** gebruiken schaal `8.0`: de textuur wordt 8× herhaald over een sprite van 16 px, dus één
-  tegel is ~2 item-pixels breed. Details zijn daar fysiek niet zichtbaar — je ziet een oranje
-  schittering die over je zwaard schuift. Daarom staan er juist *grote* vormen op: die geven de
-  variatie die je wél ziet.
+  tegel is ~2 item-pixels breed. Individuele pompoenen zijn daar fysiek niet te zien — je ziet een
+  oranje schittering die over je zwaard schuift. Om die schittering tóch te laten leven ligt er een
+  laagfrequente helderheidsdrift over het veld: sommige lantaarns branden feller dan andere, en dat
+  contrast overleeft het uitmiddelen wel.
 * **Gedragen harnas** gebruikt schaal `0.16`: over een borststuk zie je maar ~2 % van de textuur,
-  enorm uitvergroot. Daar staan daarom kleine pompoenen op (~1,7 % van de breedte), die als grote
-  gloeiende koppen over je harnas trekken.
+  enorm uitvergroot. Daar staan daarom véél kleinere pompoenen op (~1,7 % van de breedte), die als
+  grote gloeiende koppen over je harnas trekken.
 
+Elke lantaarn wordt uit vijf gesneden gezichten, ribben, steel met krul en blad, speculaire
+highlight en een gloed vanuit de gaten opgebouwd, en krijgt een eigen maat, rotatie en helderheid.
 Beide bestanden tegelen naadloos (strepen uit band-gefilterde ruis in het frequentiedomein,
 pompoenen met wrap-around gestempeld). De `.png.mcmeta` zet `blur: true`, net als vanilla, zodat
 de sterk uitvergrote harnas-glint glad blijft.

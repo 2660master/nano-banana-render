@@ -247,7 +247,7 @@ def _face_polys(S, style):
         P.append(m)
         for sx in (-1, 1):   # fangs
             P.append([(cx + sx * S * 0.16, S * 0.655), (cx + sx * S * 0.215, S * 0.66), (cx + sx * S * 0.185, S * 0.745)])
-    else:               # wicked slanted
+    elif style == 2:    # wicked slanted
         ey = S * 0.45
         for sx in (-1, 1):
             P.append([(cx + sx * S * 0.325, ey - S * 0.135), (cx + sx * S * 0.125, ey + S * 0.005),
@@ -265,63 +265,149 @@ def _face_polys(S, style):
             t = (k / n) * 2 - 1
             m.append((x, S * 0.70 + S * 0.075 * (1 - t * t) - (S * 0.05 if k % 2 else 0)))
         P.append(m)
+    elif style == 3:    # surprised: round eyes and an O mouth
+        ey = S * 0.435
+        for sx in (-1, 1):
+            P.append([(cx + sx * S * 0.215 + np.cos(a) * S * 0.082,
+                       ey + np.sin(a) * S * 0.082) for a in np.linspace(0, 2 * np.pi, 14, endpoint=False)])
+        P.append([(cx, ey + S * 0.070), (cx - S * 0.044, ey + S * 0.150), (cx + S * 0.044, ey + S * 0.150)])
+        P.append([(cx + np.cos(a) * S * 0.118, S * 0.715 + np.sin(a) * S * 0.088)
+                  for a in np.linspace(0, 2 * np.pi, 18, endpoint=False)])
+    else:               # style 4: sly cat eyes, narrow toothy smirk
+        ey = S * 0.445
+        for sx in (-1, 1):
+            P.append([(cx + sx * S * 0.315, ey - S * 0.05), (cx + sx * S * 0.145, ey - S * 0.115),
+                      (cx + sx * S * 0.165, ey + S * 0.02), (cx + sx * S * 0.305, ey + S * 0.045)])
+        P.append([(cx - S * 0.06, ey + S * 0.16), (cx + S * 0.06, ey + S * 0.16),
+                  (cx + S * 0.02, ey + S * 0.055), (cx - S * 0.02, ey + S * 0.055)])
+        m = []
+        x0, x1 = cx - S * 0.295, cx + S * 0.295
+        n = 24
+        for k in range(n + 1):
+            x = x0 + (x1 - x0) * k / n
+            t = (k / n) * 2 - 1
+            m.append((x, S * 0.625 + S * 0.09 * (1 - t * t) - S * 0.03 * t))
+        for k in range(n, -1, -1):
+            x = x0 + (x1 - x0) * k / n
+            t = (k / n) * 2 - 1
+            m.append((x, S * 0.675 + S * 0.10 * (1 - t * t) - S * 0.03 * t))
+        P.append(m)
+        for sx, off in [(-1, 0.155), (1, 0.035), (1, 0.165)]:   # teeth biting into the smile
+            x = cx + sx * S * off
+            P.append([(x - S * 0.030, S * 0.655), (x + S * 0.030, S * 0.658), (x, S * 0.742)])
     return P
+
+
+N_FACE_STYLES = 5
 
 
 def pumpkin_sprite(S=384, body=(214, 108, 26), dark=(126, 54, 12), rim=(255, 168, 66),
                    glowcol=(255, 210, 120), halo=(255, 122, 26), face_style=0, lit=True,
-                   silhouette=False, stem=(84, 104, 44)):
+                   silhouette=False, stem=(84, 104, 44), seed=0):
     """Returns (rgba uint8 HxWx4, glow rgba uint8) sprite arrays."""
-    F = 2
+    F = 3 if S <= 192 else 2
     C = S * F
     img = Image.new("RGBA", (C, C), (0, 0, 0, 0))
     dr = ImageDraw.Draw(img)
     cx, cy = C * 0.5, C * 0.545
     W, H = C * 0.432, C * 0.388
-    lobes = [(-0.62, 0.40, 0.78), (-0.33, 0.44, 0.93), (0.0, 0.46, 1.0),
-             (0.33, 0.44, 0.93), (0.62, 0.40, 0.78)]
-    # stem first (behind body)
-    sw, sh = C * 0.042, C * 0.135
-    dr.polygon([(cx - sw, cy - H * 0.92), (cx + sw, cy - H * 0.92),
-                (cx + sw * 1.5, cy - H * 0.92 - sh * 0.75), (cx + sw * 2.9, cy - H * 0.92 - sh * 1.15),
-                (cx + sw * 1.1, cy - H * 0.92 - sh * 1.35), (cx - sw * 0.5, cy - H * 0.92 - sh * 0.6)],
-               fill=stem if not silhouette else (12, 10, 16))
+    lobes = [(-0.76, 0.30, 0.62), (-0.55, 0.36, 0.78), (-0.30, 0.41, 0.91),
+             (0.0, 0.44, 1.0), (0.30, 0.41, 0.91), (0.55, 0.36, 0.78), (0.76, 0.30, 0.62)]
     bcol = body if not silhouette else (16, 12, 20)
     dcol = dark if not silhouette else (8, 6, 12)
+    scol = stem if not silhouette else (12, 10, 16)
+    lw = max(2, int(C * 0.0065))
+
+    # ---- stem, curl and leaf sit behind the body ----------------------------
+    sx0, sy0 = cx - C * 0.016, cy - H * 0.90
+    dr.polygon([(sx0 - C * 0.040, sy0), (sx0 + C * 0.046, sy0),
+                (sx0 + C * 0.062, sy0 - C * 0.058), (sx0 + C * 0.105, sy0 - C * 0.092),
+                (sx0 + C * 0.140, sy0 - C * 0.118), (sx0 + C * 0.098, sy0 - C * 0.140),
+                (sx0 + C * 0.052, sy0 - C * 0.112), (sx0 + C * 0.012, sy0 - C * 0.062),
+                (sx0 - C * 0.030, sy0 - C * 0.030)], fill=scol)
+    if not silhouette:
+        dr.line([(sx0 + C * 0.010, sy0 - C * 0.020), (sx0 + C * 0.058, sy0 - C * 0.082),
+                 (sx0 + C * 0.104, sy0 - C * 0.110)],
+                fill=tuple(int(v * 1.35) % 256 for v in scol), width=max(1, int(C * 0.006)))
+        dr.arc([cx + C * 0.060, cy - H * 1.30, cx + C * 0.215, cy - H * 1.02],
+               200, 480, fill=scol, width=max(2, int(C * 0.009)))
+        lx, ly = cx - C * 0.105, cy - H * 0.98
+        dr.polygon([(lx, ly), (lx - C * 0.085, ly - C * 0.055), (lx - C * 0.135, ly - C * 0.012),
+                    (lx - C * 0.105, ly + C * 0.042), (lx - C * 0.040, ly + C * 0.038)], fill=scol)
+        dr.line([(lx, ly + C * 0.006), (lx - C * 0.115, ly - C * 0.010)],
+                fill=tuple(int(v * 0.55) for v in scol), width=max(1, int(C * 0.004)))
+
+    # ---- body ---------------------------------------------------------------
     for ox, hw, hh in lobes:
         dr.ellipse([cx + ox * W - hw * W, cy - hh * H, cx + ox * W + hw * W, cy + hh * H], fill=bcol)
-    for ox, hw, hh in lobes:
-        dr.ellipse([cx + ox * W - hw * W, cy - hh * H, cx + ox * W + hw * W, cy + hh * H],
-                   outline=dcol, width=max(2, int(C * 0.007)))
+
     arr = np.asarray(img).astype(np.float64)
     if not silhouette:
         yy, xx = np.mgrid[0:C, 0:C]
-        nx = (xx - cx) / W; ny = (yy - cy) / H
+        nx = (xx - cx) / W
+        ny = (yy - cy) / H
         rr = np.sqrt(nx ** 2 + ny ** 2)
-        shade = np.clip(1.22 - 0.55 * rr ** 2, 0.42, 1.25)
-        shade *= np.clip(1.10 - 0.30 * (ny + 0.6), 0.55, 1.2)
+        shade = np.clip(1.20 - 0.46 * rr ** 2, 0.42, 1.24)
+        shade *= np.clip(1.12 - 0.32 * (ny + 0.6), 0.55, 1.22)
+        # ribs: a bright crown per lobe, a dark crease between them
+        ribs = np.zeros_like(nx)
+        for ox, hw, _ in lobes:
+            ribs += np.exp(-((nx - ox * 0.92) / 0.22) ** 2)
+        ribs = ribs / max(ribs.max(), 1e-6)
+        shade *= 0.72 + 0.47 * ribs
+        # skin speckle
+        rng = np.random.default_rng(seed + 7)
+        sp = rng.random((max(C // 12, 4), max(C // 12, 4)))
+        sp = np.asarray(Image.fromarray((sp * 255).astype(np.uint8)).resize((C, C), Image.BICUBIC)) / 255.0
+        shade *= 0.965 + 0.07 * sp
+        edge = np.clip((rr - 0.70) / 0.32, 0, 1)
+        shade *= (1 - 0.58 * edge)
         arr[..., :3] *= shade[..., None]
-        edge = np.clip((rr - 0.72) / 0.30, 0, 1)
-        arr[..., :3] *= (1 - 0.55 * edge)[..., None]
-    img = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
+        # specular bloom, upper left
+        spec = np.exp(-(((nx + 0.42) / 0.36) ** 2 + ((ny + 0.44) / 0.30) ** 2))
+        arr[..., :3] += np.array(rim) * (spec * 0.17)[..., None]
+        np.clip(arr, 0, 255, out=arr)
+
+    img = Image.fromarray(arr.astype(np.uint8))
     dr = ImageDraw.Draw(img)
-    # rim light
+    for ox, hw, hh in lobes:                       # rib seams
+        dr.ellipse([cx + ox * W - hw * W, cy - hh * H, cx + ox * W + hw * W, cy + hh * H],
+                   outline=dcol, width=lw)
     if not silhouette:
-        dr.arc([cx - W, cy - H, cx + W, cy + H], 185, 320, fill=rim + (150,), width=max(2, int(C * 0.009)))
-    # face
+        dr.arc([cx - W, cy - H, cx + W, cy + H], 188, 318, fill=rim + (170,), width=lw + 1)
+        dr.arc([cx - W * 0.97, cy - H * 0.97, cx + W * 0.97, cy + H * 0.97], 20, 130,
+               fill=dcol + (140,), width=lw)
+
+    # ---- carved face --------------------------------------------------------
     glow_img = Image.new("RGBA", (C, C), (0, 0, 0, 0))
     gdr = ImageDraw.Draw(glow_img)
+    polys = _face_polys(C, face_style)
     if lit:
-        for p in _face_polys(C, face_style):
-            dr.polygon([tuple(q) for q in p], fill=glowcol + (255,))
+        wall = tuple(int(v * 0.42 + 40) for v in glowcol)
+        for p in polys:                            # carved wall catching the candle
+            dr.polygon([(q[0], q[1] + C * 0.012) for q in p], fill=wall + (255,))
+            dr.polygon([tuple(q) for q in p], fill=glowcol + (255,), outline=dcol + (255,), width=lw)
+        mask = Image.new("L", (C, C), 0)
+        mdr = ImageDraw.Draw(mask)
+        for p in polys:
+            mdr.polygon([tuple(q) for q in p], fill=255)
+        m = np.asarray(mask).astype(np.float64)[..., None] / 255.0
+        a = np.asarray(img).astype(np.float64)
+        yy = np.mgrid[0:C, 0:C][0][..., None] / C
+        hot = np.array(glowcol) * (0.86 + 0.55 * np.clip((yy - 0.44) / 0.34, 0, 1))
+        a[..., :3] = a[..., :3] * (1 - m) + np.clip(hot, 0, 255) * m
+        img = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
+        for p in polys:
             gdr.polygon([tuple(q) for q in p], fill=halo + (255,))
         h1 = glow_img.filter(ImageFilter.GaussianBlur(C * 0.05))
         h2 = glow_img.filter(ImageFilter.GaussianBlur(C * 0.17))
         g = np.asarray(h1).astype(np.float64) * 0.55 + np.asarray(h2).astype(np.float64) * 1.05
         glow_img = Image.fromarray(np.clip(g, 0, 255).astype(np.uint8))
     else:
-        for p in _face_polys(C, face_style):
-            dr.polygon([tuple(q) for q in p], fill=(10, 8, 12, 255))
+        dr2 = ImageDraw.Draw(img)
+        for p in polys:
+            dr2.polygon([tuple(q) for q in p], fill=(10, 8, 12, 255))
+
     img = img.resize((S, S), Image.LANCZOS)
     glow_img = glow_img.resize((S, S), Image.LANCZOS)
     return (np.asarray(img).astype(np.float64),

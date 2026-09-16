@@ -7,7 +7,7 @@ So the two sheets need very different element sizes to read well in game.
 """
 import numpy as np
 from PIL import Image, ImageFilter
-from skylib import pumpkin_sprite
+from skylib import pumpkin_sprite, N_FACE_STYLES
 
 
 def periodic_streaks(S, freq, spread, angle_deg, aniso, seed):
@@ -51,13 +51,32 @@ def rot(spr, deg):
 def make_variants(sizes, rots=(0, 9, -9, 18), pad=1.25):
     """Pre-render (sprite, glow) pumpkin variants so big fields stay cheap."""
     out = []
-    for s in sizes:
-        for style in range(3):
+    for i, s in enumerate(sizes):
+        for style in range(N_FACE_STYLES):
             spr, gl = pumpkin_sprite(int(s * pad), body=(255, 126, 22), dark=(148, 44, 0),
                                      rim=(255, 206, 120), glowcol=(255, 240, 186),
-                                     halo=(255, 132, 28), face_style=style, stem=(156, 200, 74))
+                                     halo=(255, 132, 28), face_style=style, stem=(156, 200, 74),
+                                     seed=i * 11 + style)
             for r in rots:
                 out.append((rot(spr, r), rot(gl, r)))
+    return out
+
+
+def lantern_field(S, n, variants, seed, jitter=0.020, skip=0.0, stagger=True):
+    """A dense, seamless grid of jittered lanterns with low-frequency brightness drift."""
+    drift = periodic_streaks(S, 2.4, 1.6, 35.0, 0.6, seed + 991)
+    rng = np.random.default_rng(seed)
+    step = 1.0 / n
+    out = []
+    for iy in range(n):
+        for ix in range(n):
+            if skip and rng.random() < skip:
+                continue
+            off = 0.5 if (stagger and iy % 2) else 0.0
+            fx = ((ix + 0.5 + off) * step + rng.uniform(-jitter, jitter)) % 1.0
+            fy = ((iy + 0.5) * step + rng.uniform(-jitter, jitter)) % 1.0
+            g = 0.55 + 0.85 * drift[int(fy * S) % S, int(fx * S) % S]
+            out.append((fx, fy, variants[rng.integers(0, len(variants))], g))
     return out
 
 
@@ -70,25 +89,28 @@ def build(S, placements, streak_cfg, base, glow_px, glow_gain, blur_gain=0.45, l
         rgb += np.array(col) * (t ** 1.35)[..., None] * gain
     body = np.zeros((S, S, 3))
     halo = np.zeros((S, S, 3))
-    for fx, fy, (spr, gl) in placements:
-        wrap_add(body, spr, fx * S, fy * S)
-        wrap_add(halo, gl, fx * S, fy * S, gain=0.55)
+    for fx, fy, (spr, gl), g in placements:
+        wrap_add(body, spr, fx * S, fy * S, gain=g)
+        wrap_add(halo, gl, fx * S, fy * S, gain=0.55 * g)
     rgb += halo * glow_gain
     rgb += periodic_blur(body, glow_px) * blur_gain
     rgb += body
     return np.clip(rgb * level, 0, 1)
 
 
-def item_glint(S=256):
+def item_glint(S=512):
+    """A patch of many small lanterns; the brightness drift keeps items shimmering."""
     streaks = [
-        (7.0, 3.0, 22.0, 2.6, 0.55, 0.42, 0.88, (1.00, 0.40, 0.045)),
-        (15.0, 5.0, 18.0, 2.2, 0.32, 0.55, 0.95, (1.00, 0.50, 0.07)),
-        (30.0, 9.0, 26.0, 1.8, 0.12, 0.62, 1.00, (1.00, 0.66, 0.20)),
+        (14.0, 6.0, 22.0, 2.6, 0.34, 0.42, 0.88, (1.00, 0.40, 0.045)),
+        (30.0, 10.0, 18.0, 2.2, 0.20, 0.55, 0.95, (1.00, 0.50, 0.07)),
+        (62.0, 18.0, 26.0, 1.8, 0.09, 0.62, 1.00, (1.00, 0.66, 0.20)),
     ]
-    v = make_variants([116, 132, 104, 76], rots=(-8, 6, -14, 12))
-    pk = [(0.22, 0.26, v[1]), (0.70, 0.56, v[4 * 3 + 5]), (0.44, 0.84, v[4 * 6 + 10]),
-          (0.90, 0.10, v[4 * 9 + 1])]
-    return build(S, pk, streaks, (0.030, 0.009, 0.001), S * 0.055, 0.85, level=0.86)
+    v = make_variants([40, 48, 56, 62], rots=(0, 11, -11, 21, -21, 7))
+    tiny = make_variants([22, 28], rots=(0, 14, -14, 24))
+    pk = (lantern_field(S, 8, v, seed=41, jitter=0.050, skip=0.0) +
+          lantern_field(S, 12, tiny, seed=77, jitter=0.034, skip=0.55, stagger=False))
+    return build(S, pk, streaks, (0.020, 0.006, 0.001), S * 0.016, 0.62,
+                 blur_gain=0.30, level=0.82)
 
 
 def armor_glint(S=2048):
@@ -99,19 +121,9 @@ def armor_glint(S=2048):
         (150.0, 40.0, 24.0, 1.8, 0.11, 0.64, 1.00, (1.00, 0.76, 0.32)),
     ]
     v = make_variants([30, 34, 38], rots=(0, 10, -10, 20, -20, 6))
-    rng = np.random.default_rng(3)
-    n = 54
-    step = 1.0 / n
-    pk = []
-    for iy in range(n):
-        for ix in range(n):
-            if rng.random() < 0.10:
-                continue
-            fx = ((ix + 0.5 + (0.5 if iy % 2 else 0.0)) * step + rng.uniform(-0.006, 0.006)) % 1.0
-            fy = ((iy + 0.5) * step + rng.uniform(-0.005, 0.005)) % 1.0
-            pk.append((fx, fy, v[rng.integers(0, len(v))]))
-    return build(S, pk, streaks, (0.060, 0.017, 0.002), S * 0.006, 0.75,
-                 blur_gain=0.55, level=0.95)
+    pk = lantern_field(S, 54, v, seed=3, jitter=0.006, skip=0.10)
+    return build(S, pk, streaks, (0.045, 0.013, 0.002), S * 0.006, 0.65,
+                 blur_gain=0.42, level=0.95)
 
 
 def save(arr, path, final=None):
