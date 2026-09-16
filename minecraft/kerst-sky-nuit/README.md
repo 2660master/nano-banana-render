@@ -9,8 +9,14 @@ wil bovenaan in de resourcepack-lijst.
 | Sfeer | koel, ingetogen, "heilige nacht" | warm, gezellig, feestelijk |
 | Kleuren | diep indigo en staalblauw | pruim, magenta en amber |
 | Blikvanger | de Kerstster met lange lichtstaart | kerstboom-sterrenbeeld |
+| Sneeuwman | in het oosten, met groene sjaal | in het zuiden, met rode sjaal |
 | Verder | noorderlicht in groen met rode toppen, melkweg | lichtjesslingers rond de hele hemel, rood-groene suikerstokwolken |
-| Preview | `previews/a-ingame.png`, `previews/a-panorama.png` | `previews/b-ingame.png`, `previews/b-panorama.png` |
+| Preview | `previews/a-ingame.png`, `previews/a-sneeuwman.png`, `previews/a-panorama.png` | `previews/b-ingame.png`, `previews/b-sneeuwman.png`, `previews/b-panorama.png` |
+
+Beide varianten hebben een **sneeuwman-sterrenbeeld**: drie ballen, hoge hoed,
+takarmen, kooloogjes, een wortelneus en een sjaal in de kleur van de hemel.
+Hij staat vast aan de horizon (draait niet mee), zodat je hem altijd op
+dezelfde plek terugvindt.
 
 Beide packs laten de dag-hemel, zon en maan gewoon met rust: de kersthemel
 fade't in bij zonsondergang en weer uit bij zonsopkomst.

@@ -214,6 +214,105 @@ def draw_arc(buffer, a, b, color, intensity, radius_px, samples=None):
         buffer.splat(d, radius_px, color, intensity, falloff=1.4)
 
 
+def paint_point_star(buffer, point, color, core=0.16, arm=1.5, limit=4.5, gain=0.75,
+                     halo_gain=0.08, halo_deg=0.30):
+    """A small flare used to mark the vertices of a constellation figure."""
+    right, up = tangent_basis(point)
+
+    def shade(d):
+        value = four_point_star(
+            d, point, right, up, core, arm, arm * 0.75, limit,
+            halo_gain=halo_gain, halo_deg=halo_deg,
+        )
+        if value <= 0.008:
+            return None
+        return (color[0], color[1], color[2], min(value * gain, 2.4))
+
+    buffer.paint_local(point, limit, shade)
+
+
+# Snowman figure, in units of its own half-height: x runs right, y runs up, and
+# the whole thing spans roughly -1.04 .. +0.96 vertically.
+SNOWMAN_CIRCLES = [
+    (0.0, -0.62, 0.42),  # base ball
+    (0.0, 0.06, 0.30),  # body
+    (0.0, 0.50, 0.21),  # head
+]
+SNOWMAN_LINES = [
+    [(-0.34, 0.71), (0.34, 0.71)],  # hat brim
+    [(-0.19, 0.71), (-0.19, 1.00), (0.19, 1.00), (0.19, 0.71)],  # crown
+    [(-0.28, 0.12), (-0.63, 0.36)],  # left arm
+    [(-0.63, 0.36), (-0.74, 0.47)],
+    [(-0.63, 0.36), (-0.73, 0.29)],
+    [(0.28, 0.12), (0.63, 0.36)],  # right arm
+    [(0.63, 0.36), (0.74, 0.47)],
+    [(0.63, 0.36), (0.73, 0.29)],
+]
+SNOWMAN_SCARF = [
+    [(-0.24, 0.32), (0.24, 0.32)],
+    [(0.17, 0.31), (0.26, 0.11)],
+]
+SNOWMAN_EYES = [(-0.088, 0.575), (0.088, 0.575)]
+SNOWMAN_NOSE = (0.0, 0.47)
+SNOWMAN_BUTTONS = [(0.0, 0.15), (0.0, 0.06), (0.0, -0.03)]
+SNOWMAN_TIPS = [(-0.74, 0.47), (0.74, 0.47), (-0.19, 1.00), (0.19, 1.00)]
+# anchor stars on the balls themselves, so the figure reads as a constellation
+# and not as a line drawing
+SNOWMAN_RING_STARS = [
+    (-0.42, -0.62), (0.42, -0.62), (0.0, -1.04),
+    (-0.30, 0.06), (0.30, 0.06),
+]
+
+
+def paint_snowman(buffer, center, size, line_color, scarf_color, nose_color,
+                  star_color, line_gain=0.12, star_gain=0.7):
+    """A snowman drawn as a constellation figure: outline in faint lines, with
+    stars on the features that make it read (eyes, buttons, hat, twig tips)."""
+    right, up = tangent_basis(center)
+    hairline = max(0.9, 0.10 * buffer.size / 90.0)
+
+    def place(u, v):
+        uu = u * size * DEG
+        vv = v * size * DEG
+        return normalize(
+            (
+                center[0] + right[0] * uu + up[0] * vv,
+                center[1] + right[1] * uu + up[1] * vv,
+                center[2] + right[2] * uu + up[2] * vv,
+            )
+        )
+
+    def polyline(points, color, gain):
+        mapped = [place(u, v) for u, v in points]
+        for i in range(len(mapped) - 1):
+            draw_arc(buffer, mapped[i], mapped[i + 1], color, gain, hairline)
+
+    for cx, cy, radius in SNOWMAN_CIRCLES:
+        steps = 56
+        ring = [
+            (cx + radius * math.cos(math.tau * i / steps),
+             cy + radius * math.sin(math.tau * i / steps))
+            for i in range(steps + 1)
+        ]
+        polyline(ring, line_color, line_gain)
+
+    for segment in SNOWMAN_LINES:
+        polyline(segment, line_color, line_gain)
+    for segment in SNOWMAN_SCARF:
+        polyline(segment, scarf_color, line_gain * 1.9)
+
+    for u, v in SNOWMAN_EYES:
+        paint_point_star(buffer, place(u, v), star_color, core=0.13, arm=1.1,
+                         limit=3.6, gain=star_gain)
+    for u, v in SNOWMAN_BUTTONS + SNOWMAN_TIPS + SNOWMAN_RING_STARS:
+        paint_point_star(buffer, place(u, v), star_color, core=0.12, arm=0.95,
+                         limit=3.2, gain=star_gain * 0.8)
+    # the carrot is a plain dot: give it flare arms and it swallows the head
+    paint_point_star(buffer, place(*SNOWMAN_NOSE), nose_color, core=0.17,
+                     arm=0.42, limit=2.2, gain=star_gain * 0.9, halo_gain=0.05,
+                     halo_deg=0.22)
+
+
 def garland_path(az0, el0, az1, el1, sag, steps):
     """Catenary-ish arc between two sky points."""
     points = []
@@ -259,6 +358,8 @@ class StilleNacht:
 
     hero = direction(176.0, 39.0)
     hero_color = srgb("#fff3d6")
+    # east, clear of both the Christmas star and the aurora ribbons
+    snowman = direction(100.0, 32.0)
     preview_az = 176.0
     preview_el = 15.0
 
@@ -318,7 +419,18 @@ class StilleNacht:
         return (r, g, b)
 
     def paint_static(self, buffer):
-        """The Christmas star, painted at full resolution."""
+        """The Christmas star and the snowman, painted at full resolution."""
+        paint_snowman(
+            buffer,
+            self.snowman,
+            13.0,
+            line_color=srgb("#9dc4ff"),
+            scarf_color=srgb("#3ce08f"),  # aurora green, to tie it to the north
+            nose_color=srgb("#ff9838"),
+            star_color=srgb("#eef3ff"),
+            line_gain=0.115,
+        )
+
         right, up = tangent_basis(self.hero)
         hero = self.hero
         warm = self.hero_color
@@ -403,6 +515,8 @@ class Kerstmarkt:
         self.candy_green = srgb("#3fbf72")
         self.horizon_glow = srgb("#ff8a3c")
         self.tree_center = direction(8.0, 30.0)
+        # opposite the tree, and above the garland that passes through the south
+        self.snowman = direction(195.0, 36.0)
         # Azimuths are unwrapped on purpose: 285 -> 435 strings the garland
         # across the north, not the long way round through the south.
         self.garlands = [
@@ -458,6 +572,16 @@ class Kerstmarkt:
     def paint_static(self, buffer):
         self._paint_garlands(buffer)
         self._paint_tree(buffer)
+        paint_snowman(
+            buffer,
+            self.snowman,
+            13.0,
+            line_color=srgb("#b9c9ff"),
+            scarf_color=srgb("#ff5a5f"),  # red scarf, warmer to match this sky
+            nose_color=srgb("#ff9a2e"),
+            star_color=srgb("#fff3e0"),
+            line_gain=0.14,
+        )
 
     def _paint_garlands(self, buffer):
         rng = random.Random(self.seed + 77)
@@ -526,18 +650,7 @@ class Kerstmarkt:
 
         star_color = srgb("#eef3ff")
         for point in star_points:
-            r2, u2 = tangent_basis(point)
-
-            def shade(d, point=point, r2=r2, u2=u2):
-                value = four_point_star(
-                    d, point, r2, u2, 0.16, 1.5, 1.1, 4.5,
-                    halo_gain=0.08, halo_deg=0.30,
-                )
-                if value <= 0.008:
-                    return None
-                return (star_color[0], star_color[1], star_color[2], min(value * 0.75, 2.2))
-
-            buffer.paint_local(point, 4.5, shade)
+            paint_point_star(buffer, point, star_color)
 
         # the star on top gets the full treatment
         r2, u2 = tangent_basis(top)
@@ -934,6 +1047,14 @@ def build(scene, size, lowres, previews):
             star_sampler,
             look_az,
             look_el,
+        )
+        snow_az, snow_el = azimuth_elevation(scene.snowman)
+        render_ingame(
+            os.path.join(preview_dir, "%s-sneeuwman.png" % scene.key),
+            sky_sampler,
+            star_sampler,
+            snow_az,
+            snow_el - 6.0,
         )
         print("    previews %5.1fs" % (time.time() - started), flush=True)
 
