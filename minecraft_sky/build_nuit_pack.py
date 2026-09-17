@@ -36,10 +36,27 @@ NIGHT_KEYFRAMES = {
     "22200": 1.0,
     "23400": 0.0,
 }
+ALWAYS_KEYFRAMES = {"0": 1.0, "12000": 1.0, "23999": 1.0}
+
+# The mod was renamed from FabricSkyBoxes to Nuit and its format changed with
+# it, so a pack that only speaks one dialect silently shows nothing on the
+# other. Both are written here:
+#
+#   new (Nuit, 1.21.4+):  assets/nuit/sky/<name>.json, schemaVersion 1,
+#                         type square-textured, one atlas texture
+#   old (FabricSkyBoxes): assets/<LEGACY_NS>/sky/<name>.json, schemaVersion 2,
+#                         type single-sprite-square-textured, same atlas
+#
+# The legacy single-sprite type uses the identical 3x2 cell rects and the
+# identical face rotations (checked against its UVRanges and renderer), so
+# one PNG serves both. They cannot trip over each other either: the new mod
+# only scans namespaces starting with "nuit", and the old one loads every
+# skybox in its own try/catch, so the file it cannot parse is just skipped.
+LEGACY_NS = "vmaan"
 
 
 def build(concept, out_dir, width=4096, face_size=1024, pack_format=46,
-          asset_name=None):
+          asset_name=None, always_on=False):
     cfg = sg.CONCEPTS[concept]
     asset_name = asset_name or concept
 
@@ -60,24 +77,39 @@ def build(concept, out_dir, width=4096, face_size=1024, pack_format=46,
     os.makedirs(sky)
 
     atlas.save(os.path.join(sky, f"{asset_name}.png"))
+    texture_id = f"nuit:sky/{asset_name}.png"
 
-    skybox = {
-        "schemaVersion": 1,
-        "type": "square-textured",
-        "properties": {
-            "fade": {"keyFrames": NIGHT_KEYFRAMES},
-        },
-        "texture": f"nuit:sky/{asset_name}.png",
-    }
     with open(os.path.join(sky, f"{asset_name}.json"), "w") as fh:
-        json.dump(skybox, fh, indent=2)
+        json.dump({
+            "schemaVersion": 1,
+            "type": "square-textured",
+            "properties": {
+                "fade": {"keyFrames": ALWAYS_KEYFRAMES if always_on
+                         else NIGHT_KEYFRAMES},
+            },
+            "texture": texture_id,
+        }, fh, indent=2)
+
+    legacy = os.path.join(pack, "assets", LEGACY_NS, "sky")
+    os.makedirs(legacy)
+    legacy_fade = ({"alwaysOn": True} if always_on else
+                   {"startFadeIn": 11800, "endFadeIn": 13200,
+                    "startFadeOut": 22200, "endFadeOut": 23400})
+    with open(os.path.join(legacy, f"{asset_name}.json"), "w") as fh:
+        json.dump({
+            "schemaVersion": 2,
+            "type": "single-sprite-square-textured",
+            "properties": {"fade": legacy_fade},
+            "blend": {},
+            "texture": texture_id,
+        }, fh, indent=2)
 
     mcmeta = {
         "pack": {
             "pack_format": pack_format,
             # honoured from 1.20.2 on, and ignored as an unknown field
             # before that, so the pack stays loadable either way
-            "supported_formats": {"min_inclusive": 15, "max_inclusive": 99},
+            "supported_formats": {"min_inclusive": 6, "max_inclusive": 99},
             "description": f"{cfg['title']} - dark fantasy night sky (Nuit)",
         }
     }
@@ -98,12 +130,15 @@ def main():
     ap.add_argument("--pack-format", type=int, default=46,
                     help="resource pack format for the target Minecraft")
     ap.add_argument("--name", default=None, help="asset name inside the pack")
+    ap.add_argument("--always-on", action="store_true",
+                    help="show the sky day and night instead of only at night")
     ap.add_argument("--out", default=os.path.join(sg.ROOT, "packs"))
     args = ap.parse_args()
 
     os.makedirs(args.out, exist_ok=True)
     build(args.concept, args.out, width=args.width, face_size=args.face_size,
-          pack_format=args.pack_format, asset_name=args.name)
+          pack_format=args.pack_format, asset_name=args.name,
+          always_on=args.always_on)
 
 
 if __name__ == "__main__":
