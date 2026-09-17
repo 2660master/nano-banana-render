@@ -60,6 +60,44 @@ python3 sky_generator.py --preview --width 512 --stats   # tuning numbers
 mostly black: luma median around 0.03-0.10 and p90 under about 0.35.
 Anything well past that has turned into a wall of colour.
 
+## Nuit resource pack
+
+`build_nuit_pack.py` packages a sky as a resource pack for
+[Nuit](https://modrinth.com/mod/nuit) (formerly FabricSkyBoxes):
+
+```bash
+python3 build_nuit_pack.py shattered --name verbrijzelde_maan
+```
+
+It writes `packs/nuit_<name>/` and a matching `.zip`:
+
+```
+pack.mcmeta
+assets/nuit/sky/<name>.png     3x2 atlas of the six cube faces
+assets/nuit/sky/<name>.json    schemaVersion 1, type square-textured
+```
+
+Three things about that format were taken from the mod's source rather than
+from documentation, because the published schemas disagree across versions:
+
+* Current Nuit uses `schemaVersion: 1` and a **single** atlas texture, not
+  the six separate `textures` of the older FabricSkyBoxes `schemaVersion: 2`.
+* `SkyboxResourceListener` only scans namespaces starting with `nuit`, so
+  the legacy `assets/fabricskyboxes/` path is no longer read.
+* The skybox deliberately has no `rotation` block. Nuit only rotates when
+  you give it mapping or axis keyframes, and a sky with a horizon glow
+  wants to stay fixed to the world rather than wheel through it.
+
+Nuit replaces the vanilla sky outright while a skybox is active, so the
+vanilla sun, moon and stars do not show through and there is no second
+moon. The fade keyframes hold the sky at full strength through the night
+and fade it out over dusk and dawn, leaving daytime vanilla.
+
+`pack_format` is a guess at the target game version; `supported_formats`
+covers 1.20.2 onwards. If Minecraft still lists the pack as incompatible,
+it can be enabled anyway, or `--pack-format` can be set to the right
+number.
+
 ## Cube face convention
 
 `--faces` writes `north/south/east/west/top/bottom.png`. The viewer stands
@@ -79,6 +117,17 @@ python3 test_cube_seams.py
 A body near the corner of a face looks stretched when you open the PNG on
 its own. That is the cube projection doing its job - the skybox undoes it
 and the moon is round again in game.
+
+`test_nuit_atlas.py` goes further than the seam test: it reimplements
+Nuit's `TEXTURE_FACES`, `MATRIX4F_ROTATED_FACE` and quad UV assignment and
+checks that the direction the mod will show at a given atlas pixel is the
+direction this generator drew there. The seam test alone would still pass
+if all six faces were rotated as a set, which in game means a sky that is
+upside down or facing the wrong way.
+
+```bash
+python3 test_nuit_atlas.py
+```
 
 ## Shipped assets
 

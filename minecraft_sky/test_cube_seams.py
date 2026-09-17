@@ -21,14 +21,14 @@ PAIRS = [
     ("east", "right", "south", "left"),
     ("south", "right", "west", "left"),
     ("west", "right", "north", "left"),
-    ("top", "top", "north", "top"),
-    ("top", "bottom", "south", "top"),
-    ("top", "left", "east", "top"),
-    ("top", "right", "west", "top"),
-    ("bottom", "bottom", "north", "bottom"),
-    ("bottom", "top", "south", "bottom"),
-    ("bottom", "left", "east", "bottom"),
-    ("bottom", "right", "west", "bottom"),
+    ("top", "top", "south", "top"),
+    ("top", "bottom", "north", "top"),
+    ("top", "left", "west", "top"),
+    ("top", "right", "east", "top"),
+    ("bottom", "top", "north", "bottom"),
+    ("bottom", "bottom", "south", "bottom"),
+    ("bottom", "left", "west", "bottom"),
+    ("bottom", "right", "east", "bottom"),
 ]
 
 

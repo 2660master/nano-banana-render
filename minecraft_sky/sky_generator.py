@@ -633,18 +633,32 @@ def perspective_view(pano, yaw, pitch, fov, w, h):
 # Each face is generated so that "up in the image" is up in the sky for the
 # four side faces; top/bottom are laid out to join the north face seamlessly.
 # A viewer stands inside the cube, so each face uses right = forward x up:
-# facing north, east really is on your right. Top and bottom are laid out
-# with north at the top of the image and south at the bottom respectively,
-# which is what makes all twelve edges line up.
+# facing north, east really is on your right.
+#
+# These orientations match the Nuit (formerly FabricSkyBoxes) renderer, read
+# off its Utils.MATRIX4F_ROTATED_FACE: every side face has east/south/north
+# on the right as below, top puts north at the bottom of the image and
+# bottom puts north at the top. With that, all twelve cube edges line up -
+# test_cube_seams.py checks it.
 CUBE_FACES = {
     #         right (+u)           down (+v)            forward (centre)
     "north": ((1, 0, 0), (0, -1, 0), (0, 0, -1)),
     "south": ((-1, 0, 0), (0, -1, 0), (0, 0, 1)),
     "east": ((0, 0, 1), (0, -1, 0), (1, 0, 0)),
     "west": ((0, 0, -1), (0, -1, 0), (-1, 0, 0)),
-    "top": ((-1, 0, 0), (0, 0, 1), (0, 1, 0)),
-    "bottom": ((-1, 0, 0), (0, 0, -1), (0, -1, 0)),
+    "top": ((1, 0, 0), (0, 0, -1), (0, 1, 0)),
+    "bottom": ((1, 0, 0), (0, 0, 1), (0, -1, 0)),
 }
+
+# Nuit packs all six faces into one 3x2 atlas. Cell (column, row), read off
+# Utils.TEXTURE_FACES:
+#     bottom | top   | south
+#     west   | north | east
+ATLAS_CELLS = {
+    "bottom": (0, 0), "top": (1, 0), "south": (2, 0),
+    "west": (0, 1), "north": (1, 1), "east": (2, 1),
+}
+ATLAS_COLS, ATLAS_ROWS = 3, 2
 
 
 def face_dirs(face, size, pixel_centres=True):
@@ -666,6 +680,15 @@ def face_dirs(face, size, pixel_centres=True):
 
 def cube_face(pano, face, size):
     return sample_equirect(pano, face_dirs(face, size))
+
+
+def cube_atlas(pano, size):
+    """The six faces packed into Nuit's 3x2 atlas."""
+    out = np.zeros((ATLAS_ROWS * size, ATLAS_COLS * size, 3), np.float32)
+    for face, (col, row) in ATLAS_CELLS.items():
+        out[row * size:(row + 1) * size,
+            col * size:(col + 1) * size] = cube_face(pano, face, size)
+    return out
 
 
 # --------------------------------------------------------------- concepts --
