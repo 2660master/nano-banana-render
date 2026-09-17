@@ -353,7 +353,8 @@ def shade_moon(col, d, moon, aa):
     cracks = moon.get("cracks", 0.0)
     if cracks:
         cr = fbm(nrm * moon.get("crack_scale", 5.0), moon["seed"] + 21,
-                 octaves=4, ridged=True)
+                 octaves=moon.get("crack_octaves", 4),
+                 gain=moon.get("crack_gain", 0.5), ridged=True)
         shade *= 1.0 - cracks * smoothstep(0.55, 0.95, cr)
 
     body = (disc * shade * moon.get("brightness", 1.0))[..., None] * srgb_to_linear(
@@ -361,11 +362,48 @@ def shade_moon(col, d, moon, aa):
     )
     emit = moon.get("crack_glow", 0.0)
     if emit and cr is not None:  # light still leaking out of the fractures
-        core = smoothstep(0.80, 0.99, cr) * disc * emit
+        core = smoothstep(moon.get("crack_glow_lo", 0.80), 0.995, cr) \
+            * disc * emit
         body = body + core[..., None] * srgb_to_linear(
             moon.get("crack_color", (168, 140, 255))
         )
     return col * (1.0 - disc[..., None]) + body
+
+
+def debris_ring(axis, count, seed, tilt=5.0, size=(0.10, 1.3), gap=None,
+                **common):
+    """Chunks strung along a great circle - a ruined moon's leftovers.
+
+    ``axis`` is the ring plane's normal, so the ring itself arcs across the
+    sky perpendicular to it. ``tilt`` is how many degrees chunks stray out
+    of the plane, and ``gap`` optionally opens a stretch of empty ring
+    (start, end in degrees) so it reads as broken rather than tidy.
+    """
+    rng = np.random.default_rng(seed)
+    n = normalize(axis)
+    up = np.array([0.0, 1.0, 0.0], np.float32)
+    if abs(float(n @ up)) > 0.95:
+        up = np.array([0.0, 0.0, 1.0], np.float32)
+    uax = normalize(np.cross(up, n))
+    vax = np.cross(n, uax)
+
+    out = []
+    while len(out) < count:
+        deg = rng.uniform(0.0, 360.0)
+        if gap and gap[0] <= deg <= gap[1]:
+            continue
+        th = math.radians(deg)
+        d = uax * math.cos(th) + vax * math.sin(th)
+        d = normalize(d + n * math.radians(tilt) * rng.normal())
+        chunk = dict(common)
+        chunk["dir"] = d
+        chunk["radius"] = size[0] + (size[1] - size[0]) * rng.random() ** 2.6
+        chunk["seed"] = int(rng.integers(1, 10 ** 6))
+        chunk["irregular"] = float(rng.uniform(0.18, 0.38))
+        chunk["facets"] = int(rng.integers(6, 11))
+        chunk["brightness"] = common.get("brightness", 1.0) * rng.uniform(0.7, 1.1)
+        out.append(chunk)
+    return out
 
 
 def debris_field(centre, count, seed, inner=1.5, outer=7.0, size=(0.22, 2.0),
@@ -452,7 +490,9 @@ def shade_block(d, lat, lon, cfg, aa):
         falloff *= smoothstep(-0.25, 0.02, elev)
         if hg.get("patchy"):
             n = fbm(d * hg.get("patch_scale", 1.4), hg.get("seed", 99), octaves=4)
-            falloff *= 0.25 + 1.35 * smoothstep(0.3, 0.75, n)
+            floor = hg.get("patch_floor", 0.25)
+            falloff *= floor + (1.6 - floor) * smoothstep(
+                hg.get("patch_lo", 0.30), hg.get("patch_hi", 0.75), n)
         col += (falloff * hg["strength"])[..., None] * srgb_to_linear(hg["color"])
 
     for moon in cfg.get("moons", []):
@@ -739,80 +779,88 @@ CONCEPTS["bloodmoon"] = {
 }
 
 # 2 ------------------------------------------------------ SHATTERED MOON ---
+RING_AXIS = (-0.85, 0.35, -0.39)   # ring plane normal: a steep arc that
+                                   # rises past the moon and over the zenith
+MOON_DIR = direction(24, -24)
+MOON_LIGHT = direction(16, -54)
+
 CONCEPTS["shattered"] = {
     "title": "Verbrijzelde Maan",
-    "blurb": "Kapotgeslagen maan met brokstukken in een violette leegte.",
+    "blurb": "Reusachtige gebroken maan, puinring over de hemel, aswolken.",
     "seed": 23,
-    "zenith": (5, 4, 12),
-    "horizon": (16, 12, 34),
-    "ground": (3, 3, 7),
-    "light_dir": direction(30, -24),
+    "zenith": (3, 3, 6),
+    "horizon": (9, 7, 14),
+    "ground": (2, 2, 4),
+    "light_dir": MOON_DIR,
     "nebula": [
-        # violet gas, thickest away from the moon so the moon stays readable
-        {"seed": 201, "scale": 1.5, "warp": 0.40, "octaves": 4, "gain": 0.45,
-         "lo": 0.50, "hi": 0.93, "power": 2.0, "strength": 0.15,
-         "color": (48, 20, 104), "color2": (142, 76, 220),
+        # bruised gas, desaturated - grim rather than pretty
+        {"seed": 201, "scale": 1.4, "warp": 0.45, "octaves": 4, "gain": 0.45,
+         "lo": 0.50, "hi": 0.93, "power": 2.0, "strength": 0.13,
+         "color": (34, 18, 48), "color2": (98, 74, 128),
          "coverage_scale": 0.8, "cov_lo": 0.48, "cov_hi": 0.84},
-        # wisps riding on the big masses, so the gas keeps reading as gas
-        # when the player looks straight at it
-        {"seed": 211, "scale": 5.2, "warp": 0.35, "octaves": 4, "gain": 0.42,
-         "ridged": True, "lo": 0.54, "hi": 0.94, "power": 2.2, "strength": 0.10,
-         "color": (70, 34, 150), "color2": (186, 132, 255),
-         "coverage_scale": 0.9, "cov_lo": 0.50, "cov_hi": 0.86},
-        # the galactic band: bright core, cold edges
-        {"seed": 241, "scale": 2.4, "warp": 0.30, "octaves": 4, "gain": 0.48,
-         "band_axis": (0.86, 0.22, -0.46), "band_width": 0.30,
-         "lo": 0.44, "hi": 0.90, "power": 1.6, "strength": 0.26,
-         "color": (58, 52, 138), "color2": (192, 176, 255)},
-        # unresolved stars: fine grain inside the band, not a smooth wash
-        {"seed": 261, "scale": 30.0, "octaves": 3, "gain": 0.55,
-         "band_axis": (0.86, 0.22, -0.46), "band_width": 0.24,
-         "lo": 0.50, "hi": 0.84, "power": 1.5, "strength": 0.11,
-         "color": (120, 122, 170), "color2": (216, 220, 255)},
-        # dust lanes cutting through the band
-        {"seed": 281, "scale": 3.6, "warp": 0.45, "octaves": 4, "mode": "mul",
-         "band_axis": (0.86, 0.22, -0.46), "band_width": 0.20,
-         "lo": 0.46, "hi": 0.90, "strength": 0.65},
-        # finer dark filaments across the band, breaking the big lanes up
-        {"seed": 287, "scale": 8.0, "warp": 0.40, "octaves": 4, "mode": "mul",
-         "band_axis": (0.86, 0.22, -0.46), "band_width": 0.22,
-         "lo": 0.54, "hi": 0.94, "strength": 0.45},
-        # low violet haze, no heavy deck - this sky should feel empty
-        {"seed": 291, "scale": 2.6, "warp": 0.45, "octaves": 5, "gain": 0.5,
-         "mode": "cloud", "over": True, "lo": 0.52, "hi": 0.86,
-         "opacity": 0.55, "color": (12, 9, 24), "ambient": 0.05,
-         "detail": 0.45, "detail_scale": 8.0,
-         "elev_centre": 0.02, "elev_spread": 0.16,
-         "rim": 0.14, "rim_size": 60, "rim_color": (176, 150, 255)},
+        # dust strung along the ring, clumped
+        {"seed": 231, "scale": 3.0, "warp": 0.30, "octaves": 4, "gain": 0.46,
+         "ridged": True, "band_axis": RING_AXIS, "band_width": 0.042,
+         "lo": 0.44, "hi": 0.92, "power": 1.6, "strength": 0.42,
+         "color": (52, 46, 66), "color2": (170, 160, 190)},
+        # gaps torn in that dust so the ring is broken, not tidy
+        {"seed": 237, "scale": 5.0, "warp": 0.40, "octaves": 4, "mode": "mul",
+         "band_axis": RING_AXIS, "band_width": 0.075,
+         "lo": 0.48, "hi": 0.92, "strength": 0.60},
+        # grain of unresolved rubble inside the ring
+        {"seed": 261, "scale": 34.0, "octaves": 3, "gain": 0.55,
+         "band_axis": RING_AXIS, "band_width": 0.045,
+         "lo": 0.52, "hi": 0.86, "power": 1.6, "strength": 0.10,
+         "color": (96, 92, 110), "color2": (196, 192, 214)},
+        # high torn overcast, rim lit by the moon
+        {"seed": 291, "scale": 1.9, "warp": 0.55, "octaves": 5, "gain": 0.5,
+         "mode": "cloud", "over": True, "lo": 0.44, "hi": 0.80,
+         "opacity": 0.94, "color": (12, 10, 17), "ambient": 0.075,
+         "detail": 0.45, "detail_scale": 7.0,
+         "elev_centre": 0.16, "elev_spread": 0.40,
+         "rim": 0.46, "rim_size": 32, "rim_color": (176, 150, 226)},
+        # a lower, heavier bank that eats the horizon
+        {"seed": 297, "scale": 3.2, "warp": 0.45, "octaves": 5, "gain": 0.5,
+         "mode": "cloud", "over": True, "lo": 0.44, "hi": 0.80,
+         "opacity": 0.94, "color": (9, 8, 12), "ambient": 0.055,
+         "detail": 0.50, "detail_scale": 9.0,
+         "elev_centre": -0.02, "elev_spread": 0.17,
+         "rim": 0.32, "rim_size": 42, "rim_color": (140, 118, 180)},
     ],
     "moons": [
-        # the broken body itself: lumpy rim, deep fissures, and light still
-        # bleeding out of the core through them
-        {"dir": direction(30, -24), "radius": 9.0, "color": (172, 166, 202),
-         "brightness": 0.68, "glow": 0.13, "glow_size": 2.6,
-         "glow_color": (110, 96, 190), "texture": 0.18, "texture_scale": 8.0,
-         "fine_texture": 0.10, "fine_scale": 34.0, "maria": 0.34,
-         "bump": 0.52, "bump_scale": 7.5, "bump_octaves": 3, "bump_gain": 0.26,
-         "irregular": 0.05, "cracks": 0.72, "crack_scale": 3.0,
-         "crack_glow": 0.85, "crack_color": (182, 150, 255),
-         "light": direction(22, -50), "ambient": 0.10, "seed": 3},
+        # it looms: close enough that the fissures are the main event
+        {"dir": MOON_DIR, "radius": 18.0, "color": (104, 101, 120),
+         "brightness": 0.78, "glow": 0.09, "glow_size": 1.6,
+         "glow_color": (86, 74, 140), "texture": 0.18, "texture_scale": 9.0,
+         "fine_texture": 0.10, "fine_scale": 38.0, "maria": 0.36,
+         "bump": 0.52, "bump_scale": 9.0, "bump_octaves": 3, "bump_gain": 0.26,
+         "irregular": 0.055, "cracks": 0.88, "crack_scale": 2.3,
+         "crack_octaves": 1, "crack_glow_lo": 0.88,
+         "crack_glow": 2.2, "crack_color": (152, 104, 255),
+         "light": MOON_LIGHT, "ambient": 0.07, "seed": 3},
     ] + debris_field(
-        direction(30, -24), 54, seed=4242, inner=5.5, outer=42.0,
-        size=(0.16, 2.3), spread=1.35, flatten=0.45,
-        color=(150, 144, 178), brightness=0.62, texture=0.22,
+        MOON_DIR, 40, seed=4242, inner=20.0, outer=54.0,
+        size=(0.16, 2.6), spread=1.4, flatten=0.5,
+        color=(132, 128, 156), brightness=0.58, texture=0.22,
         texture_scale=9.0, fine_texture=0.14, fine_scale=30.0,
         bump=0.50, bump_scale=9.0, bump_octaves=3, bump_gain=0.28,
-        light=direction(22, -50), ambient=0.05, limb=0.30,
+        light=MOON_LIGHT, ambient=0.045, limb=0.30,
+    ) + debris_ring(
+        RING_AXIS, 62, seed=909, tilt=4.0, size=(0.14, 2.2), gap=(96, 150),
+        color=(126, 122, 150), brightness=0.55, texture=0.22,
+        texture_scale=9.0, fine_texture=0.14, fine_scale=30.0,
+        bump=0.50, bump_scale=9.0, bump_octaves=3, bump_gain=0.28,
+        light=MOON_LIGHT, ambient=0.04, limb=0.30,
     ),
-    "horizon_glow": {"color": (52, 34, 110), "height": 0.11, "strength": 0.11,
-                     "patchy": True, "patch_scale": 1.0, "seed": 29},
-    "stars": {"count": 15000, "brightness": 1.0, "falloff": 3.6, "size": 0.40,
-              "warm": (255, 214, 176), "cool": (172, 198, 255), "warm_bias": 2.4,
-              "bright_frac": 0.005, "spikes": 0.65,
-              "cluster_axis": (0.86, 0.22, -0.46), "cluster_width": 0.30,
-              "cluster_base": 0.40},
-    "grade": {"exposure": 1.20, "saturation": 1.10},
-    "preview": {"yaw": -24, "pitch": 24, "fov": 80},
+    # something is burning a long way off
+    "horizon_glow": {"color": (104, 24, 14), "height": 0.05, "strength": 0.20,
+                     "patchy": True, "patch_scale": 2.4, "patch_floor": 0.0,
+                     "patch_lo": 0.58, "patch_hi": 0.80, "seed": 29},
+    "stars": {"count": 5000, "brightness": 0.55, "falloff": 4.2, "size": 0.38,
+              "warm": (214, 182, 150), "cool": (150, 166, 202), "warm_bias": 2.0,
+              "bright_frac": 0.003, "spikes": 0.35},
+    "grade": {"exposure": 1.75, "saturation": 0.88},
+    "preview": {"yaw": -24, "pitch": 22, "fov": 80},
 }
 
 # 3 ----------------------------------------------------------- WRAITHLIGHT --
