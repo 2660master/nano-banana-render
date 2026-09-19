@@ -526,7 +526,10 @@ def main():
         "pack": {
             "pack_format": 64,
             "supported_formats": {"min_inclusive": 9, "max_inclusive": 99},
-            "description": "Pink Sky · Nuit skybox",
+            # Two lines is all Minecraft shows in the pack list; the § codes
+            # are the usual legacy colour formatting.
+            "description": "§dRoze lucht vol dikke wolken\n"
+                           "§71 vooraan, 2 achter je §8· vereist Nuit",
         },
     })
 
