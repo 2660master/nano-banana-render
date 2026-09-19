@@ -35,3 +35,6 @@ env/
 Thumbs.db
 Desktop.ini
 *.log
+
+# Candyland sky build output
+candyland-sky/tools/out/

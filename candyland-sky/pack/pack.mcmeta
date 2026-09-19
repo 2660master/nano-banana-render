@@ -1,0 +1,7 @@
+{
+  "pack": {
+    "pack_format": 55,
+    "supported_formats": { "min_inclusive": 15, "max_inclusive": 99 },
+    "description": "§dCandyland§r — Bubblegum Noon sky\n§7Requires the Nuit mod"
+  }
+}
