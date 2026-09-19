@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "type": "square-textured",
+  "properties": {
+    "layer": 0,
+    "sunSkyTint": false,
+    "visibleUnderwater": true
+  },
+  "conditions": {},
+  "texture": "nuit:sky/eternal_sky.png"
+}
