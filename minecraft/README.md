@@ -1,4 +1,4 @@
-# Eternal Sky — Nuit skybox pack
+# MadisonBeerSky — Nuit skybox pack
 
 Een Minecraft resource pack voor de **Nuit**-mod (de opvolger van FabricSkyBoxes) dat de
 vanilla-lucht vervangt door één vaste wolkenlucht, met een foto op de noordkant en een
@@ -12,12 +12,12 @@ elke dimensie, elk biome en bij elk weertype.
 | Minecraft | Java Edition **1.21.11** |
 | Vereiste mod | [Nuit](https://modrinth.com/mod/nuit) `1.0.0-beta.6` (Fabric of NeoForge) |
 | `pack_format` | 75 |
-| Textuur | 4608 × 3072 (1536 px per cubeface) |
+| Textuur | 6144 × 4096 (2048 px per cubeface) |
 
 ## Installeren
 
 1. Installeer **Nuit** voor 1.21.11 in je mods-map (plus Fabric API of NeoForge).
-2. Kopieer de map `nuit-eternal-sky/` naar `.minecraft/resourcepacks/`.
+2. Kopieer de map `MadisonBeerSky/` naar `.minecraft/resourcepacks/`.
    Minecraft accepteert een map net zo goed als een `.zip`; wil je toch een zip, run dan
    `bash minecraft/tools/package.sh`.
 3. Start het spel, zet het pack aan bij **Opties → Resource Packs**, en klaar.
@@ -25,12 +25,12 @@ elke dimensie, elk biome en bij elk weertype.
 ## Wat staat waar
 
 ```
-nuit-eternal-sky/
+MadisonBeerSky/
 ├── pack.mcmeta                              pack_format 75
 ├── pack.png                                 pack-icoon
 └── assets/nuit/sky/
-    ├── eternal_sky.json                     de skybox-definitie
-    └── eternal_sky.png                      3×2 atlas met de zes cubefaces
+    ├── madison_beer_sky.json                de skybox-definitie
+    └── madison_beer_sky.png                 3×2 atlas met de zes cubefaces
 ```
 
 ### Oriëntatie van de foto's
@@ -49,7 +49,7 @@ rechthoek, en de onderkant lost op in het wolkendek.
 
 ## Hoe "altijd" is geregeld
 
-In `eternal_sky.json`:
+In `madison_beer_sky.json`:
 
 - **`fade` weggelaten** → Nuit leest dat als lege keyframes en zet de alpha permanent op
   `1.0`. Dat is de officiële manier om een skybox altijd aan te laten staan; keyframes
@@ -84,7 +84,7 @@ Zet dit als extra bestand in `assets/nuit/sky/` (bijvoorbeeld `decorations.json`
 ### Optioneel: mist ook vastzetten
 
 De wereldmist wordt 's nachts nog steeds donker. Wil je dat de verte altijd bij de lucht
-past, voeg dan dit toe aan `properties` in `eternal_sky.json`:
+past, voeg dan dit toe aan `properties` in `madison_beer_sky.json`:
 
 ```json
 "fog": { "modifyColors": true, "red": 0.62, "green": 0.72, "blue": 0.84 }
@@ -94,11 +94,12 @@ past, voeg dan dit toe aan `properties` in `eternal_sky.json`:
 
 ```bash
 pip install pillow numpy
-python3 minecraft/tools/build_skybox.py --face-size 1536
+python3 minecraft/tools/build_skybox.py
 ```
 
-Handige opties: `--face-size 2048` voor een scherpere (ca. 13 MB) atlas, en
-`--preview-dir <map>` om de zes faces los weg te schrijven zodat je ze kan nakijken.
+Handige opties: `--face-size 1536` voor een kleinere atlas, `--wraps 1` voor een unieke
+maar zachtere lucht (zie hieronder), en `--preview-dir <map>` om de zes faces los weg te
+schrijven zodat je ze kan nakijken. Een volledige build duurt ongeveer een minuut.
 
 Wil je de portretten groter, kleiner of hoger in beeld? Pas `PORTRAIT_HEIGHT` en
 `PORTRAIT_CENTER_Y` bovenin het script aan. Een cubeface beslaat 90°, dus `0.56` is een
@@ -126,6 +127,34 @@ col 0      col 1     col 2
 bottom     top       south     <- rij 0
 west       north     east      <- rij 1
 ```
+
+## Wolkenkwaliteit
+
+De scherpte van de lucht wordt begrensd door de bron: de panoramategel is maar 2000 px
+breed. Hoe minder graden hemel elke bronpixel moet bedekken, hoe meer detail overleeft.
+Daarom herhaalt `--wraps 2` (de standaard) het panorama twee keer rond de horizon in
+plaats van één keer over de volle 360° uit te rekken. Dat verdubbelt de hoekdichtheid en
+maakt de wolken zichtbaar scherper.
+
+De prijs is dat de lucht een periode van 180° heeft: de oost- en westkant tonen dezelfde
+wolken. Je kan ze nooit tegelijk zien — je moet je een halve slag omdraaien om het te
+merken — en de twee naden vallen precies midden op de noord- en zuidkant, waar de
+portretten eroverheen staan. Wil je liever een unieke lucht rondom en neem je de zachtere
+wolken voor lief, gebruik dan `--wraps 1`.
+
+Verder doet het script nog drie dingen voor de kwaliteit:
+
+- **Naadzoeker.** Het panorama moet op zichzelf aansluiten, maar beide originele randen
+  zijn drukke wolkenpartijen. Het script zoekt het paar randen dat het beste op elkaar
+  aansluit (hier scheelt dat 41%) en offert daar een paar honderd kolommen voor op. Dat
+  kost veel minder detail dan de overvloeier breder maken tot de sprong niet meer opvalt.
+- **Detailherstel.** Twee unsharp-passes — een brede voor lokaal contrast in de
+  wolkenmassa's, een smalle voor de randen — halen terug wat het opschalen kost. Dat
+  gebeurt op de equirectangulaire kaart en niet per face, want per face filteren laat een
+  lichte of donkere haarlijn achter langs elke cuberand.
+- **Bronreparatie.** De onderste ~50 rijen van de panoramategel bevatten twee donkere,
+  hardgerande vlekken die de generator heeft achtergelaten. Op ware grootte vallen ze niet
+  op, uitvergroot worden het storende spikkels, dus de uitsnede stopt erboven.
 
 ## Bronmateriaal
 

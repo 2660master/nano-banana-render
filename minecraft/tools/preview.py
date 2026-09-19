@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render what the Eternal Sky skybox looks like in game, without launching Minecraft.
+"""Render what the MadisonBeerSky skybox looks like in game, without launching Minecraft.
 
 This deliberately re-implements Nuit's renderer rather than reusing anything from
 ``build_skybox.py``: the quad, the UV ranges and the per-face matrices are ported
@@ -20,7 +20,7 @@ import numpy as np
 from PIL import Image
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_ATLAS = REPO_ROOT / "minecraft" / "nuit-eternal-sky" / "assets" / "nuit" / "sky" / "eternal_sky.png"
+DEFAULT_ATLAS = REPO_ROOT / "minecraft" / "MadisonBeerSky" / "assets" / "nuit" / "sky" / "madison_beer_sky.png"
 
 # Utils.TEXTURE_FACES: (minU, minV, maxU, maxV) per face id.
 TEXTURE_FACES = [

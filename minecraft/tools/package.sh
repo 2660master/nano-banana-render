@@ -3,8 +3,8 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-pack="$root/nuit-eternal-sky"
-out="${1:-$root/nuit-eternal-sky.zip}"
+pack="$root/MadisonBeerSky"
+out="${1:-$root/MadisonBeerSky.zip}"
 
 rm -f "$out"
 # Zip from inside the pack: pack.mcmeta has to sit at the root of the archive.

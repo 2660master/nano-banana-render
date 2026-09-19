@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Nuit square-textured skybox atlas for the Eternal Sky resource pack.
+"""Build the Nuit square-textured skybox atlas for the MadisonBeerSky resource pack.
 
 The atlas is a 3x2 grid of cube faces. Nuit's face -> cell mapping is taken from
 ``Utils.TEXTURE_FACES`` in the mod source (tag ``mc1.21.11-1.0.0-beta.6``):
@@ -14,7 +14,14 @@ Pipeline:
   3. Re-project the equirectangular map onto the six cube faces.
   4. Composite one cut-out portrait onto the north face and one onto the south face.
 
-Usage:  python3 build_skybox.py [--face-size 1024] [--out <path.png>]
+Cloud sharpness is bounded by the source: the panorama is only 2000 px wide, so the
+fewer degrees of sky each of those pixels has to cover, the more detail survives.
+``--wraps 2`` therefore repeats the panorama twice around the horizon instead of
+stretching one copy over the full 360 degrees, doubling the angular pixel density.
+The two joins land dead centre on the north and south faces, where the portraits
+cover them.
+
+Usage:  python3 build_skybox.py [--face-size 2048] [--wraps 2] [--out <path.png>]
 """
 
 from __future__ import annotations
@@ -24,17 +31,21 @@ import math
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SOURCE_DIR = REPO_ROOT / "minecraft" / "source-images"
-DEFAULT_OUT = REPO_ROOT / "minecraft" / "nuit-eternal-sky" / "assets" / "nuit" / "sky" / "eternal_sky.png"
+DEFAULT_OUT = REPO_ROOT / "minecraft" / "MadisonBeerSky" / "assets" / "nuit" / "sky" / "madison_beer_sky.png"
 
 # Collage geometry of sky.webp (2000x1333); seams detected at x=667, x=1333, y=667.
 # The top-left tile carries the stock-photo watermark and is deliberately unused.
-PANORAMA_BOX = (0, 667, 2000, 1333)
+#
+# The panorama tile is 666 rows tall, but its bottom ~50 rows hold two dark, hard-edged
+# blobs the generator left in the shadowed deck. They pass unnoticed at 1:1 and turn
+# into obvious specks once the sky is magnified, so the crop stops above them.
+PANORAMA_BOX = (0, 667, 2000, 1279)
 ZENITH_BOX = (1333, 0, 2000, 667)  # top-right tile: upward shot, deep blue sky
-NADIR_BOX = (1150, 380, 1750, 666)  # dense cloud deck inside the panorama
+NADIR_BOX = (1120, 336, 1650, 608)  # dense cloud deck, clear of those blobs
 
 # How far past the cap the fisheye photo is faded out, as a multiple of the cap angle.
 CAP_FADE_SCALE = 2.2
@@ -43,14 +54,37 @@ CAP_FADE_SCALE = 2.2
 # tracking where per-row "blueness" (mean B - mean R) crosses zero.
 HORIZON_ROW = 390
 
-# Vertical field of view the panorama is stretched to cover once it wraps 360 degrees.
-PANORAMA_FOV_DEG = 112.0
+# Vertical field of view the cropped panorama is stretched to cover, per --wraps
+# setting. One wrap is close to isotropic; two wraps double the horizontal pixel
+# density, and 71.7 degrees still carries the band to the top of every side face
+# while holding the vertical stretch to a barely visible 1.3x. Both values put the
+# horizon 45.7 degrees below the top of the band, so the geometry matches either way.
+PANORAMA_FOV_DEG = {1: 103.0, 2: 71.7}
 
-# Width of the wrap-around overlap used to close the 360 degree seam, in atlas columns.
-SEAM_BLEND_PX = 384
+# Width of the wrap-around overlap used to close each seam, in equirect columns.
+# Kept narrow on purpose: a cross-fade is a double exposure, so every column it spans
+# loses cloud detail. The loop search below is what makes a narrow one hold up.
+SEAM_BLEND_PX = 256
 
-EQUIRECT_WIDTH = 4096
-EQUIRECT_HEIGHT = 2048
+# How many columns the loop search may trim from each end of the panorama while
+# hunting for the pair of edges that butt together most cleanly.
+LOOP_SEARCH_PX = 260
+LOOP_STRIP_PX = 24
+
+# Sized so a 2048 px face samples the map at roughly 1:1 (a face spans a quarter of
+# the width), which keeps the projection from adding a second round of upscaling.
+EQUIRECT_WIDTH = 8192
+EQUIRECT_HEIGHT = 4096
+
+# Detail restoration for the sky, applied per face before the portraits go on.
+# (radius, percent, threshold) for PIL's unsharp mask: a wide, gentle pass lifts
+# local contrast in the cloud masses, a tight one puts the edges back after upscaling.
+CLARITY_UNSHARP = (30, 22, 2)
+DETAIL_UNSHARP = (2.0, 62, 3)
+
+# Strength of the pole smoothing. The fisheye caps already converge on a point, so
+# this only has to catch what is left; too high and it softens the zenith for nothing.
+POLE_RELAX = 0.35
 
 # Portrait placement on its cube face, as fractions of the face size. A face spans
 # 90 degrees, so 0.56 is a 50 degree figure; centring it at 0.44 puts it 5 degrees
@@ -58,7 +92,10 @@ EQUIRECT_HEIGHT = 2048
 # degree FOV, and keeps the head well above the terrain horizon.
 PORTRAIT_HEIGHT = 0.56
 PORTRAIT_CENTER_Y = 0.44
-PORTRAIT_FADE = 0.14  # bottom fraction of the portrait dissolved into the sky
+# Bottom fraction of the portrait dissolved into the sky. The horizon crosses the
+# figure around 61% down, so the whole dissolve stays below it: from the ground it is
+# hidden behind terrain, and it only has to hold up when you are flying.
+PORTRAIT_FADE = 0.22
 
 
 def load_sky() -> Image.Image:
@@ -134,23 +171,55 @@ def blend_cap(
         equirect[row] = equirect[row] * (1.0 - weight) + cap * weight
 
 
-def build_equirect(sky: Image.Image) -> np.ndarray:
-    """Warp the collage into a seamless equirectangular sky map (H, W, 3) float32."""
-    panorama = sky.crop(PANORAMA_BOX)
-    width, height = EQUIRECT_WIDTH, EQUIRECT_HEIGHT
+def best_loop_crop(panorama: Image.Image) -> Image.Image:
+    """Trim the panorama to the pair of edges that join up most cleanly.
 
-    # Stretch the panorama over the full 360 degrees, with SEAM_BLEND_PX of extra
+    The panorama has to meet itself where it wraps, and its two original edges are
+    both busy cloud, which a cross-fade can only turn into mush. Giving up a couple
+    of hundred columns to find edges that already agree costs far less detail than
+    widening the blend until the mismatch stops showing.
+    """
+    pixels = np.asarray(panorama.convert("RGB"), dtype=np.float32)
+    width = pixels.shape[1]
+    strip = LOOP_STRIP_PX
+
+    best_cost, best = None, (0, width)
+    for left in range(0, LOOP_SEARCH_PX + 1, 4):
+        head = pixels[:, left : left + strip]
+        for right in range(width - LOOP_SEARCH_PX, width + 1, 4):
+            cost = float(np.abs(pixels[:, right - strip : right] - head).mean())
+            if best_cost is None or cost < best_cost:
+                best_cost, best = cost, (left, right)
+
+    left, right = best
+    return panorama.crop((left, 0, right, panorama.height))
+
+
+def build_equirect(sky: Image.Image, wraps: int) -> np.ndarray:
+    """Warp the collage into a seamless equirectangular sky map (H, W, 3) float32."""
+    full_panorama = sky.crop(PANORAMA_BOX)
+    panorama = best_loop_crop(full_panorama)
+    width, height = EQUIRECT_WIDTH, EQUIRECT_HEIGHT
+    copy_width = width // wraps
+
+    # Stretch the panorama over its share of the horizon, with SEAM_BLEND_PX of extra
     # width so the right edge can be cross-faded back onto the left edge.
-    band_height = int(round(PANORAMA_FOV_DEG / 180.0 * height))
-    wide = panorama.resize((width + SEAM_BLEND_PX, band_height), Image.LANCZOS)
+    band_height = int(round(PANORAMA_FOV_DEG[wraps] / 180.0 * height))
+    wide = panorama.resize((copy_width + SEAM_BLEND_PX, band_height), Image.LANCZOS)
     band = np.asarray(wide, dtype=np.float32)
 
-    # Overlap blend: out[x] = lerp(band[width + x], band[x]) across the first
-    # SEAM_BLEND_PX columns. out[0] then equals band[width], which is the column
-    # directly after out[width - 1] = band[width - 1], so the wrap is continuous.
-    out_band = band[:, :width].copy()
+    # Overlap blend: copy[x] = lerp(band[copy_width + x], band[x]) across the first
+    # SEAM_BLEND_PX columns. copy[0] then equals band[copy_width], the column directly
+    # after copy[copy_width - 1] = band[copy_width - 1], so the copy tiles seamlessly
+    # against itself and every join between wraps is continuous.
+    copy = band[:, :copy_width].copy()
     t = (np.arange(SEAM_BLEND_PX, dtype=np.float32) / SEAM_BLEND_PX)[None, :, None]
-    out_band[:, :SEAM_BLEND_PX] = band[:, width:] * (1.0 - t) + band[:, :SEAM_BLEND_PX] * t
+    copy[:, :SEAM_BLEND_PX] = band[:, copy_width:] * (1.0 - t) + band[:, :SEAM_BLEND_PX] * t
+    del band
+
+    # Roll the joins onto the north and south faces, where the portraits cover them.
+    out_band = np.roll(np.tile(copy, (1, wraps, 1)), -(SEAM_BLEND_PX // 2), axis=1)
+    del copy
 
     # Place the band so its horizon sits exactly on the equator of the sphere.
     horizon_in_band = int(round(HORIZON_ROW / panorama.height * band_height))
@@ -184,10 +253,28 @@ def build_equirect(sky: Image.Image) -> np.ndarray:
     # apart, so both caps come from dedicated photos instead.
     zenith = np.asarray(sky.crop(ZENITH_BOX), dtype=np.float32)
     blend_cap(equirect, zenith, out_band[:64], top, nadir=False)
-    nadir = np.asarray(panorama.crop(NADIR_BOX), dtype=np.float32)
+    # NADIR_BOX is measured on the uncropped tile, so take it from there.
+    nadir = np.asarray(full_panorama.crop(NADIR_BOX), dtype=np.float32)
     blend_cap(equirect, nadir, out_band[-64:], height - bottom, nadir=True)
+    del out_band
 
-    return relax_poles(equirect)
+    return relax_poles(sharpen_sky(equirect))
+
+
+def sharpen_sky(equirect: np.ndarray) -> np.ndarray:
+    """Put back the micro-contrast that upscaling a 2000 px panorama costs.
+
+    Sharpening happens here rather than per face because the map wraps: filtering
+    each cube face on its own would leave a bright or dark hairline along every
+    cube edge where the kernel ran out of neighbours.
+    """
+    height, width = equirect.shape[:2]
+    pad = 128  # comfortably past the reach of the widest unsharp radius
+    wrapped = np.concatenate([equirect[:, width - pad :], equirect, equirect[:, :pad]], axis=1)
+    image = Image.fromarray(np.clip(wrapped, 0, 255).astype(np.uint8), "RGB")
+    for radius, percent, threshold in (CLARITY_UNSHARP, DETAIL_UNSHARP):
+        image = image.filter(ImageFilter.UnsharpMask(radius, percent, threshold))
+    return np.asarray(image, dtype=np.float32)[:, pad : pad + width]
 
 
 def _circular_box_blur(row: np.ndarray, radius: int) -> np.ndarray:
@@ -210,16 +297,15 @@ def relax_poles(equirect: np.ndarray) -> np.ndarray:
     space: untouched at the horizon, converging on a single colour at the poles.
     """
     height, width = equirect.shape[:2]
-    out = equirect.copy()
     for row in range(height):
         theta = (row + 0.5) / height * math.pi
-        radius = int(round((1.0 / max(math.sin(theta), 1e-6) - 1.0) * 0.7))
+        radius = int(round((1.0 / max(math.sin(theta), 1e-6) - 1.0) * POLE_RELAX))
         if radius < 1:
             continue
         radius = min(radius, width // 2)
-        blurred = _circular_box_blur(out[row], radius)
-        out[row] = _circular_box_blur(blurred, max(1, radius // 2))
-    return out
+        blurred = _circular_box_blur(equirect[row], radius)
+        equirect[row] = _circular_box_blur(blurred, max(1, radius // 2))
+    return equirect
 
 
 # (u, v) in [0,1] with u left->right and v top->bottom of the cell, mapped to a
@@ -297,10 +383,11 @@ def paste_portrait(face: Image.Image, portrait: Image.Image) -> Image.Image:
     return canvas.convert("RGB")
 
 
-def build_atlas(face_size: int) -> tuple[Image.Image, dict[str, Image.Image]]:
-    equirect = build_equirect(load_sky())
+def build_atlas(face_size: int, wraps: int) -> tuple[Image.Image, dict[str, Image.Image]]:
+    equirect = build_equirect(load_sky(), wraps)
 
     faces = {name: render_face(equirect, name, face_size) for name in FACE_DIRECTIONS}
+    del equirect
     faces["north"] = paste_portrait(faces["north"], prepare_portrait(SOURCE_DIR / "front.webp", face_size))
     faces["south"] = paste_portrait(faces["south"], prepare_portrait(SOURCE_DIR / "back.webp", face_size))
 
@@ -320,20 +407,28 @@ def build_atlas(face_size: int) -> tuple[Image.Image, dict[str, Image.Image]]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--face-size", type=int, default=1024, help="pixels per cube face (default: 1024)")
+    parser.add_argument("--face-size", type=int, default=2048, help="pixels per cube face (default: 2048)")
+    parser.add_argument(
+        "--wraps",
+        type=int,
+        default=2,
+        choices=sorted(PANORAMA_FOV_DEG),
+        help="times the panorama repeats around the horizon; 2 is twice as sharp (default: 2)",
+    )
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="atlas output path")
     parser.add_argument("--preview-dir", type=Path, default=None, help="also write the individual faces here")
     args = parser.parse_args()
 
-    atlas, faces = build_atlas(args.face_size)
+    atlas, faces = build_atlas(args.face_size, args.wraps)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     atlas.save(args.out, optimize=True)
     print(f"wrote {args.out} ({atlas.width}x{atlas.height}, {args.out.stat().st_size / 1e6:.1f} MB)")
 
-    icon_source = faces["north"].resize((128, 128), Image.LANCZOS)
-    icon_path = args.out.parent.parent.parent.parent / "pack.png"
-    icon_source.save(icon_path, optimize=True)
-    print(f"wrote {icon_path}")
+    # Only refresh the pack icon when writing the pack itself, not a scratch render.
+    if args.out == DEFAULT_OUT:
+        icon_path = DEFAULT_OUT.parents[3] / "pack.png"
+        faces["north"].resize((128, 128), Image.LANCZOS).save(icon_path, optimize=True)
+        print(f"wrote {icon_path}")
 
     if args.preview_dir:
         args.preview_dir.mkdir(parents=True, exist_ok=True)
