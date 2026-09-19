@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "type": "square-textured",
+  "texture": "pinksky:textures/sky/pink_sky.png",
+  "blend": {
+    "type": "normal"
+  },
+  "properties": {
+    "layer": 0,
+    "sunSkyTint": false,
+    "visibleUnderwater": false,
+    "transitionInDuration": 20,
+    "transitionOutDuration": 20,
+    "rotation": {
+      "skyboxRotation": true,
+      "speed": 0.0,
+      "duration": 24000
+    },
+    "fog": {
+      "modifyColors": true,
+      "red": 1.0,
+      "green": 0.73,
+      "blue": 0.85,
+      "modifyDensity": false,
+      "density": 0.0,
+      "showInDenseFog": false
+    }
+  },
+  "conditions": {
+    "dimensions": {
+      "excludes": false,
+      "entries": [
+        "minecraft:overworld"
+      ]
+    }
+  }
+}
