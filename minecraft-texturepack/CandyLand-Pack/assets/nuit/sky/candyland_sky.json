@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "type": "square-textured",
-  "texture": "pinksky:textures/sky/pink_sky.png",
+  "texture": "candyland:textures/sky/candyland_sky.png",
   "blend": {
     "type": "normal"
   },

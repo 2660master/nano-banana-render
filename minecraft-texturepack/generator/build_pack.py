@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the "Pink Sky" Nuit skybox resource pack.
+"""Build the "CandyLand Pack" Nuit skybox resource pack.
 
 Pipeline: enhance the three source cut-outs -> generate a pink sky with a thick
 cloud deck over the six cube faces -> composite the portraits onto the north and
@@ -19,8 +19,8 @@ from PIL import Image, ImageEnhance, ImageFilter
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 PHOTOS = os.path.join(HERE, "source_photos")
-PACK = os.path.join(ROOT, "PinkSky")
-NAMESPACE = "pinksky"
+PACK = os.path.join(ROOT, "CandyLand-Pack")
+NAMESPACE = "candyland"
 
 FACE = 1536                      # pixels per cube face
 SEED = 20260919
@@ -487,14 +487,14 @@ def main():
     tex_dir = os.path.join(PACK, "assets", NAMESPACE, "textures", "sky")
     os.makedirs(tex_dir, exist_ok=True)
 
-    atlas_path = os.path.join(tex_dir, "pink_sky.png")
+    atlas_path = os.path.join(tex_dir, "candyland_sky.png")
     atlas.save(atlas_path, optimize=True)
     print(f"atlas -> {atlas_path} ({os.path.getsize(atlas_path)/1e6:.1f} MB)")
 
-    write_json(os.path.join(PACK, "assets", "nuit", "sky", "pink_sky.json"), {
+    write_json(os.path.join(PACK, "assets", "nuit", "sky", "candyland_sky.json"), {
         "schemaVersion": 1,
         "type": "square-textured",
-        "texture": f"{NAMESPACE}:textures/sky/pink_sky.png",
+        "texture": f"{NAMESPACE}:textures/sky/candyland_sky.png",
         "blend": {"type": "normal"},
         "properties": {
             "layer": 0,
@@ -526,7 +526,7 @@ def main():
         "pack": {
             "pack_format": 64,
             "supported_formats": {"min_inclusive": 9, "max_inclusive": 99},
-            "description": "CandyLand Pack",
+            "description": "\u00a7dCandyLand Pack",
         },
     })
 
@@ -545,7 +545,7 @@ def main():
     flat.resize((512, 512), Image.LANCZOS).save(
         os.path.join(PACK, "pack.png"), optimize=True)
 
-    zip_path = os.path.join(ROOT, "PinkSky.zip")
+    zip_path = os.path.join(ROOT, "CandyLand-Pack.zip")
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
         for base, _dirs, files in os.walk(PACK):
             for f in sorted(files):
