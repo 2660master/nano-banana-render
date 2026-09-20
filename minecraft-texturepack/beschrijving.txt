@@ -1,4 +1,4 @@
-CANDYLAND PACK - skybox voor de Nuit-mod
+BRECKIE HILL SKY - skybox voor de Nuit-mod
 
 Een roze lucht met een dik pak roze wolken, en drie foto's die erin staan:
 eentje recht voor je (noord) en twee achter je (zuid). Je staat tot je middel
@@ -6,8 +6,8 @@ in een zee van wolken.
 
 INSTALLEREN
 1. Installeer de Nuit-mod (Fabric of NeoForge) - zonder die mod doet de pack niks.
-2. Zet CandyLand-Pack.zip in .minecraft/resourcepacks/
-3. In de game: Options > Resource Packs > CandyLand Pack aanzetten.
+2. Zet breckie hill sky.zip in .minecraft/resourcepacks/
+3. In de game: Options > Resource Packs > "breckie hill sky" aanzetten.
 
 Werkt in de Overworld. Onder water verbergt de skybox zichzelf.
 
