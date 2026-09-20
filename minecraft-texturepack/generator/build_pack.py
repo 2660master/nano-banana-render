@@ -526,17 +526,23 @@ def main():
         "pack": {
             "pack_format": 64,
             "supported_formats": {"min_inclusive": 9, "max_inclusive": 99},
-            # Two lines is all Minecraft shows in the pack list; the § codes
-            # are the usual legacy colour formatting.
-            "description": "§dRoze lucht vol dikke wolken\n"
-                           "§71 vooraan, 2 achter je §8· vereist Nuit",
+            "description": "CandyLand Pack",
         },
     })
 
-    # Pack icon: crop of the north face around the front portrait.
-    icon = rendered["north"].crop((int(FACE * 0.24), int(FACE * 0.13),
-                                   int(FACE * 0.76), int(FACE * 0.65)))
-    icon.resize((512, 512), Image.LANCZOS).convert("RGB").save(
+    with open(os.path.join(PACK, "credits.txt"), "w", encoding="utf-8") as fh:
+        fh.write("made by 2660master\n"
+                 "add .master.26 on dc for your custom packs\n")
+
+    # Pack icon, from the supplied artwork. Minecraft wants a square; flatten
+    # any transparency onto white rather than letting it go black.
+    icon = Image.open(os.path.join(HERE, "pack_icon.png")).convert("RGBA")
+    side = min(icon.size)
+    icon = icon.crop(((icon.width - side) // 2, (icon.height - side) // 2,
+                      (icon.width + side) // 2, (icon.height + side) // 2))
+    flat = Image.new("RGB", icon.size, (255, 255, 255))
+    flat.paste(icon, mask=icon.split()[3])
+    flat.resize((512, 512), Image.LANCZOS).save(
         os.path.join(PACK, "pack.png"), optimize=True)
 
     zip_path = os.path.join(ROOT, "PinkSky.zip")
