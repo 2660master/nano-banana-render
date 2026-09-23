@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360" role="img" aria-label="Hydro Wave preview">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#050d20"/><stop offset="0.55" stop-color="#0d2a66"/><stop offset="1" stop-color="#050d20"/></linearGradient>
+<linearGradient id="glow" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#38bdf8" stop-opacity="0"/><stop offset="1" stop-color="#38bdf8" stop-opacity="0.55"/></linearGradient>
+<linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0.35" stop-color="#050d20" stop-opacity="0"/><stop offset="1" stop-color="#050d20" stop-opacity="0.92"/></linearGradient>
+<pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#38bdf8" stroke-opacity="0.13" stroke-width="1"/></pattern>
+</defs>
+<rect width="640" height="360" fill="url(#bg)"/>
+<rect width="640" height="360" fill="url(#grid)"/>
+<rect x="418" y="-120" width="33" height="600" fill="#38bdf8" fill-opacity="0.103" transform="rotate(45 320.0 180.0)"/>
+<rect x="452" y="-120" width="67" height="600" fill="#38bdf8" fill-opacity="0.091" transform="rotate(45 320.0 180.0)"/>
+<rect x="12" y="-120" width="49" height="600" fill="#38bdf8" fill-opacity="0.084" transform="rotate(45 320.0 180.0)"/>
+<rect x="270" y="-120" width="42" height="600" fill="#38bdf8" fill-opacity="0.105" transform="rotate(45 320.0 180.0)"/>
+<rect x="438" y="-120" width="37" height="600" fill="#38bdf8" fill-opacity="0.105" transform="rotate(45 320.0 180.0)"/>
+<rect x="423" y="145" width="65" height="65" rx="6" fill="#38bdf8" fill-opacity="0.172" stroke="#38bdf8" stroke-opacity="0.372" stroke-width="1.5" transform="rotate(12 455.5 177.5)"/>
+<rect x="432" y="82" width="54" height="54" rx="6" fill="#38bdf8" fill-opacity="0.113" stroke="#38bdf8" stroke-opacity="0.313" stroke-width="1.5" transform="rotate(5 459.0 109.0)"/>
+<rect x="440" y="91" width="29" height="29" rx="6" fill="#38bdf8" fill-opacity="0.141" stroke="#38bdf8" stroke-opacity="0.341" stroke-width="1.5" transform="rotate(4 454.5 105.5)"/>
+<rect x="346" y="198" width="65" height="65" rx="6" fill="#38bdf8" fill-opacity="0.204" stroke="#38bdf8" stroke-opacity="0.404" stroke-width="1.5" transform="rotate(11 378.5 230.5)"/>
+<rect x="539" y="203" width="31" height="31" rx="6" fill="#38bdf8" fill-opacity="0.251" stroke="#38bdf8" stroke-opacity="0.451" stroke-width="1.5" transform="rotate(3 554.5 218.5)"/>
+<rect x="266" y="52" width="37" height="37" rx="6" fill="#38bdf8" fill-opacity="0.254" stroke="#38bdf8" stroke-opacity="0.454" stroke-width="1.5" transform="rotate(4 284.5 70.5)"/>
+<rect x="194" y="168" width="28" height="28" rx="6" fill="#38bdf8" fill-opacity="0.237" stroke="#38bdf8" stroke-opacity="0.437" stroke-width="1.5" transform="rotate(6 208.0 182.0)"/>
+<path d="M9.4 78.3 A122 122 0 0 1 238.6 161.7" fill="none" stroke="url(#glow)" stroke-width="3" stroke-linecap="round"/>
+<rect width="640" height="360" fill="url(#fade)"/>
+<text x="320" y="176" text-anchor="middle" font-family="Segoe UI, Inter, sans-serif" font-size="30" font-weight="800" letter-spacing="0.3em" fill="#eaf3ff" fill-opacity="0.16">LEAKESTAN</text>
+<text x="320" y="202" text-anchor="middle" font-family="Segoe UI, Inter, sans-serif" font-size="11" font-weight="600" letter-spacing="0.34em" fill="#38bdf8" fill-opacity="0.5">PREVIEW</text>
+</svg>

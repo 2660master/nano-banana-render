@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="blue">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leakestan — Pack Archive</title>
+<meta name="description" content="Leakestan — a blue-tinted archive of packs. Browse previews, grab downloads and join the Discord.">
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<a class="skip-link" href="#grid">Skip to packs</a>
+
+<!-- ───────────────────────── Sidebar ───────────────────────── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar__inner">
+
+    <a class="brand" href="#top">
+      <img class="brand__mark" src="assets/logo.svg" alt="" width="40" height="40">
+      <span class="brand__text">
+        <span class="brand__name">Leak<em>estan</em></span>
+        <span class="brand__tag">pack archive</span>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label="Categories">
+      <p class="nav__label">Browse</p>
+      <ul class="nav__list" id="categoryList"></ul>
+    </nav>
+
+    <div class="panel panel--discord">
+      <div class="panel__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+          <path d="M19.3 5.3A16 16 0 0 0 15.4 4l-.2.4a15 15 0 0 1 3.5 1.7 13.4 13.4 0 0 0-11.4 0A15 15 0 0 1 10.8 4.4L10.6 4a16 16 0 0 0-3.9 1.3C3.6 9.9 3 14.3 3.3 18.6a16.2 16.2 0 0 0 4.9 2.5l.9-1.5a10 10 0 0 1-1.6-.8l.4-.3a11.5 11.5 0 0 0 10.2 0l.4.3a10 10 0 0 1-1.6.8l.9 1.5a16.2 16.2 0 0 0 4.9-2.5c.4-5-.6-9.3-3.4-13.3ZM9.3 16c-.9 0-1.7-.9-1.7-2s.8-2 1.7-2 1.7.9 1.7 2-.8 2-1.7 2Zm5.4 0c-.9 0-1.7-.9-1.7-2s.8-2 1.7-2 1.7.9 1.7 2-.8 2-1.7 2Z"/>
+        </svg>
+      </div>
+      <h2 class="panel__title">Join the Discord</h2>
+      <p class="panel__text">Requests, mirrors and drop notifications land there first.</p>
+      <a class="btn btn--discord" id="discordSidebar" href="#" rel="noopener noreferrer">Join server</a>
+      <p class="panel__hint" id="discordHint" hidden>Invite link not set yet.</p>
+    </div>
+
+    <p class="sidebar__foot">
+      Previews are placeholders · downloads are blank until linked.
+    </p>
+  </div>
+</aside>
+
+<!-- ───────────────────────── Main ───────────────────────── -->
+<div class="shell" id="top">
+
+  <header class="topbar">
+    <button class="icon-btn topbar__menu" id="menuToggle" aria-expanded="false" aria-controls="sidebar">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      <span class="sr-only">Menu</span>
+    </button>
+
+    <div class="search">
+      <svg class="search__icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+      <input id="search" type="search" placeholder="Search packs…" autocomplete="off" aria-label="Search packs">
+      <kbd class="search__kbd">/</kbd>
+    </div>
+
+    <div class="topbar__actions">
+      <label class="select">
+        <span class="sr-only">Sort</span>
+        <select id="sort">
+          <option value="newest">Newest first</option>
+          <option value="popular">Most grabbed</option>
+          <option value="name">A → Z</option>
+        </select>
+      </label>
+
+      <div class="toggle" role="group" aria-label="View">
+        <button class="toggle__btn is-active" data-view="grid" aria-pressed="true">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>
+          <span class="sr-only">Grid</span>
+        </button>
+        <button class="toggle__btn" data-view="list" aria-pressed="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="3" y="4" width="18" height="4" rx="2"/><rect x="3" y="10" width="18" height="4" rx="2"/><rect x="3" y="16" width="18" height="4" rx="2"/></svg>
+          <span class="sr-only">List</span>
+        </button>
+      </div>
+
+      <a class="btn btn--discord btn--sm topbar__discord" id="discordTop" href="#" rel="noopener noreferrer">Discord</a>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <section class="hero">
+      <div class="hero__glow" aria-hidden="true"></div>
+      <div class="hero__body">
+        <p class="hero__eyebrow">Archive</p>
+        <h1 class="hero__title">Every pack, one blue shelf.</h1>
+        <p class="hero__text">
+          Scroll the previews, open one for a closer look, then take the download
+          straight from the card.
+        </p>
+        <div class="hero__stats">
+          <div class="stat"><span class="stat__num" id="statPacks">0</span><span class="stat__label">packs</span></div>
+          <div class="stat"><span class="stat__num" id="statCats">0</span><span class="stat__label">categories</span></div>
+          <div class="stat"><span class="stat__num" id="statHits">0</span><span class="stat__label">grabs</span></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="section-head">
+      <h2 class="section-head__title" id="resultTitle">All packs</h2>
+      <p class="section-head__count" id="resultCount">0 results</p>
+    </div>
+
+    <section class="grid" id="grid" aria-live="polite"></section>
+
+    <p class="empty" id="empty" hidden>Nothing matches that search.</p>
+
+    <footer class="footer">
+      <div class="footer__brand">
+        <img src="assets/logo.svg" alt="" width="28" height="28">
+        <span>Leakestan</span>
+      </div>
+      <p class="footer__text">
+        Fan-made archive. Previews shown here are placeholders and every download
+        button is still blank.
+      </p>
+      <a class="btn btn--discord btn--sm" id="discordFooter" href="#" rel="noopener noreferrer">Join the Discord</a>
+    </footer>
+
+  </main>
+</div>
+
+<!-- ───────────────────────── Lightbox ───────────────────────── -->
+<div class="lightbox" id="lightbox" hidden>
+  <div class="lightbox__backdrop" data-close></div>
+  <div class="lightbox__card" role="dialog" aria-modal="true" aria-labelledby="lbTitle">
+    <button class="icon-btn lightbox__close" data-close>
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      <span class="sr-only">Close</span>
+    </button>
+    <img class="lightbox__img" id="lbImg" src="" alt="">
+    <div class="lightbox__body">
+      <div>
+        <h3 class="lightbox__title" id="lbTitle"></h3>
+        <p class="lightbox__meta" id="lbMeta"></p>
+      </div>
+      <a class="btn btn--primary" id="lbDownload" href="#" download>Download</a>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="backdrop" id="backdrop" hidden></div>
+
+<script src="data/packs.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

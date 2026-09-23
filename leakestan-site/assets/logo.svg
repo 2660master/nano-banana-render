@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Leakestan">
+  <defs>
+    <linearGradient id="lk" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#60a5fa"/>
+      <stop offset="0.5" stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="#0b1630" stroke="url(#lk)" stroke-width="2.5"/>
+  <path d="M22 16v27h18" fill="none" stroke="url(#lk)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="43" cy="22" r="4.5" fill="url(#lk)"/>
+  <path d="M43 29c0 5-5 6-5 10" fill="none" stroke="url(#lk)" stroke-width="3" stroke-linecap="round" stroke-dasharray="3 5" opacity="0.8"/>
+</svg>

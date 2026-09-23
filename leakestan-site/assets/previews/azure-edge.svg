@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360" role="img" aria-label="Azure Edge 16x preview">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#08112a"/><stop offset="0.55" stop-color="#12306b"/><stop offset="1" stop-color="#08112a"/></linearGradient>
+<linearGradient id="glow" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4f9dff" stop-opacity="0"/><stop offset="1" stop-color="#4f9dff" stop-opacity="0.55"/></linearGradient>
+<linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0.35" stop-color="#08112a" stop-opacity="0"/><stop offset="1" stop-color="#08112a" stop-opacity="0.92"/></linearGradient>
+<pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#4f9dff" stroke-opacity="0.13" stroke-width="1"/></pattern>
+</defs>
+<rect width="640" height="360" fill="url(#bg)"/>
+<rect width="640" height="360" fill="url(#grid)"/>
+<rect x="391" y="-120" width="35" height="600" fill="#4f9dff" fill-opacity="0.176" transform="rotate(60 320.0 180.0)"/>
+<rect x="362" y="-120" width="65" height="600" fill="#4f9dff" fill-opacity="0.091" transform="rotate(60 320.0 180.0)"/>
+<rect x="514" y="-120" width="53" height="600" fill="#4f9dff" fill-opacity="0.167" transform="rotate(60 320.0 180.0)"/>
+<rect x="514" y="-120" width="56" height="600" fill="#4f9dff" fill-opacity="0.142" transform="rotate(60 320.0 180.0)"/>
+<rect x="-75" y="-120" width="53" height="600" fill="#4f9dff" fill-opacity="0.146" transform="rotate(60 320.0 180.0)"/>
+<rect x="265" y="191" width="46" height="46" rx="6" fill="#4f9dff" fill-opacity="0.142" stroke="#4f9dff" stroke-opacity="0.342" stroke-width="1.5" transform="rotate(-1 288.0 214.0)"/>
+<rect x="469" y="167" width="36" height="36" rx="6" fill="#4f9dff" fill-opacity="0.25" stroke="#4f9dff" stroke-opacity="0.45" stroke-width="1.5" transform="rotate(-16 487.0 185.0)"/>
+<rect x="265" y="110" width="64" height="64" rx="6" fill="#4f9dff" fill-opacity="0.143" stroke="#4f9dff" stroke-opacity="0.343" stroke-width="1.5" transform="rotate(-18 297.0 142.0)"/>
+<rect x="171" y="35" width="74" height="74" rx="6" fill="#4f9dff" fill-opacity="0.223" stroke="#4f9dff" stroke-opacity="0.423" stroke-width="1.5" transform="rotate(8 208.0 72.0)"/>
+<rect x="511" y="202" width="63" height="63" rx="6" fill="#4f9dff" fill-opacity="0.208" stroke="#4f9dff" stroke-opacity="0.408" stroke-width="1.5" transform="rotate(-12 542.5 233.5)"/>
+<rect x="481" y="144" width="59" height="59" rx="6" fill="#4f9dff" fill-opacity="0.097" stroke="#4f9dff" stroke-opacity="0.297" stroke-width="1.5" transform="rotate(-15 510.5 173.5)"/>
+<rect x="432" y="188" width="51" height="51" rx="6" fill="#4f9dff" fill-opacity="0.189" stroke="#4f9dff" stroke-opacity="0.389" stroke-width="1.5" transform="rotate(-6 457.5 213.5)"/>
+<path d="M12.2 125.3 A119 119 0 0 1 235.8 206.7" fill="none" stroke="url(#glow)" stroke-width="3" stroke-linecap="round"/>
+<rect width="640" height="360" fill="url(#fade)"/>
+<text x="320" y="176" text-anchor="middle" font-family="Segoe UI, Inter, sans-serif" font-size="30" font-weight="800" letter-spacing="0.3em" fill="#eaf3ff" fill-opacity="0.16">LEAKESTAN</text>
+<text x="320" y="202" text-anchor="middle" font-family="Segoe UI, Inter, sans-serif" font-size="11" font-weight="600" letter-spacing="0.34em" fill="#4f9dff" fill-opacity="0.5">PREVIEW</text>
+</svg>
