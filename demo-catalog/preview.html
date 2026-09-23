@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Demo Catalog</title>
+<style>
+  :root{
+    --bg:#0d1117;--bg-elev:#161b22;--bg-elev-2:#1c2230;--border:#262d3a;
+    --border-strong:#333b4a;--text:#e6edf3;--text-dim:#9aa5b1;--text-faint:#6b7684;
+    --accent:#6ea8fe;--accent-2:#a06bff;--good:#3fb950;--star:#f2c14e;
+    --radius:14px;--shadow:0 8px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%,rgba(110,168,254,.10),transparent 60%),
+      radial-gradient(1000px 500px at 100% 0%,rgba(160,107,255,.10),transparent 55%),var(--bg);
+    color:var(--text);
+    font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;line-height:1.5;
+  }
+  a{color:inherit;text-decoration:none}
+  .container{max-width:1180px;margin:0 auto;padding:0 20px}
+  .site-header{position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);
+    background:rgba(13,17,23,.72);border-bottom:1px solid var(--border)}
+  .site-header .container{display:flex;align-items:center;gap:18px;height:64px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;cursor:pointer}
+  .brand .logo{width:30px;height:30px;border-radius:9px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:grid;place-items:center;color:#0d1117;font-weight:800;font-size:16px}
+  .brand small{color:var(--text-faint);font-weight:500;font-size:12px}
+  .header-search{margin-left:auto;position:relative;width:min(360px,42vw)}
+  .header-search input{width:100%;height:40px;padding:0 14px 0 38px;border-radius:10px;
+    border:1px solid var(--border-strong);background:var(--bg-elev);color:var(--text);
+    font-size:14px;outline:none}
+  .header-search input:focus{border-color:var(--accent)}
+  .header-search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-faint)}
+  .hero{padding:46px 0 26px}
+  .hero h1{font-size:clamp(26px,4vw,40px);margin:0 0 8px;letter-spacing:-.5px}
+  .hero p{color:var(--text-dim);margin:0;max-width:620px}
+  .filters{display:flex;flex-wrap:wrap;gap:10px;padding:18px 0 26px}
+  .chip{padding:8px 14px;border-radius:999px;border:1px solid var(--border-strong);
+    background:var(--bg-elev);color:var(--text-dim);font-size:13px;cursor:pointer;
+    transition:all .15s ease;user-select:none}
+  .chip:hover{border-color:var(--accent);color:var(--text)}
+  .chip.active{background:linear-gradient(135deg,rgba(110,168,254,.18),rgba(160,107,255,.18));
+    border-color:var(--accent);color:var(--text)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px;padding-bottom:60px}
+  .card{background:var(--bg-elev);border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px;display:flex;flex-direction:column;gap:12px;cursor:pointer;
+    transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease}
+  .card:hover{transform:translateY(-3px);border-color:var(--border-strong);box-shadow:var(--shadow)}
+  .card-top{display:flex;align-items:center;gap:12px}
+  .thumb{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;
+    font-weight:800;font-size:20px;color:#0d1117;flex-shrink:0}
+  .card h3{margin:0;font-size:16px}
+  .card .meta{color:var(--text-faint);font-size:12px}
+  .card .desc{color:var(--text-dim);font-size:13.5px;margin:0;flex:1}
+  .card-tags{display:flex;flex-wrap:wrap;gap:6px}
+  .tag{font-size:11px;padding:3px 8px;border-radius:6px;background:var(--bg-elev-2);
+    color:var(--text-dim);border:1px solid var(--border)}
+  .card-foot{display:flex;align-items:center;justify-content:space-between;
+    border-top:1px solid var(--border);padding-top:12px;font-size:12.5px;color:var(--text-dim)}
+  .rating{color:var(--star);font-weight:600}
+  .badge-free{color:var(--good);font-weight:600;border:1px solid rgba(63,185,80,.35);
+    background:rgba(63,185,80,.08);padding:2px 8px;border-radius:6px}
+  .empty{text-align:center;color:var(--text-faint);padding:60px 0}
+  .detail{padding:34px 0 60px}
+  .back-link{display:inline-flex;align-items:center;gap:6px;color:var(--text-dim);
+    font-size:14px;margin-bottom:22px;cursor:pointer}
+  .back-link:hover{color:var(--text)}
+  .detail-head{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+  .detail-head .thumb{width:76px;height:76px;border-radius:18px;font-size:30px}
+  .detail-head h1{margin:0 0 4px;font-size:28px}
+  .detail-head .sub{color:var(--text-dim);font-size:14px}
+  .detail-actions{margin-left:auto;display:flex;gap:10px}
+  .btn{padding:10px 18px;border-radius:10px;border:1px solid var(--border-strong);
+    background:var(--bg-elev);color:var(--text);font-size:14px;font-weight:600;cursor:pointer}
+  .btn.primary{border:none;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#0d1117}
+  .detail-grid{display:grid;grid-template-columns:1fr 300px;gap:26px;margin-top:30px}
+  .panel{background:var(--bg-elev);border:1px solid var(--border);border-radius:var(--radius);padding:22px}
+  .panel h2{margin:0 0 12px;font-size:16px}
+  .panel p{color:var(--text-dim);margin:0 0 14px}
+  .spec-row{display:flex;justify-content:space-between;padding:10px 0;
+    border-bottom:1px solid var(--border);font-size:14px}
+  .spec-row:last-child{border-bottom:none}
+  .spec-row .k{color:var(--text-faint)}
+  .spec-row .v{color:var(--text);font-weight:500}
+  .notice{margin-top:28px;font-size:12.5px;color:var(--text-faint);
+    border-top:1px solid var(--border);padding-top:18px}
+  .hidden{display:none}
+  @media (max-width:760px){.detail-grid{grid-template-columns:1fr}.header-search{width:46vw}.brand small{display:none}}
+</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="brand" onclick="goHome()">
+        <span class="logo">D</span>
+        <span>Demo Catalog <small>voorbeeld-inhoud</small></span>
+      </div>
+      <div class="header-search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input id="search" type="search" placeholder="Zoek op naam, tag of auteur…" autocomplete="off" />
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="home">
+      <section class="hero">
+        <h1>Ontdek tools &amp; resources</h1>
+        <p>Een schone voorbeeldcatalogus. Blader door de items, filter op categorie of zoek gericht. Alle inhoud is fictief en volledig legaal.</p>
+      </section>
+      <div id="filters" class="filters"></div>
+      <div id="grid" class="grid"></div>
+    </div>
+    <section id="detail" class="detail hidden"></section>
+  </main>
+
+<script>
+const CATALOG_ITEMS = [
+  {id:"a1",name:"Aurora Notes",category:"Productivity",author:"Studio Northlight",version:"1.4.2",updated:"2026-08-14",tags:["markdown","offline","sync"],price:"Free",rating:4.7,downloads:12840,short:"A calm, distraction-free note app with local-first storage.",description:"Aurora Notes keeps your writing fast and private. Everything is stored locally by default, with optional end-to-end encrypted sync. Includes markdown preview, tagging, and a focus mode."},
+  {id:"b2",name:"PixelForge",category:"Graphics",author:"Rowan Vega",version:"3.0.0",updated:"2026-09-02",tags:["pixel-art","editor","animation"],price:"Free",rating:4.9,downloads:28110,short:"An open pixel-art editor with onion-skinning and tilemaps.",description:"PixelForge is a lightweight editor for pixel art and sprite animation. It supports layers, palettes, onion-skinning, and tilemap export. Built for hobbyists and indie game artists."},
+  {id:"c3",name:"LoopStation",category:"Audio",author:"Cadence Labs",version:"2.1.5",updated:"2026-07-28",tags:["daw","loops","midi"],price:"Free",rating:4.5,downloads:9432,short:"A minimal loop-based music sketchpad in your browser.",description:"LoopStation lets you layer beats, melodies, and samples into quick musical sketches. MIDI input, per-track effects, and export to WAV. Great for prototyping song ideas."},
+  {id:"d4",name:"TerraMap",category:"Tools",author:"Open Carto Collective",version:"0.9.1",updated:"2026-06-19",tags:["maps","geojson","viewer"],price:"Free",rating:4.3,downloads:5120,short:"Render and inspect GeoJSON layers with a clean viewer.",description:"TerraMap is a small viewer for geospatial data. Drop in GeoJSON files, toggle layers, and inspect feature properties. No account needed, runs entirely client-side."},
+  {id:"e5",name:"SnapKit",category:"Graphics",author:"Mira Osei",version:"1.2.0",updated:"2026-09-10",tags:["screenshots","mockups","export"],price:"Free",rating:4.6,downloads:17600,short:"Turn plain screenshots into polished, framed mockups.",description:"SnapKit adds backgrounds, device frames, and shadows to your screenshots in seconds. Batch export at multiple resolutions for docs, stores, and social posts."},
+  {id:"f6",name:"QueryLens",category:"Developer",author:"Basalt Tools",version:"4.5.3",updated:"2026-08-30",tags:["sql","database","explorer"],price:"Free",rating:4.8,downloads:21050,short:"A friendly SQL explorer with schema diagrams.",description:"QueryLens connects to local databases and gives you a fast query editor, auto-generated schema diagrams, and safe read-only mode for exploring unfamiliar data."},
+  {id:"g7",name:"FocusTimer",category:"Productivity",author:"Studio Northlight",version:"2.0.0",updated:"2026-05-11",tags:["pomodoro","focus","minimal"],price:"Free",rating:4.4,downloads:8300,short:"A tiny, tidy Pomodoro timer that stays out of your way.",description:"FocusTimer runs quiet work/break cycles with gentle notifications and a daily summary. No sign-up, no tracking, just a clean timer that helps you keep momentum."},
+  {id:"h8",name:"MeshViewer",category:"Graphics",author:"Rowan Vega",version:"1.7.4",updated:"2026-09-18",tags:["3d","obj","gltf"],price:"Free",rating:4.7,downloads:14220,short:"Preview 3D models (OBJ / glTF) right in the browser.",description:"MeshViewer loads OBJ and glTF models with orbit controls, wireframe toggle, and basic material inspection. Perfect for quickly checking exported assets."},
+  {id:"i9",name:"ClipVault",category:"Tools",author:"Cadence Labs",version:"3.3.0",updated:"2026-07-04",tags:["clipboard","history","snippets"],price:"Free",rating:4.2,downloads:6740,short:"A searchable clipboard history and snippet manager.",description:"ClipVault remembers what you copy and lets you pin frequently used snippets. Fuzzy search, tags, and local encryption keep everything organized and private."},
+  {id:"j10",name:"MarkFlow",category:"Developer",author:"Basalt Tools",version:"5.1.0",updated:"2026-09-20",tags:["docs","markdown","static-site"],price:"Free",rating:4.9,downloads:30410,short:"Write docs in markdown, publish a static site instantly.",description:"MarkFlow turns a folder of markdown files into a searchable static documentation site. Themes, code highlighting, and a live preview server are all included."}
+];
+
+const GRADIENTS=[["#6ea8fe","#a06bff"],["#3fb950","#2dd4bf"],["#f2c14e","#f97362"],["#f97362","#a06bff"],["#2dd4bf","#6ea8fe"],["#a06bff","#f2c14e"]];
+function gradientFor(id){let h=0;for(let i=0;i<id.length;i++)h=(h*31+id.charCodeAt(i))>>>0;const[a,b]=GRADIENTS[h%GRADIENTS.length];return`linear-gradient(135deg,${a},${b})`}
+function initials(n){return n.split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase()}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+
+let activeCategory="All",query="";
+const grid=document.getElementById("grid"),filters=document.getElementById("filters"),search=document.getElementById("search");
+const homeEl=document.getElementById("home"),detailEl=document.getElementById("detail");
+
+const categories=["All",...Array.from(new Set(CATALOG_ITEMS.map(i=>i.category)))];
+filters.innerHTML=categories.map(c=>`<div class="chip${c==="All"?" active":""}" data-cat="${esc(c)}">${esc(c)}</div>`).join("");
+filters.addEventListener("click",e=>{const chip=e.target.closest(".chip");if(!chip)return;activeCategory=chip.dataset.cat;filters.querySelectorAll(".chip").forEach(c=>c.classList.remove("active"));chip.classList.add("active");draw()});
+search.addEventListener("input",()=>{query=search.value.trim().toLowerCase();draw()});
+
+function matches(it){if(activeCategory!=="All"&&it.category!==activeCategory)return false;if(!query)return true;return[it.name,it.author,it.category,it.short,(it.tags||[]).join(" ")].join(" ").toLowerCase().includes(query)}
+function draw(){const vis=CATALOG_ITEMS.filter(matches);grid.innerHTML=vis.length?vis.map(cardHtml).join(""):`<div class="empty">Geen resultaten gevonden.</div>`}
+function cardHtml(it){const tags=(it.tags||[]).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join("");
+  return`<div class="card" onclick="openItem('${it.id}')">
+    <div class="card-top"><div class="thumb" style="background:${gradientFor(it.id)}">${esc(initials(it.name))}</div>
+    <div><h3>${esc(it.name)}</h3><div class="meta">${esc(it.category)} · ${esc(it.author)}</div></div></div>
+    <p class="desc">${esc(it.short)}</p><div class="card-tags">${tags}</div>
+    <div class="card-foot"><span class="rating">★ ${it.rating.toFixed(1)}</span><span class="badge-free">${esc(it.price)}</span></div></div>`}
+
+function openItem(id){const it=CATALOG_ITEMS.find(x=>x.id===id);if(!it)return;
+  const tags=(it.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join(" ");
+  detailEl.innerHTML=`<div class="back-link" onclick="goHome()">← Terug naar overzicht</div>
+    <div class="detail-head"><div class="thumb" style="background:${gradientFor(it.id)}">${esc(initials(it.name))}</div>
+    <div><h1>${esc(it.name)}</h1><div class="sub">${esc(it.category)} · door ${esc(it.author)} · <span class="rating">★ ${it.rating.toFixed(1)}</span></div></div>
+    <div class="detail-actions"><button class="btn primary" onclick="alert('Dit is een demo — er wordt niets gedownload.')">Bekijk</button>
+    <button class="btn" onclick="alert('Toegevoegd aan favorieten (demo).')">♡ Bewaar</button></div></div>
+    <div class="detail-grid"><div class="panel"><h2>Beschrijving</h2><p>${esc(it.description)}</p><div class="card-tags">${tags}</div></div>
+    <div class="panel"><h2>Informatie</h2>
+    <div class="spec-row"><span class="k">Versie</span><span class="v">${esc(it.version)}</span></div>
+    <div class="spec-row"><span class="k">Bijgewerkt</span><span class="v">${esc(it.updated)}</span></div>
+    <div class="spec-row"><span class="k">Categorie</span><span class="v">${esc(it.category)}</span></div>
+    <div class="spec-row"><span class="k">Auteur</span><span class="v">${esc(it.author)}</span></div>
+    <div class="spec-row"><span class="k">Downloads</span><span class="v">${it.downloads.toLocaleString("nl-NL")}</span></div>
+    <div class="spec-row"><span class="k">Prijs</span><span class="v badge-free">${esc(it.price)}</span></div></div></div>
+    <p class="notice">Dit is een demonstratiepagina met fictieve, legale voorbeeld-inhoud. Er wordt geen software gehost of gedownload.</p>`;
+  homeEl.classList.add("hidden");detailEl.classList.remove("hidden");window.scrollTo(0,0)}
+
+function goHome(){detailEl.classList.add("hidden");homeEl.classList.remove("hidden")}
+draw();
+</script>
+</body>
+</html>
