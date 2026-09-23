@@ -100,6 +100,7 @@ andere formaten worden netjes bijgesneden.
 
 ## Let op
 
-De afbeeldingen zijn zelfgemaakte placeholders en de namen ("Client 01" t/m
-"Client 12"), datums en aantallen zijn opvulling. Vervang ze door je eigen
-materiaal.
+De afbeeldingen en namen zijn handmatig aangeleverd. Alleen de datums bij
+`added` zijn verzonnen — die bepalen niets anders dan de volgorde bij
+"Newest first". Er worden geen bestanden gehost of gelinkt: elke downloadknop
+serveert `assets/blank.txt`.

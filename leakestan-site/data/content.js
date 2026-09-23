@@ -37,34 +37,49 @@ window.LEAKESTAN = {
    * Een item heeft maar vier dingen nodig: naam, categorie, afbeelding en
    * (later) een link. `added` bepaalt alleen de volgorde bij "Newest first".
    *
-   * LET OP: de afbeeldingen hieronder zijn eigen placeholders, niet de
-   * screenshots van de originele site. Vervang `image` door je eigen
-   * bestand zodra je het hebt.
+   * Nieuw item toevoegen: zet je afbeelding in assets/previews/ en kopieer
+   * een blok hieronder. Let op dat `id` uniek blijft.
    * ------------------------------------------------------------------- */
   ITEMS: [
     {
-      id: "nova-addon",
-      name: "Nova Addon",
+      id: "base-debug",
+      name: "Base Debug",
       category: "clients",
-      image: "assets/previews/nova-addon.svg",
+      image: "assets/previews/base-debug.webp",
       download: "",
-      added: "2026-09-18",
+      added: "2026-09-22",
     },
     {
-      id: "lemon-debug",
-      name: "Lemon Debug",
+      id: "water-client-dev-prerelease",
+      name: "Water Client Dev Version Pre Release",
       category: "clients",
-      image: "assets/previews/lemon-debug.svg",
+      image: "assets/previews/water-client-dev-prerelease.webp",
       download: "",
-      added: "2026-09-16",
+      added: "2026-09-21",
+    },
+    {
+      id: "swyzzy-client",
+      name: "Swyzzy Client",
+      category: "clients",
+      image: "assets/previews/swyzzy-client.webp",
+      download: "",
+      added: "2026-09-20",
     },
     {
       id: "larp-debug-v8",
       name: "Larp Debug V8",
       category: "clients",
-      image: "assets/previews/larp-debug-v8.svg",
+      image: "assets/previews/larp-debug-v8.png",
       download: "",
-      added: "2026-09-14",
+      added: "2026-09-19",
+    },
+    {
+      id: "krypton-avengers-addon",
+      name: "Krypton Avengers Addon",
+      category: "clients",
+      image: "assets/previews/krypton-avengers-addon.png",
+      download: "",
+      added: "2026-09-18",
     },
   ],
 };
