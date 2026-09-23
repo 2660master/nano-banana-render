@@ -1,14 +1,18 @@
 /* ==========================================================================
    LEAKESTAN — gallery logic
-   Reads everything from data/packs.js (window.LEAKESTAN).
+   Reads everything from data/content.js (window.LEAKESTAN).
    ========================================================================== */
 (function () {
   "use strict";
 
   var CFG = window.LEAKESTAN || {};
-  var PACKS = Array.isArray(CFG.PACKS) ? CFG.PACKS.slice() : [];
+  var ITEMS = Array.isArray(CFG.ITEMS) ? CFG.ITEMS.slice() : [];
+  var CATEGORIES = Array.isArray(CFG.CATEGORIES) ? CFG.CATEGORIES.slice() : [];
   var BLANK = CFG.BLANK_DOWNLOAD || "assets/blank.txt";
   var INVITE = (CFG.DISCORD_INVITE || "").trim();
+
+  /* "home" is the catch-all tab — it lists every entry. */
+  var HOME = "home";
 
   var $ = function (id) { return document.getElementById(id); };
 
@@ -24,10 +28,20 @@
   var toastEl = $("toast");
 
   var state = {
-    category: "all",
+    category: CATEGORIES.length ? CATEGORIES[0].key : HOME,
     query: "",
     sort: "newest",
     view: readStored("leakestan:view") || "grid",
+  };
+
+  /* Minimal stroke icons for the sidebar, keyed by the category's icon field. */
+  var ICONS = {
+    home: '<path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/>',
+    file: '<path d="M14 3H7v18h10V6z"/><path d="M13 3v4h4"/>',
+    tool: '<path d="M15 3a5 5 0 0 0-4.6 7L3 17.4 6.6 21l7.4-7.4A5 5 0 0 0 21 9l-3 3-3-3 3-3a5 5 0 0 0-3-3z"/>',
+    bug: '<rect x="8" y="8" width="8" height="11" rx="4"/><path d="M8 12H4M20 12h-4M8 17l-3 2M16 17l3 2M8 9 6 6M16 9l2-3"/>',
+    warn: '<path d="M12 4 2.8 20h18.4z"/><path d="M12 10v4M12 17.2v.1"/>',
+    dot: '<circle cx="12" cy="12" r="4"/>',
   };
 
   /* ── helpers ──────────────────────────────────────────────────────── */
@@ -56,6 +70,20 @@
     return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
   }
 
+  function categoryLabel(key) {
+    for (var i = 0; i < CATEGORIES.length; i++) {
+      if (CATEGORIES[i].key === key) { return CATEGORIES[i].label; }
+    }
+    return key;
+  }
+
+  function iconMarkup(name) {
+    var body = ICONS[name] || ICONS.dot;
+    return '<svg class="nav__icon" viewBox="0 0 24 24" width="17" height="17" fill="none" ' +
+      'stroke="currentColor" stroke-width="1.8" stroke-linecap="round" ' +
+      'stroke-linejoin="round" aria-hidden="true">' + body + "</svg>";
+  }
+
   var toastTimer;
   function toast(message) {
     if (!toastEl) { return; }
@@ -67,17 +95,13 @@
     }, 2600);
   }
 
-  /* A pack without a real link falls back to the blank placeholder file. */
-  function hasRealDownload(pack) {
-    return typeof pack.download === "string" && pack.download.trim() !== "";
+  /* An entry without a real link falls back to the blank placeholder file. */
+  function hasRealDownload(item) {
+    return typeof item.download === "string" && item.download.trim() !== "";
   }
 
-  function downloadHref(pack) {
-    return hasRealDownload(pack) ? pack.download.trim() : BLANK;
-  }
-
-  function downloadName(pack) {
-    return hasRealDownload(pack) ? "" : pack.id + "-blank.txt";
+  function downloadHref(item) {
+    return hasRealDownload(item) ? item.download.trim() : BLANK;
   }
 
   /* ── Discord buttons ──────────────────────────────────────────────── */
@@ -97,7 +121,7 @@
         btn.classList.add("is-empty");
         btn.addEventListener("click", function (event) {
           event.preventDefault();
-          toast("Discord invite is not set yet — add it in data/packs.js");
+          toast("Discord invite is not set yet — add it in data/content.js");
         });
       }
     });
@@ -107,38 +131,32 @@
 
   /* ── Categories ───────────────────────────────────────────────────── */
 
+  function countFor(key) {
+    if (key === HOME) { return ITEMS.length; }
+    return ITEMS.filter(function (item) { return item.category === key; }).length;
+  }
+
   function buildCategories() {
-    var counts = {};
-    PACKS.forEach(function (pack) {
-      var key = pack.category || "Other";
-      counts[key] = (counts[key] || 0) + 1;
-    });
-
-    var entries = [{ key: "all", label: "All packs", count: PACKS.length }];
-    Object.keys(counts).sort().forEach(function (key) {
-      entries.push({ key: key, label: key, count: counts[key] });
-    });
-
-    catList.innerHTML = entries.map(function (entry) {
-      return '<li><button class="nav__btn' + (entry.key === state.category ? " is-active" : "") +
-        '" type="button" data-category="' + esc(entry.key) + '">' +
-        '<span class="nav__dot"></span>' + esc(entry.label) +
-        '<span class="nav__count">' + entry.count + "</span></button></li>";
+    catList.innerHTML = CATEGORIES.map(function (cat) {
+      var count = countFor(cat.key);
+      return '<li><button class="nav__btn' + (cat.key === state.category ? " is-active" : "") +
+        '" type="button" data-category="' + esc(cat.key) + '">' +
+        iconMarkup(cat.icon) +
+        '<span class="nav__name">' + esc(cat.label) + "</span>" +
+        '<span class="nav__count' + (count ? "" : " is-zero") + '">' + count + "</span>" +
+        "</button></li>";
     }).join("");
-
-    return Object.keys(counts).length;
   }
 
   /* ── Filtering ────────────────────────────────────────────────────── */
 
-  function visiblePacks() {
+  function visibleItems() {
     var q = state.query.toLowerCase();
 
-    var list = PACKS.filter(function (pack) {
-      var matchesCategory = state.category === "all" || pack.category === state.category;
-      if (!matchesCategory) { return false; }
+    var list = ITEMS.filter(function (item) {
+      if (state.category !== HOME && item.category !== state.category) { return false; }
       if (!q) { return true; }
-      return (pack.name + " " + pack.category + " " + (pack.resolution || ""))
+      return (item.name + " " + item.category + " " + (item.version || ""))
         .toLowerCase().indexOf(q) !== -1;
     });
 
@@ -153,30 +171,28 @@
 
   /* ── Rendering ────────────────────────────────────────────────────── */
 
-  function cardMarkup(pack) {
-    var blank = !hasRealDownload(pack);
+  function cardMarkup(item) {
+    var blank = !hasRealDownload(item);
 
-    return '<article class="card" id="pack-' + esc(pack.id) + '">' +
-      '<button class="card__shot" type="button" data-open="' + esc(pack.id) + '">' +
-        (pack.featured ? '<span class="card__flag">Hot</span>' : "") +
-        '<img class="card__img" src="' + esc(pack.image) + '" alt="' + esc(pack.name) + ' preview" loading="lazy">' +
-        (pack.resolution ? '<span class="card__res">' + esc(pack.resolution) + "</span>" : "") +
+    return '<article class="card" id="item-' + esc(item.id) + '">' +
+      '<button class="card__shot" type="button" data-open="' + esc(item.id) + '">' +
+        (item.featured ? '<span class="card__flag">Hot</span>' : "") +
+        '<img class="card__img" src="' + esc(item.image) + '" alt="' + esc(item.name) + ' preview" loading="lazy">' +
       "</button>" +
       '<div class="card__body">' +
         '<div class="card__head">' +
-          '<h3 class="card__name">' + esc(pack.name) + "</h3>" +
-          '<span class="card__cat">' + esc(pack.category) + "</span>" +
+          '<h3 class="card__name">' + esc(item.name) + "</h3>" +
+          (item.version ? '<span class="card__cat">' + esc(item.version) + "</span>" : "") +
         "</div>" +
         '<div class="card__meta">' +
-          "<span>" + esc(pack.size || "—") + "</span>" +
-          "<span>" + esc(formatDate(pack.added)) + "</span>" +
-          "<span>" + formatNumber(pack.hits || 0) + " grabs</span>" +
+          "<span>" + esc(formatDate(item.added)) + "</span>" +
+          "<span>" + formatNumber(item.hits || 0) + " views</span>" +
         "</div>" +
         '<div class="card__actions">' +
-          '<a class="btn btn--primary" href="' + esc(downloadHref(pack)) + '"' +
-            (blank ? ' download="' + esc(downloadName(pack)) + '"' : " download") +
-            ' data-download="' + esc(pack.id) + '">Download</a>' +
-          '<button class="icon-btn" type="button" data-copy="' + esc(pack.id) + '" title="Copy link">' +
+          '<a class="btn btn--primary" href="' + esc(downloadHref(item)) + '"' +
+            (blank ? ' download="' + esc(item.id) + '-blank.txt"' : " download") +
+            ' data-download="' + esc(item.id) + '">Download</a>' +
+          '<button class="icon-btn" type="button" data-copy="' + esc(item.id) + '" title="Copy link">' +
             '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">' +
             '<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/>' +
             '<path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>' +
@@ -188,14 +204,23 @@
   }
 
   function render() {
-    var list = visiblePacks();
+    var list = visibleItems();
+    var label = categoryLabel(state.category);
 
     grid.classList.toggle("is-list", state.view === "list");
     grid.innerHTML = list.map(cardMarkup).join("");
 
-    empty.hidden = list.length > 0;
-    resultTitle.textContent = state.category === "all" ? "All packs" : state.category;
+    resultTitle.textContent = label;
     resultCount.textContent = list.length + (list.length === 1 ? " result" : " results");
+
+    empty.hidden = list.length > 0;
+    if (!empty.hidden) {
+      var searching = state.query !== "";
+      $("emptyTitle").textContent = searching ? "No matches" : "Nothing here yet";
+      $("emptyText").textContent = searching
+        ? 'Nothing matches "' + state.query + '".'
+        : label + " is still empty.";
+    }
   }
 
   /* ── Stats ────────────────────────────────────────────────────────── */
@@ -216,10 +241,12 @@
     })(start);
   }
 
-  function renderStats(categoryCount) {
-    var hits = PACKS.reduce(function (sum, pack) { return sum + (pack.hits || 0); }, 0);
-    countUp($("statPacks"), PACKS.length);
-    countUp($("statCats"), categoryCount);
+  function renderStats() {
+    var hits = ITEMS.reduce(function (sum, item) { return sum + (item.hits || 0); }, 0);
+    /* Home is a view of everything, not a category of its own. */
+    var cats = CATEGORIES.filter(function (c) { return c.key !== HOME; }).length;
+    countUp($("statItems"), ITEMS.length);
+    countUp($("statCats"), cats);
     countUp($("statHits"), hits);
   }
 
@@ -229,29 +256,25 @@
   var lastFocus = null;
 
   function openLightbox(id) {
-    var pack = PACKS.filter(function (p) { return p.id === id; })[0];
-    if (!pack) { return; }
+    var item = ITEMS.filter(function (p) { return p.id === id; })[0];
+    if (!item) { return; }
 
     lastFocus = document.activeElement;
-    $("lbImg").src = pack.image;
-    $("lbImg").alt = pack.name + " preview";
-    $("lbTitle").textContent = pack.name;
+    $("lbImg").src = item.image;
+    $("lbImg").alt = item.name + " preview";
+    $("lbTitle").textContent = item.name;
     $("lbMeta").textContent = [
-      pack.category, pack.resolution, pack.size, formatDate(pack.added),
+      categoryLabel(item.category), item.version, formatDate(item.added),
     ].filter(Boolean).join(" · ");
 
     var link = $("lbDownload");
-    link.href = downloadHref(pack);
-    link.setAttribute("data-download", pack.id);
-    if (hasRealDownload(pack)) {
-      link.setAttribute("download", "");
-    } else {
-      link.setAttribute("download", downloadName(pack));
-    }
+    link.href = downloadHref(item);
+    link.setAttribute("data-download", item.id);
+    link.setAttribute("download", hasRealDownload(item) ? "" : item.id + "-blank.txt");
 
     lightbox.hidden = false;
     document.body.style.overflow = "hidden";
-    $("lbDownload").focus();
+    link.focus();
   }
 
   function closeLightbox() {
@@ -312,7 +335,7 @@
 
       var copy = event.target.closest("[data-copy]");
       if (copy) {
-        var url = location.origin + location.pathname + "#pack-" + copy.getAttribute("data-copy");
+        var url = location.origin + location.pathname + "#item-" + copy.getAttribute("data-copy");
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(url).then(function () {
             toast("Link copied");
@@ -355,12 +378,12 @@
   }
 
   function announceDownload(id) {
-    var pack = PACKS.filter(function (p) { return p.id === id; })[0];
-    if (!pack) { return; }
-    if (hasRealDownload(pack)) {
-      toast("Downloading " + pack.name + "…");
+    var item = ITEMS.filter(function (p) { return p.id === id; })[0];
+    if (!item) { return; }
+    if (hasRealDownload(item)) {
+      toast("Downloading " + item.name + "…");
     } else {
-      toast("Placeholder — " + pack.name + " has no link yet (blank file).");
+      toast("Placeholder — " + item.name + " has no link yet (blank file).");
     }
   }
 
@@ -375,13 +398,13 @@
       el.setAttribute("aria-pressed", String(on));
     });
 
-    var categoryCount = buildCategories();
+    buildCategories();
     wireDiscord();
     wireEvents();
-    renderStats(categoryCount);
+    renderStats();
     render();
 
-    if (location.hash.indexOf("#pack-") === 0) {
+    if (location.hash.indexOf("#item-") === 0) {
       var target = document.getElementById(location.hash.slice(1));
       if (target) { target.scrollIntoView({ block: "center" }); }
     }

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360" role="img" aria-label="preview">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a0508"/><stop offset="0.55" stop-color="#3d0a14"/><stop offset="1" stop-color="#0a0508"/></linearGradient>
+<linearGradient id="glow" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#f5253b" stop-opacity="0"/><stop offset="1" stop-color="#f5253b" stop-opacity="0.55"/></linearGradient>
+<linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0.3" stop-color="#0a0508" stop-opacity="0"/><stop offset="1" stop-color="#0a0508" stop-opacity="0.94"/></linearGradient>
+<pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#f5253b" stroke-opacity="0.12" stroke-width="1"/></pattern>
+</defs>
+<rect width="640" height="360" fill="url(#bg)"/>
+<rect width="640" height="360" fill="url(#grid)"/>
+<rect x="70" y="-120" width="68" height="600" fill="#f5253b" fill-opacity="0.084" transform="rotate(35 320.0 180.0)"/>
+<rect x="290" y="-120" width="46" height="600" fill="#f5253b" fill-opacity="0.07" transform="rotate(35 320.0 180.0)"/>
+<rect x="96" y="-120" width="43" height="600" fill="#f5253b" fill-opacity="0.084" transform="rotate(35 320.0 180.0)"/>
+<rect x="392" y="-120" width="58" height="600" fill="#f5253b" fill-opacity="0.122" transform="rotate(35 320.0 180.0)"/>
+<rect x="21" y="-120" width="74" height="600" fill="#f5253b" fill-opacity="0.105" transform="rotate(35 320.0 180.0)"/>
+<rect x="225" y="81" width="26" height="26" rx="6" fill="#f5253b" fill-opacity="0.104" stroke="#f5253b" stroke-opacity="0.324" stroke-width="1.5" transform="rotate(-6 238.0 94.0)"/>
+<rect x="29" y="222" width="39" height="39" rx="6" fill="#f5253b" fill-opacity="0.103" stroke="#f5253b" stroke-opacity="0.323" stroke-width="1.5" transform="rotate(-10 48.5 241.5)"/>
+<rect x="332" y="56" width="27" height="27" rx="6" fill="#f5253b" fill-opacity="0.117" stroke="#f5253b" stroke-opacity="0.337" stroke-width="1.5" transform="rotate(9 345.5 69.5)"/>
+<rect x="232" y="171" width="35" height="35" rx="6" fill="#f5253b" fill-opacity="0.218" stroke="#f5253b" stroke-opacity="0.438" stroke-width="1.5" transform="rotate(-16 249.5 188.5)"/>
+<rect x="519" y="27" width="47" height="47" rx="6" fill="#f5253b" fill-opacity="0.134" stroke="#f5253b" stroke-opacity="0.354" stroke-width="1.5" transform="rotate(-3 542.5 50.5)"/>
+<rect x="359" y="203" width="64" height="64" rx="6" fill="#f5253b" fill-opacity="0.103" stroke="#f5253b" stroke-opacity="0.323" stroke-width="1.5" transform="rotate(3 391.0 235.0)"/>
+<rect x="360" y="72" width="60" height="60" rx="6" fill="#f5253b" fill-opacity="0.138" stroke="#f5253b" stroke-opacity="0.358" stroke-width="1.5" transform="rotate(0 390.0 102.0)"/>
+<path d="M317.1 127.5 A101 101 0 0 1 506.9 196.5" fill="none" stroke="url(#glow)" stroke-width="3" stroke-linecap="round"/>
+<rect width="640" height="360" fill="url(#fade)"/>
+<g opacity="0.22"><polygon points="253.25,120.00 278.21,120.00 260.50,191.04 293.14,191.04 286.91,216.00 229.31,216.00" fill="#ffffff"/><polygon points="322.37,120.00 347.33,120.00 336.80,162.24 378.05,120.00 410.69,120.00 359.84,169.92 389.63,216.00 356.03,216.00 333.45,175.68 323.39,216.00 298.43,216.00" fill="#ffffff"/></g>
+<text x="320" y="244" text-anchor="middle" font-family="Segoe UI, Inter, sans-serif" font-size="11" font-weight="600" letter-spacing="0.34em" fill="#f5253b" fill-opacity="0.55">PREVIEW</text>
+</svg>

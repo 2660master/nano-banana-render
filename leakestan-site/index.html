@@ -1,26 +1,26 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="blue">
+<html lang="en" data-theme="red">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Leakestan — Pack Archive</title>
-<meta name="description" content="Leakestan — a blue-tinted archive of packs. Browse previews, grab downloads and join the Discord.">
+<title>Leakestan</title>
+<meta name="description" content="Leakestan — archive of clients, tools and more. Browse previews, grab downloads and join the Discord.">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
-<a class="skip-link" href="#grid">Skip to packs</a>
+<a class="skip-link" href="#grid">Skip to content</a>
 
 <!-- ───────────────────────── Sidebar ───────────────────────── -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar__inner">
 
     <a class="brand" href="#top">
-      <img class="brand__mark" src="assets/logo.svg" alt="" width="40" height="40">
+      <img class="brand__mark" src="assets/logo.svg" alt="" width="42" height="42">
       <span class="brand__text">
         <span class="brand__name">Leak<em>estan</em></span>
-        <span class="brand__tag">pack archive</span>
+        <span class="brand__tag">archive</span>
       </span>
     </a>
 
@@ -58,7 +58,7 @@
 
     <div class="search">
       <svg class="search__icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
-      <input id="search" type="search" placeholder="Search packs…" autocomplete="off" aria-label="Search packs">
+      <input id="search" type="search" placeholder="Search…" autocomplete="off" aria-label="Search">
       <kbd class="search__kbd">/</kbd>
     </div>
 
@@ -67,7 +67,7 @@
         <span class="sr-only">Sort</span>
         <select id="sort">
           <option value="newest">Newest first</option>
-          <option value="popular">Most grabbed</option>
+          <option value="popular">Most viewed</option>
           <option value="name">A → Z</option>
         </select>
       </label>
@@ -93,27 +93,30 @@
       <div class="hero__glow" aria-hidden="true"></div>
       <div class="hero__body">
         <p class="hero__eyebrow">Archive</p>
-        <h1 class="hero__title">Every pack, one blue shelf.</h1>
+        <h1 class="hero__title">Everything on one shelf.</h1>
         <p class="hero__text">
           Scroll the previews, open one for a closer look, then take the download
           straight from the card.
         </p>
         <div class="hero__stats">
-          <div class="stat"><span class="stat__num" id="statPacks">0</span><span class="stat__label">packs</span></div>
+          <div class="stat"><span class="stat__num" id="statItems">0</span><span class="stat__label">entries</span></div>
           <div class="stat"><span class="stat__num" id="statCats">0</span><span class="stat__label">categories</span></div>
-          <div class="stat"><span class="stat__num" id="statHits">0</span><span class="stat__label">grabs</span></div>
+          <div class="stat"><span class="stat__num" id="statHits">0</span><span class="stat__label">views</span></div>
         </div>
       </div>
     </section>
 
     <div class="section-head">
-      <h2 class="section-head__title" id="resultTitle">All packs</h2>
+      <h2 class="section-head__title" id="resultTitle">Home</h2>
       <p class="section-head__count" id="resultCount">0 results</p>
     </div>
 
     <section class="grid" id="grid" aria-live="polite"></section>
 
-    <p class="empty" id="empty" hidden>Nothing matches that search.</p>
+    <div class="empty" id="empty" hidden>
+      <p class="empty__title" id="emptyTitle">Nothing here yet</p>
+      <p class="empty__text" id="emptyText">This category is still empty.</p>
+    </div>
 
     <footer class="footer">
       <div class="footer__brand">
@@ -153,7 +156,7 @@
 
 <div class="backdrop" id="backdrop" hidden></div>
 
-<script src="data/packs.js"></script>
+<script src="data/content.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

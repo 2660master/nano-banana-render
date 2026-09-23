@@ -1,13 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Leakestan">
   <defs>
     <linearGradient id="lk" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#60a5fa"/>
-      <stop offset="0.5" stop-color="#3b82f6"/>
-      <stop offset="1" stop-color="#22d3ee"/>
+      <stop offset="0" stop-color="#ff5464"/>
+      <stop offset="1" stop-color="#f5253b"/>
     </linearGradient>
   </defs>
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="#0b1630" stroke="url(#lk)" stroke-width="2.5"/>
-  <path d="M22 16v27h18" fill="none" stroke="url(#lk)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="43" cy="22" r="4.5" fill="url(#lk)"/>
-  <path d="M43 29c0 5-5 6-5 10" fill="none" stroke="url(#lk)" stroke-width="3" stroke-linecap="round" stroke-dasharray="3 5" opacity="0.8"/>
+  <rect width="64" height="64" rx="15" fill="#08080a"/>
+  <rect x="1" y="1" width="62" height="62" rx="14" fill="none" stroke="#f5253b" stroke-opacity="0.32"/>
+  <polygon points="15.07,19.83 21.40,19.83 16.91,37.84 25.19,37.84 23.61,44.17 9.00,44.17" fill="url(#lk)"/>
+  <polygon points="32.60,19.83 38.93,19.83 36.26,30.54 46.72,19.83 55.00,19.83 42.10,32.49 49.66,44.17 41.14,44.17 35.41,33.95 32.86,44.17 26.53,44.17" fill="url(#lk)"/>
 </svg>
