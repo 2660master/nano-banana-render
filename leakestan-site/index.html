@@ -4,13 +4,40 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Leakestan</title>
-<meta name="description" content="Leakestan — archive of clients, tools and more. Browse previews, grab downloads and join the Discord.">
+<meta name="description" content="Leakestan — archive of clients, tools and more. Browse previews and join the Discord.">
+<meta name="theme-color" content="#0a0708">
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
 <link rel="stylesheet" href="css/styles.css">
+<script>
+  /* Runs before first paint: enables JS-only styling and decides whether the
+     intro plays (once per session, never with reduced motion). */
+  (function () {
+    var root = document.documentElement;
+    root.classList.add("js");
+    var skip = false;
+    try { skip = sessionStorage.getItem("leakestan:intro") === "1"; } catch (e) { skip = true; }
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) { skip = true; }
+    if (skip) { root.classList.add("intro-skip"); }
+  })();
+</script>
 </head>
 <body>
 
 <a class="skip-link" href="#grid">Skip to content</a>
+
+<!-- Decorative layers -->
+<div class="ambient" aria-hidden="true"><span></span><span></span></div>
+<div class="grain" aria-hidden="true"></div>
+<div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+
+<!-- Intro -->
+<div class="loader" id="loader" aria-hidden="true">
+  <div class="loader__inner">
+    <img class="loader__logo" src="assets/logo.svg" alt="" width="72" height="72">
+    <p class="loader__word">LEAKESTAN</p>
+    <div class="loader__bar"><span></span></div>
+  </div>
+</div>
 
 <!-- ───────────────────────── Sidebar ───────────────────────── -->
 <aside class="sidebar" id="sidebar">
@@ -26,7 +53,10 @@
 
     <nav class="nav" aria-label="Categories">
       <p class="nav__label">Browse</p>
-      <ul class="nav__list" id="categoryList"></ul>
+      <div class="nav__track">
+        <span class="nav__indicator" id="navIndicator" aria-hidden="true"></span>
+        <ul class="nav__list" id="categoryList"></ul>
+      </div>
     </nav>
 
     <div class="panel panel--discord">
@@ -58,8 +88,8 @@
 
     <div class="search">
       <svg class="search__icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
-      <input id="search" type="search" placeholder="Search…" autocomplete="off" aria-label="Search">
-      <kbd class="search__kbd">/</kbd>
+      <input id="search" type="search" placeholder="Search the archive…" autocomplete="off" aria-label="Search">
+      <kbd class="search__kbd" id="searchKbd">Ctrl K</kbd>
     </div>
 
     <div class="topbar__actions">
@@ -90,9 +120,15 @@
 
     <section class="hero">
       <div class="hero__glow" aria-hidden="true"></div>
+      <div class="hero__stack" id="heroStack" aria-hidden="true"></div>
+
       <div class="hero__body">
-        <p class="hero__eyebrow">Archive</p>
-        <h1 class="hero__title">Everything on one shelf.</h1>
+        <p class="hero__eyebrow">
+          <span class="live-dot" aria-hidden="true"></span>
+          Live archive <span class="hero__sep" aria-hidden="true">·</span>
+          <span>updated <time id="updated">—</time></span>
+        </p>
+        <h1 class="hero__title">Everything on <span class="hero__shine">one shelf.</span></h1>
         <p class="hero__text">
           Scroll the previews, open one for a closer look, then take the download
           straight from the card.
@@ -101,6 +137,10 @@
           <div class="stat"><span class="stat__num" id="statItems">0</span><span class="stat__label">entries</span></div>
           <div class="stat"><span class="stat__num" id="statCats">0</span><span class="stat__label">categories</span></div>
         </div>
+      </div>
+
+      <div class="ticker" aria-hidden="true">
+        <div class="ticker__track" id="ticker"></div>
       </div>
     </section>
 
@@ -112,20 +152,53 @@
     <section class="grid" id="grid" aria-live="polite"></section>
 
     <div class="empty" id="empty" hidden>
+      <div class="empty__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h6l2 2h10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V5a2 2 0 0 1 2-2h4l2 2"/></svg>
+      </div>
       <p class="empty__title" id="emptyTitle">Nothing here yet</p>
       <p class="empty__text" id="emptyText">This category is still empty.</p>
     </div>
 
     <footer class="footer">
-      <div class="footer__brand">
-        <img src="assets/logo.svg" alt="" width="28" height="28">
-        <span>Leakestan</span>
+      <div class="footer__top">
+        <div class="footer__about">
+          <div class="footer__brand">
+            <img src="assets/logo.svg" alt="" width="30" height="30">
+            <span>Leakestan</span>
+          </div>
+          <p class="footer__text">
+            Fan-made archive. No files are hosted or linked here — every
+            download button is still blank.
+          </p>
+        </div>
+
+        <div class="footer__col">
+          <p class="footer__head">Browse</p>
+          <ul class="footer__list" id="footerCats"></ul>
+        </div>
+
+        <div class="footer__col">
+          <p class="footer__head">Community</p>
+          <ul class="footer__list">
+            <li><a class="footer__link" id="discordFooter" href="#" rel="noopener noreferrer">Discord server</a></li>
+            <li><button class="footer__link" type="button" id="copySite">Copy site link</button></li>
+          </ul>
+        </div>
+
+        <div class="footer__col">
+          <p class="footer__head">Shortcuts</p>
+          <ul class="footer__list footer__keys">
+            <li><kbd>/</kbd> Search</li>
+            <li><kbd>←</kbd><kbd>→</kbd> Browse preview</li>
+            <li><kbd>Esc</kbd> Close</li>
+          </ul>
+        </div>
       </div>
-      <p class="footer__text">
-        Fan-made archive. Every download button is still blank — no files are
-        hosted or linked here.
-      </p>
-      <a class="btn btn--discord btn--sm" id="discordFooter" href="#" rel="noopener noreferrer">Join the Discord</a>
+
+      <div class="footer__bottom">
+        <span>© <span id="year">2026</span> Leakestan</span>
+        <span class="footer__status"><span class="live-dot" aria-hidden="true"></span><span id="footerCount">0 entries</span></span>
+      </div>
     </footer>
 
   </main>
@@ -133,28 +206,52 @@
 
 <!-- ───────────────────────── Lightbox ───────────────────────── -->
 <div class="lightbox" id="lightbox" hidden>
-  <div class="lightbox__backdrop" data-close></div>
+  <div class="lightbox__backdrop" data-close data-cursor="view" data-cursor-label="Close"></div>
   <div class="lightbox__card" role="dialog" aria-modal="true" aria-labelledby="lbTitle">
     <button class="icon-btn lightbox__close" data-close>
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
       <span class="sr-only">Close</span>
     </button>
-    <img class="lightbox__img" id="lbImg" src="" alt="">
+    <div class="lightbox__media">
+      <img class="lightbox__img" id="lbImg" src="" alt="">
+      <button class="lightbox__nav lightbox__nav--prev" id="lbPrev" type="button">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+        <span class="sr-only">Previous</span>
+      </button>
+      <button class="lightbox__nav lightbox__nav--next" id="lbNext" type="button">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+        <span class="sr-only">Next</span>
+      </button>
+      <span class="lightbox__count" id="lbCount"></span>
+    </div>
     <div class="lightbox__body">
       <div>
         <h3 class="lightbox__title" id="lbTitle"></h3>
         <p class="lightbox__meta" id="lbMeta"></p>
       </div>
-      <a class="btn btn--primary" id="lbDownload" href="#" download>Download</a>
+      <a class="btn btn--primary" id="lbDownload" href="#" download>
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 20h14"/></svg>
+        <span>Download</span>
+      </a>
     </div>
   </div>
 </div>
 
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<button class="to-top" id="toTop" type="button" hidden>
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6m0 0-6 6m6-6 6 6"/></svg>
+  <span class="sr-only">Back to top</span>
+</button>
+
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <span class="toast__icon" aria-hidden="true"></span>
+  <span class="toast__msg" id="toastMsg"></span>
+</div>
 
 <div class="backdrop" id="backdrop" hidden></div>
 
 <script src="data/content.js"></script>
 <script src="js/app.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/cursor.js"></script>
 </body>
 </html>

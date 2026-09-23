@@ -1,6 +1,7 @@
 /* ==========================================================================
    LEAKESTAN — gallery logic
    Reads everything from data/content.js (window.LEAKESTAN).
+   Visual effects live in fx.js, the cursor in cursor.js.
    ========================================================================== */
 (function () {
   "use strict";
@@ -26,6 +27,7 @@
   var sidebar = $("sidebar");
   var backdrop = $("backdrop");
   var toastEl = $("toast");
+  var toastMsg = $("toastMsg");
 
   var state = {
     category: CATEGORIES.length ? CATEGORIES[0].key : HOME,
@@ -33,6 +35,13 @@
     sort: "newest",
     view: readStored("leakestan:view") || "grid",
   };
+
+  /* What the grid currently shows, in order — the lightbox walks this. */
+  var shown = [];
+
+  /* Catalogue number per entry, fixed by its position in content.js. */
+  var catalogue = {};
+  ITEMS.forEach(function (item, i) { catalogue[item.id] = i + 1; });
 
   /* Minimal stroke icons for the sidebar, keyed by the category's icon field. */
   var ICONS = {
@@ -43,6 +52,20 @@
     warn: '<path d="M12 4 2.8 20h18.4z"/><path d="M12 10v4M12 17.2v.1"/>',
     dot: '<circle cx="12" cy="12" r="4"/>',
   };
+
+  var SVG_DOWNLOAD =
+    '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 20h14"/></svg>';
+
+  var SVG_LINK =
+    '<svg class="icon-link" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ' +
+    'stroke-width="2" stroke-linecap="round" aria-hidden="true">' +
+    '<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/>' +
+    '<path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>' +
+    '<svg class="icon-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ' +
+    'stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
 
   /* ── helpers ──────────────────────────────────────────────────────── */
 
@@ -59,6 +82,8 @@
   function writeStored(key, value) {
     try { window.localStorage.setItem(key, value); } catch (err) { /* private mode */ }
   }
+
+  function pad(n) { return n < 10 ? "0" + n : String(n); }
 
   function formatNumber(n) {
     return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -77,6 +102,19 @@
     return key;
   }
 
+  function byId(id) {
+    for (var i = 0; i < ITEMS.length; i++) {
+      if (ITEMS[i].id === id) { return ITEMS[i]; }
+    }
+    return null;
+  }
+
+  function newestFirst(list) {
+    return list.slice().sort(function (a, b) {
+      return new Date(b.added || 0) - new Date(a.added || 0);
+    });
+  }
+
   function iconMarkup(name) {
     var body = ICONS[name] || ICONS.dot;
     return '<svg class="nav__icon" viewBox="0 0 24 24" width="17" height="17" fill="none" ' +
@@ -87,12 +125,23 @@
   var toastTimer;
   function toast(message) {
     if (!toastEl) { return; }
-    toastEl.textContent = message;
+    toastMsg.textContent = message;
+    toastEl.classList.remove("is-on");
+    /* Force a reflow so the timer bar restarts on back-to-back toasts. */
+    void toastEl.offsetWidth;
     toastEl.classList.add("is-on");
     window.clearTimeout(toastTimer);
     toastTimer = window.setTimeout(function () {
       toastEl.classList.remove("is-on");
     }, 2600);
+  }
+
+  function copyText(text, done) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+    } else {
+      done(false);
+    }
   }
 
   /* An entry without a real link falls back to the blank placeholder file. */
@@ -107,19 +156,19 @@
   /* ── Discord buttons ──────────────────────────────────────────────── */
 
   function wireDiscord() {
-    var buttons = ["discordSidebar", "discordTop", "discordFooter"].map($).filter(Boolean);
+    var links = ["discordSidebar", "discordTop", "discordFooter"].map($).filter(Boolean);
     var hint = $("discordHint");
 
-    buttons.forEach(function (btn) {
+    links.forEach(function (link) {
       if (INVITE) {
-        btn.href = INVITE;
-        btn.target = "_blank";
-        btn.classList.remove("is-empty");
+        link.href = INVITE;
+        link.target = "_blank";
+        link.classList.remove("is-empty");
       } else {
-        btn.href = "#";
-        btn.removeAttribute("target");
-        btn.classList.add("is-empty");
-        btn.addEventListener("click", function (event) {
+        link.href = "#";
+        link.removeAttribute("target");
+        link.classList.add("is-empty");
+        link.addEventListener("click", function (event) {
           event.preventDefault();
           toast("Discord invite is not set yet — add it in data/content.js");
         });
@@ -146,6 +195,34 @@
         '<span class="nav__count' + (count ? "" : " is-zero") + '">' + count + "</span>" +
         "</button></li>";
     }).join("");
+
+    var footerCats = $("footerCats");
+    if (footerCats) {
+      footerCats.innerHTML = CATEGORIES.map(function (cat) {
+        return '<li><button class="footer__link" type="button" data-category="' + esc(cat.key) + '">' +
+          esc(cat.label) + "</button></li>";
+      }).join("");
+    }
+  }
+
+  /* The highlight glides between categories instead of jumping. */
+  function moveIndicator() {
+    var indicator = $("navIndicator");
+    var active = catList.querySelector(".nav__btn.is-active");
+    if (!indicator || !active) { return; }
+    indicator.style.transform = "translateY(" + active.offsetTop + "px)";
+    indicator.style.height = active.offsetHeight + "px";
+    indicator.classList.add("is-ready");
+  }
+
+  function selectCategory(key) {
+    state.category = key;
+    Array.prototype.forEach.call(catList.querySelectorAll(".nav__btn"), function (el) {
+      el.classList.toggle("is-active", el.getAttribute("data-category") === key);
+    });
+    moveIndicator();
+    setSidebar(false);
+    render();
   }
 
   /* ── Filtering ────────────────────────────────────────────────────── */
@@ -159,34 +236,33 @@
       return (item.name + " " + item.category).toLowerCase().indexOf(q) !== -1;
     });
 
-    list.sort(function (a, b) {
-      if (state.sort === "name") { return a.name.localeCompare(b.name); }
-      return new Date(b.added || 0) - new Date(a.added || 0);
-    });
-
-    return list;
+    if (state.sort === "name") {
+      return list.sort(function (a, b) { return a.name.localeCompare(b.name); });
+    }
+    return newestFirst(list);
   }
 
   /* ── Rendering ────────────────────────────────────────────────────── */
 
-  function cardMarkup(item) {
+  function cardMarkup(item, position) {
     var blank = !hasRealDownload(item);
+    var number = "#" + pad(catalogue[item.id] || position + 1);
 
-    return '<article class="card" id="item-' + esc(item.id) + '">' +
-      '<button class="card__shot" type="button" data-open="' + esc(item.id) + '">' +
-        '<img class="card__img" src="' + esc(item.image) + '" alt="' + esc(item.name) + ' preview" loading="lazy">' +
+    return '<article class="card" id="item-' + esc(item.id) + '" style="--i:' + position + '">' +
+      '<button class="card__shot" type="button" data-open="' + esc(item.id) + '" ' +
+        'aria-label="Open ' + esc(item.name) + ' preview">' +
+        '<img class="card__img" src="' + esc(item.image) + '" alt="' + esc(item.name) + ' preview" ' +
+          'loading="lazy" decoding="async">' +
+        '<span class="card__index">' + number + "</span>" +
       "</button>" +
       '<div class="card__body">' +
         '<h3 class="card__name">' + esc(item.name) + "</h3>" +
         '<div class="card__actions">' +
           '<a class="btn btn--primary" href="' + esc(downloadHref(item)) + '"' +
             (blank ? ' download="' + esc(item.id) + '-blank.txt"' : " download") +
-            ' data-download="' + esc(item.id) + '">Download</a>' +
-          '<button class="icon-btn" type="button" data-copy="' + esc(item.id) + '" title="Copy link">' +
-            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">' +
-            '<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/>' +
-            '<path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>' +
-            '<span class="sr-only">Copy link</span>' +
+            ' data-download="' + esc(item.id) + '">' + SVG_DOWNLOAD + "<span>Download</span></a>" +
+          '<button class="icon-btn copy-btn" type="button" data-copy="' + esc(item.id) + '" title="Copy link">' +
+            SVG_LINK + '<span class="sr-only">Copy link</span>' +
           "</button>" +
         "</div>" +
       "</div>" +
@@ -196,6 +272,7 @@
   function render() {
     var list = visibleItems();
     var label = categoryLabel(state.category);
+    shown = list;
 
     grid.classList.toggle("is-list", state.view === "list");
     grid.innerHTML = list.map(cardMarkup).join("");
@@ -211,9 +288,12 @@
         ? 'Nothing matches "' + state.query + '".'
         : label + " is still empty.";
     }
+
+    /* fx.js hooks reveal, tilt and image fade-in onto the fresh cards. */
+    document.dispatchEvent(new CustomEvent("leakestan:render"));
   }
 
-  /* ── Stats ────────────────────────────────────────────────────────── */
+  /* ── Hero extras ──────────────────────────────────────────────────── */
 
   function countUp(el, target) {
     if (!el) { return; }
@@ -231,44 +311,145 @@
     })(start);
   }
 
-  function renderStats() {
+  /* Hold an animation until the intro has cleared, so it isn't played to
+     nobody. Falls through on a timer in case fx.js never reports back. */
+  function whenIntroDone(fn) {
+    if (document.documentElement.classList.contains("intro-skip")) { fn(); return; }
+    var fired = false;
+    function go() {
+      if (fired) { return; }
+      fired = true;
+      fn();
+    }
+    document.addEventListener("leakestan:intro-done", go);
+    window.setTimeout(go, 1800);
+  }
+
+  function renderHero() {
     /* Home is a view of everything, not a category of its own. */
     var cats = CATEGORIES.filter(function (c) { return c.key !== HOME; }).length;
-    countUp($("statItems"), ITEMS.length);
-    countUp($("statCats"), cats);
+    whenIntroDone(function () {
+      countUp($("statItems"), ITEMS.length);
+      countUp($("statCats"), cats);
+    });
+
+    var latest = newestFirst(ITEMS);
+
+    var updated = $("updated");
+    if (updated && latest[0]) {
+      updated.textContent = formatDate(latest[0].added);
+      updated.setAttribute("datetime", latest[0].added);
+    }
+
+    /* Three newest previews, fanned out on the right. */
+    var stack = $("heroStack");
+    if (stack) {
+      stack.innerHTML = latest.slice(0, 3).map(function (item, i) {
+        return '<img class="hero__shot hero__shot--' + (i + 1) + '" src="' + esc(item.image) + '" alt="" ' +
+          'decoding="async">';
+      }).join("");
+    }
+
+    /* Ticker: the list twice, so the loop has no visible seam. */
+    var ticker = $("ticker");
+    if (ticker && ITEMS.length) {
+      var run = latest.map(function (item) {
+        return '<span class="ticker__item">' + esc(item.name) + "</span>";
+      }).join('<span class="ticker__sep">◆</span>');
+      ticker.innerHTML = '<div class="ticker__run">' + run + '<span class="ticker__sep">◆</span></div>' +
+        '<div class="ticker__run">' + run + '<span class="ticker__sep">◆</span></div>';
+      ticker.style.setProperty("--ticker-duration", Math.max(20, ITEMS.length * 3.2) + "s");
+    }
+
+    var footerCount = $("footerCount");
+    if (footerCount) {
+      footerCount.textContent = ITEMS.length + (ITEMS.length === 1 ? " entry" : " entries") + " indexed";
+    }
+
+    var year = $("year");
+    if (year) { year.textContent = String(new Date().getFullYear()); }
+
+    /* Show the right modifier key for the search shortcut. */
+    var kbd = $("searchKbd");
+    if (kbd && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) {
+      kbd.textContent = "⌘ K";
+    }
   }
 
   /* ── Lightbox ─────────────────────────────────────────────────────── */
 
   var lightbox = $("lightbox");
   var lastFocus = null;
+  var lbIndex = -1;
 
-  function openLightbox(id) {
-    var item = ITEMS.filter(function (p) { return p.id === id; })[0];
-    if (!item) { return; }
+  function showInLightbox(index) {
+    if (!shown.length) { return; }
+    lbIndex = (index + shown.length) % shown.length;
+    var item = shown[lbIndex];
 
-    lastFocus = document.activeElement;
-    $("lbImg").src = item.image;
-    $("lbImg").alt = item.name + " preview";
+    var img = $("lbImg");
+    img.classList.remove("is-in");
+    img.src = item.image;
+    img.alt = item.name + " preview";
+    /* Restart the swap animation even when the image is cached. */
+    void img.offsetWidth;
+    img.classList.add("is-in");
+
     $("lbTitle").textContent = item.name;
     $("lbMeta").textContent = [
-      categoryLabel(item.category), formatDate(item.added),
+      "#" + pad(catalogue[item.id] || lbIndex + 1),
+      categoryLabel(item.category),
+      formatDate(item.added),
     ].filter(Boolean).join(" · ");
+    $("lbCount").textContent = (lbIndex + 1) + " / " + shown.length;
+
+    var single = shown.length < 2;
+    $("lbPrev").hidden = single;
+    $("lbNext").hidden = single;
 
     var link = $("lbDownload");
     link.href = downloadHref(item);
     link.setAttribute("data-download", item.id);
     link.setAttribute("download", hasRealDownload(item) ? "" : item.id + "-blank.txt");
+  }
 
+  function openLightbox(id) {
+    var index = -1;
+    for (var i = 0; i < shown.length; i++) {
+      if (shown[i].id === id) { index = i; break; }
+    }
+    if (index === -1) { return; }
+
+    lastFocus = document.activeElement;
+    showInLightbox(index);
     lightbox.hidden = false;
-    document.body.style.overflow = "hidden";
-    link.focus();
+    document.body.classList.add("is-locked");
+    $("lbDownload").focus({ preventScroll: true });
   }
 
   function closeLightbox() {
+    if (lightbox.hidden) { return; }
     lightbox.hidden = true;
-    document.body.style.overflow = "";
-    if (lastFocus && lastFocus.focus) { lastFocus.focus(); }
+    document.body.classList.remove("is-locked");
+    if (lastFocus && lastFocus.focus) { lastFocus.focus({ preventScroll: true }); }
+  }
+
+  /* Keep Tab inside the dialog while it is open. */
+  function trapFocus(event) {
+    var focusable = Array.prototype.filter.call(
+      lightbox.querySelectorAll("button, a[href]"),
+      function (el) { return !el.hidden && el.offsetParent !== null; }
+    );
+    if (!focusable.length) { return; }
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   }
 
   /* ── Mobile sidebar ───────────────────────────────────────────────── */
@@ -282,17 +463,36 @@
 
   /* ── Events ───────────────────────────────────────────────────────── */
 
+  function announceDownload(id) {
+    var item = byId(id);
+    if (!item) { return; }
+    if (hasRealDownload(item)) {
+      toast("Downloading " + item.name + "…");
+    } else {
+      toast("Placeholder — " + item.name + " has no link yet.");
+    }
+  }
+
+  function flashCopied(button) {
+    button.classList.add("is-copied");
+    window.setTimeout(function () { button.classList.remove("is-copied"); }, 1600);
+  }
+
   function wireEvents() {
     catList.addEventListener("click", function (event) {
       var btn = event.target.closest("[data-category]");
-      if (!btn) { return; }
-      state.category = btn.getAttribute("data-category");
-      Array.prototype.forEach.call(catList.querySelectorAll(".nav__btn"), function (el) {
-        el.classList.toggle("is-active", el === btn);
-      });
-      setSidebar(false);
-      render();
+      if (btn) { selectCategory(btn.getAttribute("data-category")); }
     });
+
+    var footerCats = $("footerCats");
+    if (footerCats) {
+      footerCats.addEventListener("click", function (event) {
+        var btn = event.target.closest("[data-category]");
+        if (!btn) { return; }
+        selectCategory(btn.getAttribute("data-category"));
+        resultTitle.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
 
     search.addEventListener("input", function () {
       state.query = search.value.trim();
@@ -324,15 +524,10 @@
       var copy = event.target.closest("[data-copy]");
       if (copy) {
         var url = location.origin + location.pathname + "#item-" + copy.getAttribute("data-copy");
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(url).then(function () {
-            toast("Link copied");
-          }, function () {
-            toast("Could not copy link");
-          });
-        } else {
-          toast("Clipboard not available");
-        }
+        copyText(url, function (ok) {
+          if (ok) { flashCopied(copy); }
+          toast(ok ? "Link copied" : "Could not copy link");
+        });
         return;
       }
 
@@ -340,9 +535,20 @@
       if (dl) { announceDownload(dl.getAttribute("data-download")); }
     });
 
+    var copySite = $("copySite");
+    if (copySite) {
+      copySite.addEventListener("click", function () {
+        copyText(location.origin + location.pathname, function (ok) {
+          toast(ok ? "Site link copied" : "Could not copy link");
+        });
+      });
+    }
+
     $("lbDownload").addEventListener("click", function () {
       announceDownload(this.getAttribute("data-download"));
     });
+    $("lbPrev").addEventListener("click", function () { showInLightbox(lbIndex - 1); });
+    $("lbNext").addEventListener("click", function () { showInLightbox(lbIndex + 1); });
 
     Array.prototype.forEach.call(lightbox.querySelectorAll("[data-close]"), function (el) {
       el.addEventListener("click", closeLightbox);
@@ -354,25 +560,35 @@
     backdrop.addEventListener("click", function () { setSidebar(false); });
 
     document.addEventListener("keydown", function (event) {
+      var open = !lightbox.hidden;
+      var cmdK = (event.metaKey || event.ctrlKey) && (event.key === "k" || event.key === "K");
+
       if (event.key === "Escape") {
-        if (!lightbox.hidden) { closeLightbox(); }
+        closeLightbox();
         setSidebar(false);
+        return;
       }
-      if (event.key === "/" && document.activeElement !== search) {
+
+      /* Search wins over an open preview: close it and jump to the field. */
+      if (open && cmdK) { closeLightbox(); }
+
+      if (open && !cmdK) {
+        if (event.key === "ArrowLeft") { event.preventDefault(); showInLightbox(lbIndex - 1); }
+        if (event.key === "ArrowRight") { event.preventDefault(); showInLightbox(lbIndex + 1); }
+        if (event.key === "Tab") { trapFocus(event); }
+        return;
+      }
+
+      var typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName);
+
+      if (cmdK || (event.key === "/" && !typing)) {
         event.preventDefault();
         search.focus();
+        search.select();
       }
     });
-  }
 
-  function announceDownload(id) {
-    var item = ITEMS.filter(function (p) { return p.id === id; })[0];
-    if (!item) { return; }
-    if (hasRealDownload(item)) {
-      toast("Downloading " + item.name + "…");
-    } else {
-      toast("Placeholder — " + item.name + " has no link yet (blank file).");
-    }
+    window.addEventListener("resize", moveIndicator);
   }
 
   /* ── Boot ─────────────────────────────────────────────────────────── */
@@ -389,8 +605,9 @@
     buildCategories();
     wireDiscord();
     wireEvents();
-    renderStats();
+    renderHero();
     render();
+    moveIndicator();
 
     if (location.hash.indexOf("#item-") === 0) {
       var target = document.getElementById(location.hash.slice(1));
