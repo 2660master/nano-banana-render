@@ -156,13 +156,11 @@
     var list = ITEMS.filter(function (item) {
       if (state.category !== HOME && item.category !== state.category) { return false; }
       if (!q) { return true; }
-      return (item.name + " " + item.category + " " + (item.version || ""))
-        .toLowerCase().indexOf(q) !== -1;
+      return (item.name + " " + item.category).toLowerCase().indexOf(q) !== -1;
     });
 
     list.sort(function (a, b) {
       if (state.sort === "name") { return a.name.localeCompare(b.name); }
-      if (state.sort === "popular") { return (b.hits || 0) - (a.hits || 0); }
       return new Date(b.added || 0) - new Date(a.added || 0);
     });
 
@@ -176,18 +174,10 @@
 
     return '<article class="card" id="item-' + esc(item.id) + '">' +
       '<button class="card__shot" type="button" data-open="' + esc(item.id) + '">' +
-        (item.featured ? '<span class="card__flag">Hot</span>' : "") +
         '<img class="card__img" src="' + esc(item.image) + '" alt="' + esc(item.name) + ' preview" loading="lazy">' +
       "</button>" +
       '<div class="card__body">' +
-        '<div class="card__head">' +
-          '<h3 class="card__name">' + esc(item.name) + "</h3>" +
-          (item.version ? '<span class="card__cat">' + esc(item.version) + "</span>" : "") +
-        "</div>" +
-        '<div class="card__meta">' +
-          "<span>" + esc(formatDate(item.added)) + "</span>" +
-          "<span>" + formatNumber(item.hits || 0) + " views</span>" +
-        "</div>" +
+        '<h3 class="card__name">' + esc(item.name) + "</h3>" +
         '<div class="card__actions">' +
           '<a class="btn btn--primary" href="' + esc(downloadHref(item)) + '"' +
             (blank ? ' download="' + esc(item.id) + '-blank.txt"' : " download") +
@@ -242,12 +232,10 @@
   }
 
   function renderStats() {
-    var hits = ITEMS.reduce(function (sum, item) { return sum + (item.hits || 0); }, 0);
     /* Home is a view of everything, not a category of its own. */
     var cats = CATEGORIES.filter(function (c) { return c.key !== HOME; }).length;
     countUp($("statItems"), ITEMS.length);
     countUp($("statCats"), cats);
-    countUp($("statHits"), hits);
   }
 
   /* ── Lightbox ─────────────────────────────────────────────────────── */
@@ -264,7 +252,7 @@
     $("lbImg").alt = item.name + " preview";
     $("lbTitle").textContent = item.name;
     $("lbMeta").textContent = [
-      categoryLabel(item.category), item.version, formatDate(item.added),
+      categoryLabel(item.category), formatDate(item.added),
     ].filter(Boolean).join(" · ");
 
     var link = $("lbDownload");

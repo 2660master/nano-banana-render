@@ -68,21 +68,21 @@ Meer hoeft er niet te gebeuren — de knop wordt automatisch een echte download.
 
 ### 4. Items en afbeeldingen
 
-Een item ziet er zo uit:
+Een item heeft maar vier dingen nodig:
 
 ```js
 {
-  id: "client-01",               // uniek, gebruikt voor de link #item-client-01
-  name: "Client 01",             // naam onder de afbeelding
+  id: "nova-addon",              // uniek, gebruikt voor de link #item-nova-addon
+  name: "Nova Addon",            // naam onder de afbeelding
   category: "clients",           // moet overeenkomen met een key hierboven
-  image: "assets/previews/client-01.svg",
+  image: "assets/previews/nova-addon.svg",
   download: "",                  // leeg = blank
-  version: "v1.0",               // pilletje rechts van de naam (mag weg)
-  added: "2026-09-18",           // bepaalt de "Newest first"-sortering
-  hits: 18420,
-  featured: true,                // zet het "Hot"-label op de afbeelding
+  added: "2026-09-18",           // bepaalt alleen de "Newest first"-sortering
 }
 ```
+
+De kaart toont precies dat: afbeelding, naam eronder, daaronder de
+downloadknop. Verder niets.
 
 Eigen afbeeldingen: zet je bestanden (`.png`, `.jpg`, `.webp`) in
 `assets/previews/` en wijs `image` ernaar. Beeldverhouding 16:9 past het beste;
