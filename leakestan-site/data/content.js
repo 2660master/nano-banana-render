@@ -121,5 +121,13 @@ window.LEAKESTAN = {
       download: "",
       added: "2026-09-13",
     },
+    {
+      id: "prestige-client",
+      name: "Prestige Client",
+      category: "clients",
+      image: "assets/previews/prestige-client.png",
+      download: "",
+      added: "2026-09-12",
+    },
   ],
 };
