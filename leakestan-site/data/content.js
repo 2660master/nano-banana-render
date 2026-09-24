@@ -26,7 +26,7 @@ window.LEAKESTAN = {
 
   /* Grootte van de rode muis (en de explosie bij klikken):
      1 = klein · 2 · 3 = standaard · 4 · 5 = groot */
-  CURSOR_SIZE: 3,
+  CURSOR_SIZE: 1,
 
   /* Hoeveel dagen een item het rode "NEW"-label krijgt, gerekend vanaf
      de datum bij `added`. Zet op 0 om het label uit te zetten. */
