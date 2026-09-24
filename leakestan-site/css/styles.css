@@ -443,7 +443,7 @@ kbd {
 
 .hero {
   position: relative; overflow: hidden;
-  padding: 40px 38px 0;
+  padding: 40px 38px 42px;
   margin-bottom: 36px;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -469,7 +469,7 @@ kbd {
   background: radial-gradient(circle, rgba(255, 84, 100, .35), transparent 66%);
   filter: blur(18px); pointer-events: none;
 }
-.hero__body { position: relative; max-width: 660px; }
+.hero__body { position: relative; max-width: 720px; }
 .hero__eyebrow {
   display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
   margin: 0 0 14px;
@@ -492,23 +492,26 @@ kbd {
 }
 @keyframes shine { from { background-position: 200% 50%; } to { background-position: 0% 50%; } }
 
-/* "one shelf." and the donut never split across lines. */
-.hero__keep { white-space: nowrap; }
+/* Heading + byline on the left, the big donut right beside them. */
+.hero__head {
+  display: flex; align-items: center;
+  gap: clamp(16px, 2.4vw, 34px);
+  margin-bottom: 28px;
+}
+.hero__headtext { min-width: 0; }
 .hero__donut {
-  display: inline-block;
-  width: 1.3em; height: 1.3em;
-  margin-left: .2em;
-  vertical-align: -.27em;
-  filter: drop-shadow(0 8px 18px rgba(245, 37, 59, .45));
+  flex: none;
+  width: clamp(76px, 10vw, 150px); height: auto; aspect-ratio: 1;
+  filter: drop-shadow(0 16px 36px rgba(245, 37, 59, .5));
   animation: donut-bob 5s ease-in-out infinite;
   transition: transform .8s var(--ease-out);
 }
 /* Float uses `translate`, the playful spin uses `transform`, so they stack. */
 .hero__donut:hover { transform: rotate(200deg) scale(1.06); }
-@keyframes donut-bob { 50% { translate: 0 -5px; } }
+@keyframes donut-bob { 50% { translate: 0 -8px; } }
 
 .hero__by {
-  margin: 0 0 26px;
+  margin: 0;
   font-size: 18px; font-weight: 600; letter-spacing: .01em;
   color: var(--text-dim);
 }
@@ -530,6 +533,21 @@ kbd {
   font-size: 11px; font-weight: 600; letter-spacing: .14em;
   text-transform: uppercase; color: var(--text-faint);
 }
+
+/* Rolling counter. Text clipped to a background doesn't follow moving
+   children reliably, so the rolling version uses a solid colour. The
+   line-height must match ODO_LINE in app.js. */
+.stat__num.odo {
+  display: inline-flex; align-items: flex-start;
+  line-height: 1.15;
+  background: none;
+  -webkit-background-clip: border-box; background-clip: border-box;
+  color: #fff3f4;
+  text-shadow: 0 0 18px rgba(245, 37, 59, .35);
+}
+.odo__digit { display: inline-block; height: 1.15em; overflow: hidden; }
+.odo__strip { display: block; white-space: pre; will-change: transform; }
+.odo__sep { display: inline-block; }
 
 /* Three newest previews, fanned like a hand of cards. */
 .hero__stack {
@@ -554,32 +572,6 @@ kbd {
 .hero:hover .hero__shot--2 { transform: rotate(-16deg) translate(-96px, 22px); }
 .hero:hover .hero__shot--3 { transform: rotate(12deg) translate(100px, -18px); }
 @keyframes float { 50% { transform: translateY(-8px); } }
-
-/* Endless strip of names along the bottom edge of the hero. */
-.ticker {
-  position: relative;
-  margin: 34px -38px 0;
-  padding: 12px 0;
-  overflow: hidden;
-  border-top: 1px solid var(--line);
-  background: rgba(5, 4, 5, .4);
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
-}
-.ticker__track {
-  display: flex; width: max-content;
-  animation: ticker var(--ticker-duration, 40s) linear infinite;
-}
-.hero:hover .ticker__track { animation-play-state: paused; }
-.ticker__run { display: flex; align-items: center; flex: none; }
-.ticker__item {
-  padding: 0 18px;
-  font-size: 11.5px; font-weight: 700; letter-spacing: .16em;
-  text-transform: uppercase; white-space: nowrap;
-  color: var(--text-dim);
-}
-.ticker__sep { font-size: 8px; color: var(--accent); }
-@keyframes ticker { to { transform: translateX(-50%); } }
 
 .section-head {
   display: flex; align-items: baseline; gap: 14px;
@@ -682,23 +674,11 @@ kbd {
   pointer-events: none;
 }
 
-.card__index {
-  position: absolute; top: 12px; left: 12px; z-index: 1;
-  padding: 4px 8px; border-radius: 8px;
-  background: rgba(5, 4, 5, .72);
-  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, .08);
-  font: 700 11px/1 var(--mono); letter-spacing: .06em;
-  color: var(--text-dim);
-  transition: color .2s var(--ease), border-color .2s var(--ease);
-}
-.card:hover .card__index { color: #fff; border-color: rgba(245, 37, 59, .6); }
-
-/* Labels sit opposite the catalogue number. */
+/* Labels in the top-right corner of the preview. */
 .card__labels {
   position: absolute; top: 12px; right: 12px; z-index: 1;
   display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px;
-  max-width: 72%;
+  max-width: calc(100% - 24px);
 }
 .chip {
   padding: 4px 8px; border-radius: 8px;
@@ -938,8 +918,9 @@ kbd {
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
 
-/* Below this the fanned stack would start to crowd the headline. */
-@media (max-width: 1439px) {
+/* Below this the fanned stack would collide with the big donut
+   (measured: 20px overlap at 1440, 54px clear at 1520). */
+@media (max-width: 1519px) {
   .hero__stack { display: none; }
 }
 
@@ -965,8 +946,7 @@ kbd {
   .topbar__actions { gap: 8px; }
   .search { min-width: 0; }
   .search input { padding-right: 14px; }
-  .hero { padding: 28px 22px 0; }
-  .ticker { margin: 26px -22px 0; }
+  .hero { padding: 28px 22px 30px; }
   .hero__stats { gap: 22px; }
   .grid { grid-template-columns: 1fr; gap: 16px; }
   .grid.is-list .card { flex-direction: column; }
@@ -987,5 +967,4 @@ kbd {
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
   }
-  .ticker__track { animation: none; }
 }

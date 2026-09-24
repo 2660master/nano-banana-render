@@ -40,10 +40,6 @@
   /* What the grid currently shows, in order — the lightbox walks this. */
   var shown = [];
 
-  /* Catalogue number per entry, fixed by its position in content.js. */
-  var catalogue = {};
-  ITEMS.forEach(function (item, i) { catalogue[item.id] = i + 1; });
-
   /* Minimal stroke icons for the sidebar, keyed by the category's icon field. */
   var ICONS = {
     home: '<path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/>',
@@ -75,7 +71,6 @@
     try { window.localStorage.setItem(key, value); } catch (err) { /* private mode */ }
   }
 
-  function pad(n) { return n < 10 ? "0" + n : String(n); }
 
   function formatNumber(n) {
     return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -264,7 +259,6 @@
 
   function cardMarkup(item, position) {
     var blank = !hasRealDownload(item);
-    var number = "#" + pad(catalogue[item.id] || position + 1);
 
     return '<article class="card" id="item-' + esc(item.id) + '" style="--i:' + position + '">' +
       '<button class="card__shot" type="button" data-open="' + esc(item.id) + '" ' +
@@ -272,7 +266,6 @@
         '<img class="card__img" src="' + esc(item.image) + '" alt="' + esc(item.name) + ' preview" ' +
           (item.focus ? 'style="object-position:' + esc(item.focus) + '" ' : "") +
           'loading="lazy" decoding="async">' +
-        '<span class="card__index">' + number + "</span>" +
         labelsMarkup(item) +
       "</button>" +
       '<div class="card__body">' +
@@ -312,20 +305,52 @@
 
   /* ── Hero extras ──────────────────────────────────────────────────── */
 
-  function countUp(el, target) {
+  /* Odometer: each digit is a column of numbers that rolls upward and stops
+     on its place in the target. Every column starts at 0; the further right,
+     the more laps it runs and the later it settles, like a real counter. */
+  var ODO_LINE = 1.15;   // em — must match .odo line-height in styles.css
+
+  function rollUp(el, target) {
     if (!el) { return; }
+    var text = formatNumber(target);
+    el.setAttribute("aria-label", text);
+
     var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced || target === 0) { el.textContent = formatNumber(target); return; }
+    if (reduced || !el.animate) { el.textContent = text; return; }
 
-    var start = performance.now();
-    var duration = 900;
+    el.textContent = "";
+    el.classList.add("odo");
 
-    (function step(now) {
-      var progress = Math.min((now - start) / duration, 1);
-      var eased = 1 - Math.pow(1 - progress, 3);
-      el.textContent = formatNumber(Math.round(target * eased));
-      if (progress < 1) { window.requestAnimationFrame(step); }
-    })(start);
+    var place = 0;
+    text.split("").forEach(function (ch) {
+      if (!/\d/.test(ch)) {
+        var sep = document.createElement("span");
+        sep.className = "odo__sep";
+        sep.setAttribute("aria-hidden", "true");
+        sep.textContent = ch;
+        el.appendChild(sep);
+        return;
+      }
+
+      place += 1;
+      var steps = place * 10 + Number(ch);   // `place` full laps, then the digit
+      var column = [];
+      for (var k = 0; k <= steps; k++) { column.push(k % 10); }
+
+      var box = document.createElement("span");
+      box.className = "odo__digit";
+      box.setAttribute("aria-hidden", "true");
+      var strip = document.createElement("span");
+      strip.className = "odo__strip";
+      strip.textContent = column.join("\n");
+      box.appendChild(strip);
+      el.appendChild(box);
+
+      strip.animate(
+        [{ transform: "translateY(0)" }, { transform: "translateY(" + (-steps * ODO_LINE) + "em)" }],
+        { duration: 1300 + place * 220, easing: "cubic-bezier(.15,.85,.25,1)", fill: "forwards" }
+      );
+    });
   }
 
   /* Hold an animation until the intro has cleared, so it isn't played to
@@ -374,8 +399,8 @@
     var clients = ITEMS.filter(function (item) { return item.category === "clients"; }).length;
     var downloads = downloadTotal();
     whenIntroDone(function () {
-      countUp($("statClients"), clients);
-      countUp($("statDownloads"), downloads);
+      rollUp($("statClients"), clients);
+      rollUp($("statDownloads"), downloads);
     });
 
     var latest = newestFirst(ITEMS);
@@ -393,17 +418,6 @@
         return '<img class="hero__shot hero__shot--' + (i + 1) + '" src="' + esc(item.image) + '" alt="" ' +
           'decoding="async">';
       }).join("");
-    }
-
-    /* Ticker: the list twice, so the loop has no visible seam. */
-    var ticker = $("ticker");
-    if (ticker && ITEMS.length) {
-      var run = latest.map(function (item) {
-        return '<span class="ticker__item">' + esc(item.name) + "</span>";
-      }).join('<span class="ticker__sep">◆</span>');
-      ticker.innerHTML = '<div class="ticker__run">' + run + '<span class="ticker__sep">◆</span></div>' +
-        '<div class="ticker__run">' + run + '<span class="ticker__sep">◆</span></div>';
-      ticker.style.setProperty("--ticker-duration", Math.max(20, ITEMS.length * 3.2) + "s");
     }
 
     var footerCount = $("footerCount");
@@ -442,7 +456,6 @@
 
     $("lbTitle").textContent = item.name;
     $("lbMeta").textContent = [
-      "#" + pad(catalogue[item.id] || lbIndex + 1),
       isNew(item) ? "New" : "",
       categoryLabel(item.category),
       formatDate(item.added),

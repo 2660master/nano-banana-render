@@ -91,10 +91,9 @@ Een item heeft maar vier dingen nodig:
 }
 ```
 
-De kaart toont afbeelding, naam eronder en daaronder de downloadknop. Het
-nummer linksboven (`#01`, `#02`…) volgt de volgorde in dit bestand. De drie
+De kaart toont afbeelding, naam eronder en daaronder de downloadknop. De drie
 nieuwste items verschijnen automatisch als uitgewaaierde stapel in de hero
-(op schermen vanaf 1440px breed) en alle namen lopen door de ticker.
+(op schermen vanaf 1520px breed; daaronder is het donut-logo de blikvanger).
 
 Eigen afbeeldingen: zet je bestanden (`.png`, `.jpg`, `.webp`) in
 `assets/previews/` en wijs `image` ernaar. Beeldverhouding 16:9 past het beste;
@@ -161,8 +160,9 @@ gaat dat al vanzelf goed.
   muis met een lichtvlek eroverheen, en tonen een laad-animatie tot de
   screenshot binnen is.
 - **Hero** — groen "live"-bolletje met de datum van het nieuwste item, een
-  glanzende kop met het donut-logo ernaast, "Leakestan By Dexter", de tellers
-  Clients en Downloads, en een ticker met alle namen.
+  glanzende kop met een groot donut-logo ernaast, "Leakestan By Dexter", en de
+  tellers Clients en Downloads, die bij het laden als een kilometerteller
+  omhoog rollen naar het juiste getal.
 - **Kleine dingen** — voortgangsbalk bovenaan, knop terug naar boven, meldingen met
   afteltijd-balk, rode tekstselectie en scrollbalk, filmkorrel en langzaam
   bewegend rood licht op de achtergrond.
