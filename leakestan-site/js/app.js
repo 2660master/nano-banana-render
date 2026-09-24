@@ -58,15 +58,6 @@
     'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
     '<path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 20h14"/></svg>';
 
-  var SVG_LINK =
-    '<svg class="icon-link" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ' +
-    'stroke-width="2" stroke-linecap="round" aria-hidden="true">' +
-    '<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/>' +
-    '<path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>' +
-    '<svg class="icon-check" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ' +
-    'stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-    '<path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
-
   /* ── helpers ──────────────────────────────────────────────────────── */
 
   function esc(value) {
@@ -261,9 +252,6 @@
           '<a class="btn btn--primary" href="' + esc(downloadHref(item)) + '"' +
             (blank ? ' download="' + esc(item.id) + '-blank.txt"' : " download") +
             ' data-download="' + esc(item.id) + '">' + SVG_DOWNLOAD + "<span>Download</span></a>" +
-          '<button class="icon-btn copy-btn" type="button" data-copy="' + esc(item.id) + '" title="Copy link">' +
-            SVG_LINK + '<span class="sr-only">Copy link</span>' +
-          "</button>" +
         "</div>" +
       "</div>" +
     "</article>";
@@ -473,11 +461,6 @@
     }
   }
 
-  function flashCopied(button) {
-    button.classList.add("is-copied");
-    window.setTimeout(function () { button.classList.remove("is-copied"); }, 1600);
-  }
-
   function wireEvents() {
     catList.addEventListener("click", function (event) {
       var btn = event.target.closest("[data-category]");
@@ -520,16 +503,6 @@
     grid.addEventListener("click", function (event) {
       var shot = event.target.closest("[data-open]");
       if (shot) { openLightbox(shot.getAttribute("data-open")); return; }
-
-      var copy = event.target.closest("[data-copy]");
-      if (copy) {
-        var url = location.origin + location.pathname + "#item-" + copy.getAttribute("data-copy");
-        copyText(url, function (ok) {
-          if (ok) { flashCopied(copy); }
-          toast(ok ? "Link copied" : "Could not copy link");
-        });
-        return;
-      }
 
       var dl = event.target.closest("[data-download]");
       if (dl) { announceDownload(dl.getAttribute("data-download")); }

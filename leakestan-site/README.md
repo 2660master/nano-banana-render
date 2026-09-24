@@ -99,7 +99,6 @@ andere formaten worden netjes bijgesneden.
 - Sorteren op nieuwste of A→Z
 - Wisselen tussen raster- en lijstweergave (keuze wordt onthouden)
 - Klik op een afbeelding voor een grote weergave; blader met `←` `→`, sluit met `Esc`
-- Link naar een specifiek item kopiëren via het schakel-icoon
 - Werkt op telefoon: de zijbalk schuift in via de menuknop
 
 ## Details en effecten
@@ -116,7 +115,7 @@ andere formaten worden netjes bijgesneden.
 - **Hero** — groen "live"-bolletje met de datum van het nieuwste item, een
   glanzende kop, en een ticker met alle namen.
 - **Kleine dingen** — voortgangsbalk bovenaan, knop terug naar boven, rimpel
-  bij klikken op knoppen, groen vinkje na link kopiëren, meldingen met
+  bij klikken op knoppen, meldingen met
   afteltijd-balk, rode tekstselectie en scrollbalk, filmkorrel en langzaam
   bewegend rood licht op de achtergrond.
 

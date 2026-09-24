@@ -693,13 +693,7 @@ kbd {
 /* Pushed down so buttons line up even when a name wraps to two lines. */
 .card__actions { display: flex; gap: 8px; margin-top: auto; }
 .card__actions .btn--primary { flex: 1; }
-.card__actions .icon-btn { flex: none; width: 44px; height: auto; align-self: stretch; }
 
-.copy-btn .icon-check { display: none; }
-.copy-btn.is-copied { color: var(--ok); border-color: rgba(52, 211, 153, .55); background: rgba(52, 211, 153, .08); }
-.copy-btn.is-copied .icon-link { display: none; }
-.copy-btn.is-copied .icon-check { display: block; animation: pop-in .3s var(--ease-out); }
-@keyframes pop-in { from { transform: scale(.4); opacity: 0; } }
 
 /* list view */
 .grid.is-list { grid-template-columns: 1fr; gap: 12px; }
