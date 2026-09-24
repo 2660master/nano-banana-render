@@ -8,7 +8,7 @@ leakestan-site/
 ├── index.html            # opbouw van de pagina
 ├── 404.html              # foutpagina voor kapotte links (staat helemaal op zichzelf)
 ├── css/styles.css        # rood/zwart thema
-├── js/app.js             # zoeken, filteren, sorteren, lightbox, downloads
+├── js/app.js             # zoeken, filteren, sorteren, downloads, tellers
 ├── js/fx.js              # intro, animaties, kantelende kaarten, scroll-balk
 ├── js/cursor.js          # eigen muiscursor
 ├── data/content.js       # ← DIT bestand pas je aan
@@ -83,7 +83,7 @@ Een item heeft maar vier dingen nodig:
   category: "clients",           // moet overeenkomen met een key hierboven
   image: "assets/previews/base-debug.webp",
   download: "",                  // leeg = blank
-  added: "2026-09-22",           // volgorde, "updated"-datum én het NEW-label
+  added: "2026-09-22",           // volgorde en het NEW-label (wordt niet getoond)
 
   // optioneel:
   tags: ["MC 1.21.11"],          // labels rechtsboven op de afbeelding
@@ -146,7 +146,7 @@ gaat dat al vanzelf goed.
 - Filteren per categorie via de zijbalk, met aantallen en een meeglijdende markering
 - Sorteren op nieuwste of A→Z
 - Wisselen tussen raster- en lijstweergave (keuze wordt onthouden)
-- Klik op een afbeelding voor een grote weergave; blader met `←` `→`, sluit met `Esc`
+- Op een kaart is alleen de downloadknop klikbaar; de afbeelding zelf niet
 - Werkt op telefoon: de zijbalk schuift in via de menuknop
 
 ## Details en effecten
@@ -159,8 +159,7 @@ gaat dat al vanzelf goed.
 - **Kaarten** — schuiven in beeld bij het scrollen, kantelen licht mee met de
   muis met een lichtvlek eroverheen, en tonen een laad-animatie tot de
   screenshot binnen is.
-- **Hero** — groen "live"-bolletje met de datum van het nieuwste item, een
-  glanzende kop met een groot donut-logo ernaast, "Leakestan By Dexter", en de
+- **Hero** — groen "live archive"-bolletje, een glanzende kop met een groot donut-logo ernaast, "Leakestan By Dexter", en de
   tellers Clients en Downloads, die bij het laden als een kilometerteller
   omhoog rollen naar het juiste getal.
 - **Kleine dingen** — voortgangsbalk bovenaan, knop terug naar boven, meldingen met

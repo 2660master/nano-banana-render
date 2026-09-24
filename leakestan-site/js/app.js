@@ -37,9 +37,6 @@
     view: readStored("leakestan:view") || "grid",
   };
 
-  /* What the grid currently shows, in order — the lightbox walks this. */
-  var shown = [];
-
   /* Minimal stroke icons for the sidebar, keyed by the category's icon field. */
   var ICONS = {
     home: '<path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/>',
@@ -71,15 +68,8 @@
     try { window.localStorage.setItem(key, value); } catch (err) { /* private mode */ }
   }
 
-
   function formatNumber(n) {
     return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  }
-
-  function formatDate(iso) {
-    var d = new Date(iso);
-    if (isNaN(d.getTime())) { return iso || "—"; }
-    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
   }
 
   function categoryLabel(key) {
@@ -260,14 +250,15 @@
   function cardMarkup(item, position) {
     var blank = !hasRealDownload(item);
 
+    /* The preview is just a picture — the Download button is the only
+       thing on a card you can click. */
     return '<article class="card" id="item-' + esc(item.id) + '" style="--i:' + position + '">' +
-      '<button class="card__shot" type="button" data-open="' + esc(item.id) + '" ' +
-        'aria-label="Open ' + esc(item.name) + ' preview">' +
+      '<div class="card__shot">' +
         '<img class="card__img" src="' + esc(item.image) + '" alt="' + esc(item.name) + ' preview" ' +
           (item.focus ? 'style="object-position:' + esc(item.focus) + '" ' : "") +
           'loading="lazy" decoding="async">' +
         labelsMarkup(item) +
-      "</button>" +
+      "</div>" +
       '<div class="card__body">' +
         '<h3 class="card__name">' + esc(item.name) + "</h3>" +
         '<div class="card__actions">' +
@@ -282,7 +273,6 @@
   function render() {
     var list = visibleItems();
     var label = categoryLabel(state.category);
-    shown = list;
 
     grid.classList.toggle("is-list", state.view === "list");
     grid.innerHTML = list.map(cardMarkup).join("");
@@ -405,12 +395,6 @@
 
     var latest = newestFirst(ITEMS);
 
-    var updated = $("updated");
-    if (updated && latest[0]) {
-      updated.textContent = formatDate(latest[0].added);
-      updated.setAttribute("datetime", latest[0].added);
-    }
-
     /* Three newest previews, fanned out on the right. */
     var stack = $("heroStack");
     if (stack) {
@@ -432,82 +416,6 @@
     var kbd = $("searchKbd");
     if (kbd && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) {
       kbd.textContent = "⌘ K";
-    }
-  }
-
-  /* ── Lightbox ─────────────────────────────────────────────────────── */
-
-  var lightbox = $("lightbox");
-  var lastFocus = null;
-  var lbIndex = -1;
-
-  function showInLightbox(index) {
-    if (!shown.length) { return; }
-    lbIndex = (index + shown.length) % shown.length;
-    var item = shown[lbIndex];
-
-    var img = $("lbImg");
-    img.classList.remove("is-in");
-    img.src = item.image;
-    img.alt = item.name + " preview";
-    /* Restart the swap animation even when the image is cached. */
-    void img.offsetWidth;
-    img.classList.add("is-in");
-
-    $("lbTitle").textContent = item.name;
-    $("lbMeta").textContent = [
-      isNew(item) ? "New" : "",
-      categoryLabel(item.category),
-      formatDate(item.added),
-    ].concat(tagsFor(item)).filter(Boolean).join(" · ");
-    $("lbCount").textContent = (lbIndex + 1) + " / " + shown.length;
-
-    var single = shown.length < 2;
-    $("lbPrev").hidden = single;
-    $("lbNext").hidden = single;
-
-    var link = $("lbDownload");
-    link.href = downloadHref(item);
-    link.setAttribute("data-download", item.id);
-    link.setAttribute("download", hasRealDownload(item) ? "" : item.id + "-blank.txt");
-  }
-
-  function openLightbox(id) {
-    var index = -1;
-    for (var i = 0; i < shown.length; i++) {
-      if (shown[i].id === id) { index = i; break; }
-    }
-    if (index === -1) { return; }
-
-    lastFocus = document.activeElement;
-    showInLightbox(index);
-    lightbox.hidden = false;
-    document.body.classList.add("is-locked");
-    $("lbDownload").focus({ preventScroll: true });
-  }
-
-  function closeLightbox() {
-    if (lightbox.hidden) { return; }
-    lightbox.hidden = true;
-    document.body.classList.remove("is-locked");
-    if (lastFocus && lastFocus.focus) { lastFocus.focus({ preventScroll: true }); }
-  }
-
-  /* Keep Tab inside the dialog while it is open. */
-  function trapFocus(event) {
-    var focusable = Array.prototype.filter.call(
-      lightbox.querySelectorAll("button, a[href]"),
-      function (el) { return !el.hidden && el.offsetParent !== null; }
-    );
-    if (!focusable.length) { return; }
-    var first = focusable[0];
-    var last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
     }
   }
 
@@ -572,9 +480,6 @@
     });
 
     grid.addEventListener("click", function (event) {
-      var shot = event.target.closest("[data-open]");
-      if (shot) { openLightbox(shot.getAttribute("data-open")); return; }
-
       var dl = event.target.closest("[data-download]");
       if (dl) { announceDownload(dl.getAttribute("data-download")); }
     });
@@ -588,38 +493,16 @@
       });
     }
 
-    $("lbDownload").addEventListener("click", function () {
-      announceDownload(this.getAttribute("data-download"));
-    });
-    $("lbPrev").addEventListener("click", function () { showInLightbox(lbIndex - 1); });
-    $("lbNext").addEventListener("click", function () { showInLightbox(lbIndex + 1); });
-
-    Array.prototype.forEach.call(lightbox.querySelectorAll("[data-close]"), function (el) {
-      el.addEventListener("click", closeLightbox);
-    });
-
     $("menuToggle").addEventListener("click", function () {
       setSidebar(!sidebar.classList.contains("is-open"));
     });
     backdrop.addEventListener("click", function () { setSidebar(false); });
 
     document.addEventListener("keydown", function (event) {
-      var open = !lightbox.hidden;
       var cmdK = (event.metaKey || event.ctrlKey) && (event.key === "k" || event.key === "K");
 
       if (event.key === "Escape") {
-        closeLightbox();
         setSidebar(false);
-        return;
-      }
-
-      /* Search wins over an open preview: close it and jump to the field. */
-      if (open && cmdK) { closeLightbox(); }
-
-      if (open && !cmdK) {
-        if (event.key === "ArrowLeft") { event.preventDefault(); showInLightbox(lbIndex - 1); }
-        if (event.key === "ArrowRight") { event.preventDefault(); showInLightbox(lbIndex + 1); }
-        if (event.key === "Tab") { trapFocus(event); }
         return;
       }
 
