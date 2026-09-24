@@ -3,7 +3,8 @@
   Leakestan — 404 page.
   Hosts (GitHub Pages, Netlify, Vercel…) serve this file for ANY missing
   address, however deep, so it can't rely on relative links to css/ or js/.
-  Everything it needs is inside this one file.
+  Its look lives entirely in this file; only the red cursor is fetched from
+  the site's home folder, and the page is fine without it.
 
   Staat de site in een submap, bv. gebruikersnaam.github.io/leakestan/ ?
   Zet dan data-home hieronder op "/leakestan/". Bij GitHub-projectpagina's
@@ -138,21 +139,6 @@
 
   .foot { margin-top: 44px; font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--text-faint); }
 
-  /* Logo cursor — same behaviour as js/cursor.js on the main site. */
-  .has-cursor, .has-cursor * { cursor: none !important; }
-  .cursor { position: fixed; top: 0; left: 0; z-index: 2147483000; width: 0; height: 0; pointer-events: none; opacity: 0; transition: opacity .2s var(--ease); will-change: transform; }
-  .cursor-on .cursor { opacity: 1; }
-  .cursor svg {
-    position: absolute; left: -4.2px; top: 0; width: 32px; height: 17px; overflow: visible;
-    fill: var(--accent-bright); stroke: #0a0708; stroke-width: 14; stroke-linejoin: round; paint-order: stroke;
-    transform-origin: 4.2px 0;
-    filter: drop-shadow(0 2px 6px rgba(245, 37, 59, .45));
-    transition: transform .22s var(--ease-out), fill .18s var(--ease), filter .22s var(--ease);
-  }
-  html[data-cursor-state="hover"] .cursor svg { fill: #fff; transform: scale(1.2); filter: drop-shadow(0 0 7px rgba(245, 37, 59, .95)) drop-shadow(0 3px 8px rgba(0, 0, 0, .6)); }
-  .cursor-down .cursor svg { transform: scale(.86); }
-  html[data-cursor-state="hover"].cursor-down .cursor svg { transform: scale(1.06); }
-
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
   }
@@ -228,39 +214,17 @@
     back.addEventListener("click", function () { window.history.back(); });
   }
 
-  /* Logo cursor (mouse only), mirroring js/cursor.js. */
-  if (!window.matchMedia || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) { return; }
-  var cursor = document.createElement("div");
-  cursor.className = "cursor";
-  cursor.setAttribute("aria-hidden", "true");
-  cursor.innerHTML =
-    '<svg viewBox="0 0 188.93 100">' +
-      '<polygon points="24.93,0 50.93,0 32.48,74 66.48,74 60,100 0,100"/>' +
-      '<polygon points="96.93,0 122.93,0 111.96,44 154.93,0 188.93,0 135.97,52 167,100 132,100 108.47,58 98,100 72,100"/>' +
-    "</svg>";
-  document.body.appendChild(cursor);
-  root.classList.add("has-cursor");
-
-  var x = 0, y = 0, queued = false;
-  document.addEventListener("pointermove", function (e) {
-    if (e.pointerType && e.pointerType !== "mouse") { return; }
-    x = e.clientX; y = e.clientY;
-    root.classList.add("cursor-on");
-    if (!queued) {
-      queued = true;
-      requestAnimationFrame(function () {
-        queued = false;
-        cursor.style.transform = "translate3d(" + x + "px," + y + "px,0)";
-      });
-    }
-  }, { passive: true });
-  document.addEventListener("pointerover", function (e) {
-    var hit = e.target.closest && e.target.closest("a, button");
-    if (hit) { root.setAttribute("data-cursor-state", "hover"); } else { root.removeAttribute("data-cursor-state"); }
-  }, { passive: true });
-  document.addEventListener("mouseout", function (e) { if (!e.relatedTarget) { root.classList.remove("cursor-on"); } });
-  document.addEventListener("pointerdown", function () { root.classList.add("cursor-down"); }, { passive: true });
-  document.addEventListener("pointerup", function () { root.classList.remove("cursor-down"); }, { passive: true });
+  /* Same red cursor + click explosion as the site: load the site's own
+     settings and cursor script from the home folder, so CURSOR_SIZE in
+     data/content.js applies here too. If they can't be reached, the page
+     simply keeps the normal cursor. */
+  function load(src, next) {
+    var s = document.createElement("script");
+    s.src = src;
+    s.onload = s.onerror = function () { if (next) { next(); } };
+    document.body.appendChild(s);
+  }
+  load(home + "data/content.js", function () { load(home + "js/cursor.js"); });
 })();
 </script>
 </body>

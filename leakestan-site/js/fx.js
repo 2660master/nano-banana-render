@@ -1,7 +1,8 @@
 /* ==========================================================================
    LEAKESTAN — visual effects
-   Intro, scroll progress, back-to-top, card reveal, card tilt + glare,
-   image fade-in and button ripples. Everything here is decoration: if this
+   Intro, scroll progress, back-to-top, card reveal, card tilt + glare and
+   image fade-in. (The click explosion lives in cursor.js.) Everything here
+   is decoration: if this
    file fails to load, the site still works and nothing stays hidden.
    ========================================================================== */
 (function () {
@@ -207,27 +208,6 @@
     });
   }
 
-  /* ── Ripple ───────────────────────────────────────────────────────── */
-
-  function setupRipple() {
-    if (reduced) { return; }
-    document.addEventListener("pointerdown", function (event) {
-      var btn = event.target.closest && event.target.closest(".btn");
-      if (!btn) { return; }
-      var box = btn.getBoundingClientRect();
-      var size = Math.max(box.width, box.height) * 2.2;
-      var ripple = document.createElement("span");
-      ripple.className = "ripple";
-      ripple.style.width = ripple.style.height = size + "px";
-      ripple.style.left = event.clientX - box.left - size / 2 + "px";
-      ripple.style.top = event.clientY - box.top - size / 2 + "px";
-      btn.appendChild(ripple);
-      window.setTimeout(function () {
-        if (ripple.parentNode) { ripple.parentNode.removeChild(ripple); }
-      }, 700);
-    }, { passive: true });
-  }
-
   /* ── Boot ─────────────────────────────────────────────────────────── */
 
   function onRender() {
@@ -243,7 +223,6 @@
     setupReveal();
     setupImages();
     setupTilt();
-    setupRipple();
     onRender();
     document.addEventListener("leakestan:render", onRender);
   }

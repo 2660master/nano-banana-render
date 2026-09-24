@@ -15,6 +15,7 @@ leakestan-site/
 └── assets/
     ├── blank.txt         # tijdelijke download ("blank")
     ├── logo.svg          # LK-logo (favicon + zijbalk)
+    ├── donut.png         # donut-logo naast de kop in de hero
     ├── wordmark.svg      # LK zonder kader
     ├── og-image.jpg      # plaatje dat Discord toont bij een geplakte link
     ├── apple-touch-icon.png  # icoon als iemand de site op zijn iPhone-beginscherm zet
@@ -109,7 +110,16 @@ is links↔rechts, het tweede boven↔onder (`"50% 0%"` = bovenkant).
 - **Eigen labels** zet je met `tags`, bijvoorbeeld de Minecraft-versie of
   `"Addon"`. Je kunt er ook op zoeken: `1.21` vindt alles met dat label.
 
-### 6. Discord-preview
+### 6. Tellers in de hero
+
+- **Clients** telt vanzelf hoeveel items er in de categorie `clients` staan.
+- **Downloads** is een oplopende teller, geen echte telling (een statische site
+  kan geen downloads tellen). Instellen met `DOWNLOADS` in `content.js`: hij
+  stond op 4720 op 24 september 2026 en krijgt elke dag om middernacht (UTC)
+  er willekeurig 20 tot 40 bij. Elke bezoeker ziet op dezelfde dag hetzelfde
+  getal en het gaat nooit omlaag.
+
+### 7. Discord-preview
 
 Als iemand je link in Discord plakt, toont Discord `assets/og-image.jpg` met
 de titel en beschrijving uit `index.html`. **Eén ding moet je doen zodra de
@@ -123,7 +133,7 @@ volledige adres, bijvoorbeeld:
 Discord kan een half adres (`assets/og-image.jpg`) niet altijd vinden. Na een
 wijziging kan het even duren voordat Discord het nieuwe plaatje laat zien.
 
-### 7. 404-pagina
+### 8. 404-pagina
 
 `404.html` verschijnt vanzelf bij een kapotte link — GitHub Pages, Netlify en
 Vercel pakken dat bestand automatisch op, zolang het in de hoofdmap van de site
@@ -142,19 +152,18 @@ gaat dat al vanzelf goed.
 
 ## Details en effecten
 
-- **Eigen cursor** — het LK-logo is de muis. Het puntje linksboven van de L
-  is waar je klikt, net als bij een gewone pijl. Boven alles wat klikbaar is
-  wordt het logo iets groter en wit met een rode gloed; in het zoekveld wordt
-  het een dun tekststreepje. Alleen met een muis; op telefoon en tablet blijft
-  alles normaal.
+- **Rode muis** — een gewone muispijl, maar rood. Boven alles wat klikbaar is
+  wordt het een rood handje, in het zoekveld een rood streepje. Bij elke klik
+  een kleine rode explosie (op telefoon bij tikken). De grootte kies je met
+  `CURSOR_SIZE` in `content.js`: 1 (klein) t/m 5 (groot); de explosie groeit mee.
 - **Intro** — kort LK-scherm bij het eerste bezoek (één keer per sessie).
 - **Kaarten** — schuiven in beeld bij het scrollen, kantelen licht mee met de
   muis met een lichtvlek eroverheen, en tonen een laad-animatie tot de
   screenshot binnen is.
 - **Hero** — groen "live"-bolletje met de datum van het nieuwste item, een
-  glanzende kop, en een ticker met alle namen.
-- **Kleine dingen** — voortgangsbalk bovenaan, knop terug naar boven, rimpel
-  bij klikken op knoppen, meldingen met
+  glanzende kop met het donut-logo ernaast, "Leakestan By Dexter", de tellers
+  Clients en Downloads, en een ticker met alle namen.
+- **Kleine dingen** — voortgangsbalk bovenaan, knop terug naar boven, meldingen met
   afteltijd-balk, rode tekstselectie en scrollbalk, filmkorrel en langzaam
   bewegend rood licht op de achtergrond.
 

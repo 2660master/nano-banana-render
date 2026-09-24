@@ -342,12 +342,40 @@
     window.setTimeout(go, 1800);
   }
 
+  /* Deterministic 32-bit hash: the same day number always gives the same
+     "random" value, so every visitor sees an identical total. */
+  function dayHash(n) {
+    var x = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b) >>> 0;
+    x ^= x >>> 13;
+    x = Math.imul(x, 0xc2b2ae35) >>> 0;
+    x ^= x >>> 16;
+    return x >>> 0;
+  }
+
+  /* start on `since`, then + a per-day amount in [min, max] for every UTC
+     midnight that has passed since. Never decreases. */
+  function downloadTotal() {
+    var cfg = CFG.DOWNLOADS || {};
+    var total = Number(cfg.start) || 0;
+    var since = Date.parse(cfg.since);
+    if (isNaN(since)) { return total; }
+    var min = Number(cfg.min) || 0;
+    var max = Math.max(Number(cfg.max) || 0, min);
+    var now = new Date();
+    var today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+    var days = Math.floor((today - since) / 86400000);
+    for (var d = 1; d <= days; d++) {
+      total += min + (dayHash(d) % (max - min + 1));
+    }
+    return total;
+  }
+
   function renderHero() {
-    /* Home is a view of everything, not a category of its own. */
-    var cats = CATEGORIES.filter(function (c) { return c.key !== HOME; }).length;
+    var clients = ITEMS.filter(function (item) { return item.category === "clients"; }).length;
+    var downloads = downloadTotal();
     whenIntroDone(function () {
-      countUp($("statItems"), ITEMS.length);
-      countUp($("statCats"), cats);
+      countUp($("statClients"), clients);
+      countUp($("statDownloads"), downloads);
     });
 
     var latest = newestFirst(ITEMS);

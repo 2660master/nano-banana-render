@@ -24,9 +24,20 @@ window.LEAKESTAN = {
   /* Bestand dat "gedownload" wordt: een leeg tekstbestand, geen archief. */
   BLANK_DOWNLOAD: "assets/blank.txt",
 
+  /* Grootte van de rode muis (en de explosie bij klikken):
+     1 = klein · 2 · 3 = standaard · 4 · 5 = groot */
+  CURSOR_SIZE: 3,
+
   /* Hoeveel dagen een item het rode "NEW"-label krijgt, gerekend vanaf
      de datum bij `added`. Zet op 0 om het label uit te zetten. */
   NEW_DAYS: 7,
+
+  /* Download-teller in de hero. Op `since` staat hij op `start`; daarna komt
+     er elke dag (om middernacht UTC, 01:00/02:00 Nederlandse tijd) een
+     willekeurig getal tussen `min` en `max` bij. Het "toeval" hangt aan de
+     datum, dus iedere bezoeker ziet op dezelfde dag precies hetzelfde getal
+     en het gaat nooit omlaag. Let op: dit telt geen echte downloads. */
+  DOWNLOADS: { start: 4720, since: "2026-09-24", min: 20, max: 40 },
 
   /* Het menu in de zijbalk. "home" is bijzonder: die toont alle items. */
   CATEGORIES: [

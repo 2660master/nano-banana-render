@@ -336,16 +336,6 @@ kbd {
 .btn--discord.is-empty { background: var(--surface-3); color: var(--text-dim); border-color: var(--line); }
 .btn--discord.is-empty:hover { background: var(--surface-3); box-shadow: none; }
 
-.ripple {
-  position: absolute; z-index: -1;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, .32);
-  transform: scale(0);
-  pointer-events: none;
-  animation: ripple .65s ease-out forwards;
-}
-@keyframes ripple { to { transform: scale(1); opacity: 0; } }
-
 .icon-btn {
   display: grid; place-items: center;
   width: 38px; height: 38px;
@@ -479,7 +469,7 @@ kbd {
   background: radial-gradient(circle, rgba(255, 84, 100, .35), transparent 66%);
   filter: blur(18px); pointer-events: none;
 }
-.hero__body { position: relative; max-width: 580px; }
+.hero__body { position: relative; max-width: 660px; }
 .hero__eyebrow {
   display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
   margin: 0 0 14px;
@@ -501,7 +491,32 @@ kbd {
   animation: shine 6s linear infinite;
 }
 @keyframes shine { from { background-position: 200% 50%; } to { background-position: 0% 50%; } }
-.hero__text { margin: 0 0 26px; max-width: 46ch; color: var(--text-dim); }
+
+/* "one shelf." and the donut never split across lines. */
+.hero__keep { white-space: nowrap; }
+.hero__donut {
+  display: inline-block;
+  width: 1.3em; height: 1.3em;
+  margin-left: .2em;
+  vertical-align: -.27em;
+  filter: drop-shadow(0 8px 18px rgba(245, 37, 59, .45));
+  animation: donut-bob 5s ease-in-out infinite;
+  transition: transform .8s var(--ease-out);
+}
+/* Float uses `translate`, the playful spin uses `transform`, so they stack. */
+.hero__donut:hover { transform: rotate(200deg) scale(1.06); }
+@keyframes donut-bob { 50% { translate: 0 -5px; } }
+
+.hero__by {
+  margin: 0 0 26px;
+  font-size: 18px; font-weight: 600; letter-spacing: .01em;
+  color: var(--text-dim);
+}
+.hero__by strong {
+  font-weight: 800;
+  background: linear-gradient(95deg, var(--accent-bright), var(--accent));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
 
 .hero__stats { display: flex; flex-wrap: wrap; gap: 34px; }
 .stat { display: flex; flex-direction: column; }
@@ -919,57 +934,7 @@ kbd {
   -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
 }
 
-/* ── Custom cursor ────────────────────────────────────────────────────── */
-
-.has-cursor, .has-cursor * { cursor: none !important; }
-
-/* The wrapper sits exactly on the pointer; its children are offset from there. */
-.cursor {
-  position: fixed; top: 0; left: 0; z-index: 2147483000;
-  width: 0; height: 0;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity .2s var(--ease);
-  will-change: transform;
-}
-.cursor-on .cursor { opacity: 1; }
-
-/* 32px wide. The L's top-left tip sits 24.93/188.93 of the way in (4.2px),
-   so shifting left by that puts the tip on the click point. The dark
-   outline keeps the red logo readable on top of red buttons. */
-.cursor__logo {
-  position: absolute; left: -4.2px; top: 0;
-  width: 32px; height: 17px;
-  overflow: visible;
-  fill: var(--accent-bright);
-  stroke: #0a0708; stroke-width: 14; stroke-linejoin: round;
-  paint-order: stroke;
-  transform-origin: 4.2px 0;
-  filter: drop-shadow(0 2px 6px rgba(245, 37, 59, .45));
-  transition: transform .22s var(--ease-out), fill .18s var(--ease),
-              filter .22s var(--ease), opacity .15s var(--ease);
-}
-
-.cursor__caret {
-  position: absolute; left: -1px; top: -11px;
-  width: 2px; height: 22px; border-radius: 1px;
-  background: var(--accent-bright);
-  opacity: 0; transform: scaleY(.4);
-  transition: opacity .15s var(--ease), transform .2s var(--ease-out);
-}
-
-/* Over anything clickable: a touch bigger, white, with a red glow. */
-html[data-cursor-state="hover"] .cursor__logo {
-  fill: #fff;
-  transform: scale(1.2);
-  filter: drop-shadow(0 0 7px rgba(245, 37, 59, .95)) drop-shadow(0 3px 8px rgba(0, 0, 0, .6));
-}
-
-html[data-cursor-state="text"] .cursor__logo { opacity: 0; transform: scale(.6); }
-html[data-cursor-state="text"] .cursor__caret { opacity: 1; transform: none; }
-
-.cursor-down .cursor__logo { transform: scale(.86); }
-html[data-cursor-state="hover"].cursor-down .cursor__logo { transform: scale(1.06); }
+/* The cursor and click explosion bring their own styles (js/cursor.js). */
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
 
