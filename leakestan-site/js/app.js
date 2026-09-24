@@ -21,7 +21,6 @@
   var grid = $("grid");
   var empty = $("empty");
   var search = $("search");
-  var sortSel = $("sort");
   var catList = $("categoryList");
   var resultTitle = $("resultTitle");
   var resultCount = $("resultCount");
@@ -33,8 +32,6 @@
   var state = {
     category: CATEGORIES.length ? CATEGORIES[0].key : HOME,
     query: "",
-    sort: "newest",
-    view: readStored("leakestan:view") || "grid",
   };
 
   /* Minimal stroke icons for the sidebar, keyed by the category's icon field. */
@@ -58,14 +55,6 @@
     return String(value == null ? "" : value)
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  }
-
-  function readStored(key) {
-    try { return window.localStorage.getItem(key); } catch (err) { return null; }
-  }
-
-  function writeStored(key, value) {
-    try { window.localStorage.setItem(key, value); } catch (err) { /* private mode */ }
   }
 
   function formatNumber(n) {
@@ -239,9 +228,6 @@
         .toLowerCase().indexOf(q) !== -1;
     });
 
-    if (state.sort === "name") {
-      return list.sort(function (a, b) { return a.name.localeCompare(b.name); });
-    }
     return newestFirst(list);
   }
 
@@ -274,7 +260,6 @@
     var list = visibleItems();
     var label = categoryLabel(state.category);
 
-    grid.classList.toggle("is-list", state.view === "list");
     grid.innerHTML = list.map(cardMarkup).join("");
 
     resultTitle.textContent = label;
@@ -461,24 +446,6 @@
       render();
     });
 
-    sortSel.addEventListener("change", function () {
-      state.sort = sortSel.value;
-      render();
-    });
-
-    Array.prototype.forEach.call(document.querySelectorAll("[data-view]"), function (btn) {
-      btn.addEventListener("click", function () {
-        state.view = btn.getAttribute("data-view");
-        writeStored("leakestan:view", state.view);
-        Array.prototype.forEach.call(document.querySelectorAll("[data-view]"), function (el) {
-          var on = el === btn;
-          el.classList.toggle("is-active", on);
-          el.setAttribute("aria-pressed", String(on));
-        });
-        render();
-      });
-    });
-
     grid.addEventListener("click", function (event) {
       var dl = event.target.closest("[data-download]");
       if (dl) { announceDownload(dl.getAttribute("data-download")); }
@@ -522,12 +489,6 @@
 
   function init() {
     if (!grid) { return; }
-
-    Array.prototype.forEach.call(document.querySelectorAll("[data-view]"), function (el) {
-      var on = el.getAttribute("data-view") === state.view;
-      el.classList.toggle("is-active", on);
-      el.setAttribute("aria-pressed", String(on));
-    });
 
     buildCategories();
     wireDiscord();

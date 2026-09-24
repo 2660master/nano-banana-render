@@ -28,7 +28,6 @@
   --rail:          264px;
 
   --shadow:        0 18px 40px -22px rgba(0, 0, 0, .95);
-  --shadow-lift:   0 30px 60px -26px rgba(180, 15, 35, .65);
   --ring:          0 0 0 2px var(--bg), 0 0 0 4px var(--accent-bright);
 
   --ease:          cubic-bezier(.22, .61, .36, 1);
@@ -393,34 +392,6 @@ kbd {
 
 .topbar__actions { display: flex; align-items: center; gap: 10px; margin-left: auto; }
 
-.select select {
-  padding: 10px 32px 10px 13px;
-  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b8a5aa' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 9px center / 15px;
-  border: 1px solid var(--line); border-radius: 11px;
-  font-size: 13.5px; font-weight: 600; color: var(--text-dim);
-  appearance: none; cursor: pointer;
-  transition: border-color .2s var(--ease), color .2s var(--ease);
-}
-.select select:hover { border-color: var(--accent); color: var(--text); }
-.select select option { background: var(--surface); color: var(--text); }
-
-.toggle {
-  display: flex; gap: 3px; padding: 3px;
-  background: var(--surface); border: 1px solid var(--line); border-radius: 11px;
-}
-.toggle__btn {
-  display: grid; place-items: center;
-  width: 32px; height: 30px;
-  background: transparent; border: 0; border-radius: 8px;
-  color: var(--text-faint); cursor: pointer;
-  transition: background .18s var(--ease), color .18s var(--ease);
-}
-.toggle__btn:hover { color: var(--text-dim); }
-.toggle__btn.is-active {
-  background: var(--accent); color: #fff;
-  box-shadow: 0 6px 16px -8px rgba(245, 37, 59, .9);
-}
-
 /* ── Main ─────────────────────────────────────────────────────────────── */
 
 /* Bottom padding keeps the last footer row clear of the back-to-top button. */
@@ -596,36 +567,106 @@ kbd {
 }
 
 .card {
+  /* Neon states. Every state has the same six layers — a dark drop shadow,
+     a crisp 1px tube, three widening halos and a faint inner glow — so the
+     browser can fade smoothly between them. Only the alphas change. */
+  --neon-off:
+    0 18px 40px -22px rgba(0, 0, 0, .95),
+    0 0 0 1px rgba(255, 70, 95, 0),
+    0 0 8px 1px rgba(255, 45, 72, 0),
+    0 0 24px 3px rgba(255, 32, 60, 0),
+    0 0 56px 8px rgba(245, 20, 50, 0),
+    inset 0 0 22px rgba(255, 45, 72, 0);
+  --neon-dim:
+    0 18px 40px -22px rgba(0, 0, 0, .95),
+    0 0 0 1px rgba(255, 70, 95, .3),
+    0 0 8px 1px rgba(255, 45, 72, .22),
+    0 0 24px 3px rgba(255, 32, 60, .1),
+    0 0 56px 8px rgba(245, 20, 50, 0),
+    inset 0 0 22px rgba(255, 45, 72, .05);
+  --neon-on:
+    0 18px 40px -22px rgba(0, 0, 0, .95),
+    0 0 0 1px rgba(255, 70, 95, .95),
+    0 0 8px 1px rgba(255, 45, 72, .85),
+    0 0 24px 3px rgba(255, 32, 60, .5),
+    0 0 56px 8px rgba(245, 20, 50, .24),
+    inset 0 0 22px rgba(255, 45, 72, .22);
+
   position: relative;
   display: flex; flex-direction: column;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--surface);
   overflow: hidden;
-  box-shadow: var(--shadow);
+  box-shadow: var(--neon-off);
   /* Tilt comes from fx.js via --rx/--ry; the reveal uses `translate`
      so the two never fight over `transform`. */
   transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(var(--lift, 0px));
   transition:
     transform .45s var(--ease-out),
-    border-color .22s var(--ease),
-    box-shadow .22s var(--ease),
+    border-color .35s var(--ease),
+    box-shadow .35s var(--ease),
     opacity .7s var(--ease-out) var(--reveal-delay, 0ms),
     translate .7s var(--ease-out) var(--reveal-delay, 0ms);
 }
 .card.is-tilting {
   transition:
     transform .12s linear,
-    border-color .22s var(--ease),
-    box-shadow .22s var(--ease),
+    border-color .35s var(--ease),
+    box-shadow .35s var(--ease),
     opacity .7s var(--ease-out) var(--reveal-delay, 0ms),
     translate .7s var(--ease-out) var(--reveal-delay, 0ms);
 }
+/* Hover: the card lights up like a red neon sign — a short ignition
+   flicker, then a steady glow. (The hum lives on the tube below: a
+   property that is still animating when the pointer leaves skips its
+   fade-out, so the halo itself is left static after ignition.) */
 .card:hover {
   --lift: -5px;
-  border-color: rgba(255, 84, 100, .55);
-  box-shadow: var(--shadow-lift);
+  border-color: #ff4760;
+  box-shadow: var(--neon-on);
+  animation: neon-ignite .55s steps(1, end);
 }
+@keyframes neon-ignite {
+  0%        { box-shadow: var(--neon-dim); border-color: rgba(255, 71, 96, .35); }
+  14%       { box-shadow: var(--neon-on);  border-color: #ff4760; }
+  24%       { box-shadow: var(--neon-dim); border-color: rgba(255, 71, 96, .35); }
+  38%       { box-shadow: var(--neon-on);  border-color: #ff4760; }
+  48%       { box-shadow: var(--neon-dim); border-color: rgba(255, 71, 96, .45); }
+  60%, 100% { box-shadow: var(--neon-on);  border-color: #ff4760; }
+}
+/* The tube itself: a light core line just inside the edge, drawn above the
+   screenshot so the whole card is framed. It flickers in step with the
+   glow, then hums softly while the pointer stays. */
+.card::before {
+  content: "";
+  position: absolute; inset: 0; z-index: 3;
+  border-radius: inherit; pointer-events: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 190, 200, .85),
+    inset 0 0 12px 1px rgba(255, 45, 72, .5);
+  opacity: 0;
+  transition: opacity .35s var(--ease);
+}
+.card:hover::before {
+  opacity: 1;
+  animation:
+    neon-tube .55s steps(1, end),
+    neon-hum 2.8s ease-in-out .55s infinite alternate;
+}
+@keyframes neon-hum {
+  from { box-shadow: inset 0 0 0 1px rgba(255, 190, 200, .85), inset 0 0 12px 1px rgba(255, 45, 72, .5); }
+  to   { box-shadow: inset 0 0 0 1px rgba(255, 215, 222, 1),   inset 0 0 20px 2px rgba(255, 45, 72, .75); }
+}
+@keyframes neon-tube {
+  0%        { opacity: .2; }
+  14%       { opacity: 1; }
+  24%       { opacity: .15; }
+  38%       { opacity: 1; }
+  48%       { opacity: .3; }
+  60%, 100% { opacity: 1; }
+}
+
 .reveal-ready .card:not(.is-in) { opacity: 0; translate: 0 26px; }
 
 /* Soft light that follows the pointer across the card. */
@@ -710,12 +751,6 @@ kbd {
 .card__actions .btn--primary { flex: 1; }
 
 
-/* list view */
-.grid.is-list { grid-template-columns: 1fr; gap: 12px; }
-.grid.is-list .card { flex-direction: row; align-items: stretch; }
-.grid.is-list .card__shot { width: 240px; flex: none; aspect-ratio: 16 / 10; }
-.grid.is-list .card__body { flex: 1; justify-content: center; }
-.grid.is-list .card__actions { max-width: 320px; margin-top: 0; }
 
 .empty {
   padding: 60px 24px; text-align: center;
@@ -754,7 +789,6 @@ kbd {
   font-size: 16px; font-weight: 800; letter-spacing: -.01em;
 }
 .footer__brand img { border-radius: 9px; }
-.footer__text { margin: 0; max-width: 34ch; font-size: 13px; color: var(--text-faint); }
 .footer__head {
   margin: 0 0 12px;
   font-size: 11px; font-weight: 800; letter-spacing: .16em;
@@ -871,8 +905,7 @@ kbd {
 }
 
 @media (max-width: 720px) {
-  /* Grid and list are both one column here, so the toggle would do nothing. */
-  .search__kbd, .topbar__discord, .toggle { display: none; }
+  .search__kbd, .topbar__discord { display: none; }
   .topbar { gap: 10px; padding: 12px 16px; }
   .topbar__actions { gap: 8px; }
   .search { min-width: 0; }
@@ -880,8 +913,6 @@ kbd {
   .hero { padding: 28px 22px 30px; }
   .hero__stats { gap: 22px; }
   .grid { grid-template-columns: 1fr; gap: 16px; }
-  .grid.is-list .card { flex-direction: column; }
-  .grid.is-list .card__shot { width: 100%; aspect-ratio: 16 / 9; }
   .section-head { flex-wrap: wrap; gap: 4px 14px; }
   .section-head::after { display: none; }
   .footer__top { gap: 26px; }

@@ -144,8 +144,7 @@ gaat dat al vanzelf goed.
 
 - Zoeken op naam of categorie (`/` of `Ctrl K` / `⌘ K` springt naar het zoekveld)
 - Filteren per categorie via de zijbalk, met aantallen en een meeglijdende markering
-- Sorteren op nieuwste of A→Z
-- Wisselen tussen raster- en lijstweergave (keuze wordt onthouden)
+- De nieuwste clients staan altijd bovenaan
 - Op een kaart is alleen de downloadknop klikbaar; de afbeelding zelf niet
 - Werkt op telefoon: de zijbalk schuift in via de menuknop
 
@@ -158,10 +157,12 @@ gaat dat al vanzelf goed.
 - **Intro** — kort LK-scherm bij het eerste bezoek (één keer per sessie).
 - **Kaarten** — schuiven in beeld bij het scrollen, kantelen licht mee met de
   muis met een lichtvlek eroverheen, en tonen een laad-animatie tot de
-  screenshot binnen is.
-- **Hero** — groen "live archive"-bolletje, een glanzende kop met een groot donut-logo ernaast, "Leakestan By Dexter", en de
-  tellers Clients en Downloads, die bij het laden als een kilometerteller
-  omhoog rollen naar het juiste getal.
+  screenshot binnen is. Met de muis erop gaan ze aan als een rode neonbuis:
+  eerst even flikkeren, dan een gloed rondom en een zacht zoemend randje.
+- **Hero** — groen "live archive"-bolletje, een glanzende kop met een groot
+  donut-logo ernaast, "Leakestan By Dexter", en de tellers Clients en
+  Downloads, die bij het laden als een kilometerteller omhoog rollen naar het
+  juiste getal.
 - **Kleine dingen** — voortgangsbalk bovenaan, knop terug naar boven, meldingen met
   afteltijd-balk, rode tekstselectie en scrollbalk, filmkorrel en langzaam
   bewegend rood licht op de achtergrond.

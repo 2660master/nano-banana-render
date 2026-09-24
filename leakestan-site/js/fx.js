@@ -189,7 +189,7 @@
     }
 
     grid.addEventListener("pointermove", function (event) {
-      if (event.pointerType !== "mouse" || grid.classList.contains("is-list")) { return; }
+      if (event.pointerType !== "mouse") { return; }
       var card = event.target.closest(".card");
       if (!card) { return; }
       if (active && active !== card) { reset(active); }
