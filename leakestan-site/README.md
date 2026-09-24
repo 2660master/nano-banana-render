@@ -6,6 +6,7 @@ of zet de map op een host (GitHub Pages, Netlify, Vercel, eigen webserver).
 ```
 leakestan-site/
 ├── index.html            # opbouw van de pagina
+├── 404.html              # foutpagina voor kapotte links (staat helemaal op zichzelf)
 ├── css/styles.css        # rood/zwart thema
 ├── js/app.js             # zoeken, filteren, sorteren, lightbox, downloads
 ├── js/fx.js              # intro, animaties, kantelende kaarten, scroll-balk
@@ -15,6 +16,8 @@ leakestan-site/
     ├── blank.txt         # tijdelijke download ("blank")
     ├── logo.svg          # LK-logo (favicon + zijbalk)
     ├── wordmark.svg      # LK zonder kader
+    ├── og-image.jpg      # plaatje dat Discord toont bij een geplakte link
+    ├── apple-touch-icon.png  # icoon als iemand de site op zijn iPhone-beginscherm zet
     └── previews/         # screenshots van de clients
 ```
 
@@ -79,7 +82,11 @@ Een item heeft maar vier dingen nodig:
   category: "clients",           // moet overeenkomen met een key hierboven
   image: "assets/previews/base-debug.webp",
   download: "",                  // leeg = blank
-  added: "2026-09-22",           // bepaalt de volgorde en de "updated"-datum
+  added: "2026-09-22",           // volgorde, "updated"-datum én het NEW-label
+
+  // optioneel:
+  tags: ["MC 1.21.11"],          // labels rechtsboven op de afbeelding
+  focus: "50% 40%",              // welk deel van de afbeelding in beeld blijft
 }
 ```
 
@@ -90,7 +97,39 @@ nieuwste items verschijnen automatisch als uitgewaaierde stapel in de hero
 
 Eigen afbeeldingen: zet je bestanden (`.png`, `.jpg`, `.webp`) in
 `assets/previews/` en wijs `image` ernaar. Beeldverhouding 16:9 past het beste;
-andere formaten worden netjes bijgesneden.
+andere formaten worden bijgesneden. Valt er iets belangrijks buiten beeld
+(zoals de kop van een menu), schuif het dan terug met `focus`: het eerste getal
+is links↔rechts, het tweede boven↔onder (`"50% 0%"` = bovenkant).
+
+### 5. Labels
+
+- **NEW** komt er vanzelf op bij alles wat in de laatste 7 dagen is toegevoegd
+  (volgens `added`). Zet bij een nieuwe client dus de echte datum. Hoeveel dagen:
+  `NEW_DAYS` bovenin `content.js` (0 = uit).
+- **Eigen labels** zet je met `tags`, bijvoorbeeld de Minecraft-versie of
+  `"Addon"`. Je kunt er ook op zoeken: `1.21` vindt alles met dat label.
+
+### 6. Discord-preview
+
+Als iemand je link in Discord plakt, toont Discord `assets/og-image.jpg` met
+de titel en beschrijving uit `index.html`. **Eén ding moet je doen zodra de
+site online staat:** zet in `index.html` bij `og:image` en `twitter:image` het
+volledige adres, bijvoorbeeld:
+
+```html
+<meta property="og:image" content="https://jouwdomein.nl/assets/og-image.jpg">
+```
+
+Discord kan een half adres (`assets/og-image.jpg`) niet altijd vinden. Na een
+wijziging kan het even duren voordat Discord het nieuwe plaatje laat zien.
+
+### 7. 404-pagina
+
+`404.html` verschijnt vanzelf bij een kapotte link — GitHub Pages, Netlify en
+Vercel pakken dat bestand automatisch op, zolang het in de hoofdmap van de site
+staat. Staat de site in een submap (bijvoorbeeld `jouwnaam.github.io/leakestan/`),
+zet dan bovenin `404.html` `data-home="/leakestan/"`. Bij een GitHub-projectpagina
+gaat dat al vanzelf goed.
 
 ## Wat de site doet
 
@@ -130,7 +169,12 @@ intro, geen inschuivende kaarten en geen kantelen — alles staat dan meteen sti
 
 ## Let op
 
-De afbeeldingen en namen zijn handmatig aangeleverd. Alleen de datums bij
-`added` zijn verzonnen — die bepalen niets anders dan de volgorde bij
-"Newest first". Er worden geen bestanden gehost of gelinkt: elke downloadknop
-serveert `assets/blank.txt`.
+De afbeeldingen en namen zijn handmatig aangeleverd. Een paar zijn bijgewerkt:
+bij Coffee Client is het watermerk van 9minecraft.net eraf geknipt, bij Radium
+Client de zwarte balken boven en onder, en het menu van Krypton Avengers Addon
+staat nu helemaal in beeld. Opsec Mod en Volt Client zijn maar 299 pixels breed
+en blijven daardoor wat wazig — een groter origineel lost dat op.
+
+De datums bij `added` zijn verzonnen; ze bepalen de volgorde en het NEW-label.
+Er worden geen bestanden gehost of gelinkt: elke downloadknop serveert
+`assets/blank.txt`.

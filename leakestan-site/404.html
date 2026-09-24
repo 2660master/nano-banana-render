@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<!--
+  Leakestan — 404 page.
+  Hosts (GitHub Pages, Netlify, Vercel…) serve this file for ANY missing
+  address, however deep, so it can't rely on relative links to css/ or js/.
+  Everything it needs is inside this one file.
+
+  Staat de site in een submap, bv. gebruikersnaam.github.io/leakestan/ ?
+  Zet dan data-home hieronder op "/leakestan/". Bij GitHub-projectpagina's
+  (*.github.io/<repo>/) gebeurt dat al automatisch.
+-->
+<html lang="en" data-home="/">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f5253b">
+<title>Page not found · Leakestan</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%2308080a'/%3E%3Cpolygon points='15.07,19.83 21.40,19.83 16.91,37.84 25.19,37.84 23.61,44.17 9.00,44.17' fill='%23f5253b'/%3E%3Cpolygon points='32.60,19.83 38.93,19.83 36.26,30.54 46.72,19.83 55.00,19.83 42.10,32.49 49.66,44.17 41.14,44.17 35.41,33.95 32.86,44.17 26.53,44.17' fill='%23f5253b'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #0a0708; --bg-deep: #050405; --surface-2: #1c171a; --line: #38272d;
+    --text: #f4ecee; --text-dim: #b8a5aa; --text-faint: #837075;
+    --accent: #f5253b; --accent-bright: #ff5464; --accent-soft: #ff9aa4; --accent-alt: #b00f22;
+    --ease: cubic-bezier(.22, .61, .36, 1); --ease-out: cubic-bezier(.16, 1, .3, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; overflow: hidden;
+    display: grid; place-items: center;
+    background: var(--bg); color: var(--text);
+    font-family: "Segoe UI", Inter, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: rgba(245, 37, 59, .42); color: #fff; }
+  a { color: inherit; text-decoration: none; }
+  :focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent-bright); }
+
+  /* Background: drifting glow, faint grid, film grain — same recipe as the site. */
+  .glow {
+    position: fixed; width: 70vmax; height: 70vmax; border-radius: 50%;
+    filter: blur(80px); pointer-events: none;
+  }
+  .glow--a { top: -34vmax; right: -20vmax; background: radial-gradient(circle, rgba(245, 37, 59, .32), transparent 62%); animation: drift 26s ease-in-out infinite alternate; }
+  .glow--b { bottom: -40vmax; left: -18vmax; background: radial-gradient(circle, rgba(176, 15, 34, .28), transparent 62%); animation: drift 32s ease-in-out infinite alternate-reverse; }
+  @keyframes drift { to { transform: translate(-10vmax, 8vmax) scale(1.1); } }
+  .grid {
+    position: fixed; inset: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, .04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, .04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    -webkit-mask-image: radial-gradient(ellipse at center, #000 10%, transparent 70%);
+    mask-image: radial-gradient(ellipse at center, #000 10%, transparent 70%);
+  }
+  .grain {
+    position: fixed; inset: 0; pointer-events: none; opacity: .05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .7 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  main {
+    position: relative; z-index: 1;
+    width: min(560px, 100% - 40px);
+    text-align: center;
+    animation: rise .8s var(--ease-out) both;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(16px); } }
+
+  .brand { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 30px; font-weight: 800; letter-spacing: -.02em; }
+  .brand svg { width: 38px; height: 38px; filter: drop-shadow(0 8px 20px rgba(245, 37, 59, .5)); }
+  .brand em { font-style: normal; background: linear-gradient(95deg, var(--accent-bright), var(--accent-alt)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  /* The 404 with a split-channel glitch that fires every few seconds. */
+  .code {
+    position: relative; margin: 0;
+    font-size: clamp(110px, 24vw, 200px); font-weight: 800;
+    letter-spacing: -.06em; line-height: .9;
+    background: linear-gradient(180deg, #fff 20%, var(--accent-soft) 130%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .code::before, .code::after {
+    content: attr(data-text);
+    position: absolute; inset: 0;
+    -webkit-background-clip: initial; background: none;
+    pointer-events: none;
+  }
+  /* Thin horizontal slices, knocked sideways for a few frames. */
+  .code::before { color: var(--accent); clip-path: inset(22% 0 62% 0); animation: glitch-a 3.2s infinite steps(1); opacity: .9; }
+  .code::after  { color: var(--accent-soft); clip-path: inset(60% 0 24% 0); animation: glitch-b 3.2s infinite steps(1); opacity: .75; }
+  @keyframes glitch-a {
+    0%, 86%, 100% { transform: none; opacity: 0; }
+    87% { transform: translate(-7px, -2px); opacity: .9; }
+    90% { transform: translate(5px, 1px); opacity: .9; }
+    93% { transform: translate(-3px, 0); opacity: .9; }
+  }
+  @keyframes glitch-b {
+    0%, 86%, 100% { transform: none; opacity: 0; }
+    88% { transform: translate(6px, 2px); opacity: .75; }
+    91% { transform: translate(-6px, -1px); opacity: .75; }
+    94% { transform: translate(3px, 0); opacity: .75; }
+  }
+
+  h1 { margin: 22px 0 10px; font-size: clamp(22px, 4vw, 28px); font-weight: 800; letter-spacing: -.02em; }
+  p.lead { margin: 0 auto 30px; max-width: 40ch; color: var(--text-dim); line-height: 1.6; }
+  .path {
+    display: inline-block; max-width: 100%; margin: 0 0 28px;
+    padding: 6px 12px; border-radius: 9px;
+    background: rgba(5, 4, 5, .6); border: 1px solid var(--line);
+    font: 600 12.5px/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    color: var(--text-faint);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .path b { color: var(--accent-bright); font-weight: 700; }
+
+  .actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
+  .btn {
+    position: relative; overflow: hidden; isolation: isolate;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 20px; border-radius: 11px; border: 1px solid transparent;
+    font: inherit; font-size: 14px; font-weight: 700; color: #fff;
+    cursor: pointer;
+    transition: transform .16s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease), border-color .2s var(--ease);
+  }
+  .btn:active { transform: translateY(1px) scale(.99); }
+  .btn--primary {
+    background: linear-gradient(95deg, var(--accent-bright), var(--accent) 52%, var(--accent-alt) 160%);
+    box-shadow: 0 12px 26px -14px rgba(245, 37, 59, .95), inset 0 1px 0 rgba(255, 255, 255, .18);
+  }
+  .btn--primary::after {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, .3) 50%, transparent 70%);
+    transform: translateX(-120%); transition: transform .75s var(--ease);
+  }
+  .btn--primary:hover::after { transform: translateX(120%); }
+  .btn--ghost { background: var(--surface-2); border-color: var(--line); color: var(--text-dim); }
+  .btn--ghost:hover { color: var(--text); border-color: var(--accent); }
+
+  .foot { margin-top: 44px; font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--text-faint); }
+
+  /* Logo cursor — same behaviour as js/cursor.js on the main site. */
+  .has-cursor, .has-cursor * { cursor: none !important; }
+  .cursor { position: fixed; top: 0; left: 0; z-index: 2147483000; width: 0; height: 0; pointer-events: none; opacity: 0; transition: opacity .2s var(--ease); will-change: transform; }
+  .cursor-on .cursor { opacity: 1; }
+  .cursor svg {
+    position: absolute; left: -4.2px; top: 0; width: 32px; height: 17px; overflow: visible;
+    fill: var(--accent-bright); stroke: #0a0708; stroke-width: 14; stroke-linejoin: round; paint-order: stroke;
+    transform-origin: 4.2px 0;
+    filter: drop-shadow(0 2px 6px rgba(245, 37, 59, .45));
+    transition: transform .22s var(--ease-out), fill .18s var(--ease), filter .22s var(--ease);
+  }
+  html[data-cursor-state="hover"] .cursor svg { fill: #fff; transform: scale(1.2); filter: drop-shadow(0 0 7px rgba(245, 37, 59, .95)) drop-shadow(0 3px 8px rgba(0, 0, 0, .6)); }
+  .cursor-down .cursor svg { transform: scale(.86); }
+  html[data-cursor-state="hover"].cursor-down .cursor svg { transform: scale(1.06); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+  <div class="glow glow--a" aria-hidden="true"></div>
+  <div class="glow glow--b" aria-hidden="true"></div>
+  <div class="grid" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <main>
+    <a class="brand" href="/" data-home-link>
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <rect width="64" height="64" rx="15" fill="#08080a"/>
+        <rect x="1" y="1" width="62" height="62" rx="14" fill="none" stroke="#f5253b" stroke-opacity=".32"/>
+        <polygon points="15.07,19.83 21.40,19.83 16.91,37.84 25.19,37.84 23.61,44.17 9.00,44.17" fill="#ff5464"/>
+        <polygon points="32.60,19.83 38.93,19.83 36.26,30.54 46.72,19.83 55.00,19.83 42.10,32.49 49.66,44.17 41.14,44.17 35.41,33.95 32.86,44.17 26.53,44.17" fill="#f5253b"/>
+      </svg>
+      <span>Leak<em>estan</em></span>
+    </a>
+
+    <p class="code" data-text="404" aria-hidden="true">404</p>
+    <h1>This page doesn't exist</h1>
+    <p class="lead">The link might be old, or the page has moved. Everything that's still around is in the archive.</p>
+    <p class="path" id="path" hidden></p>
+
+    <div class="actions">
+      <a class="btn btn--primary" href="/" data-home-link>
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/></svg>
+        Back to the archive
+      </a>
+      <button class="btn btn--ghost" type="button" id="goBack" hidden>
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H6m0 0 6-6m-6 6 6 6"/></svg>
+        Go back
+      </button>
+    </div>
+
+    <p class="foot">Error 404 · Leakestan</p>
+  </main>
+
+<script>
+(function () {
+  "use strict";
+  var root = document.documentElement;
+
+  /* Where "home" is. On a GitHub project page (user.github.io/<repo>/…)
+     the site lives under /<repo>/, so use that when data-home is left at "/". */
+  var home = root.getAttribute("data-home") || "/";
+  if (home === "/" && /\.github\.io$/.test(location.hostname)) {
+    var first = location.pathname.split("/")[1];
+    if (first) { home = "/" + first + "/"; }
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("[data-home-link]"), function (a) {
+    a.setAttribute("href", home);
+  });
+
+  /* Show which address was missing — handy when someone reports a dead link. */
+  var path = document.getElementById("path");
+  if (path && location.pathname && location.pathname !== "/" && !/404(\.html)?$/.test(location.pathname)) {
+    path.innerHTML = "";
+    path.appendChild(document.createTextNode("Not found: "));
+    var b = document.createElement("b");
+    b.textContent = decodeURIComponent(location.pathname);
+    path.appendChild(b);
+    path.hidden = false;
+  }
+
+  /* Only offer "Go back" when there is somewhere to go back to. */
+  var back = document.getElementById("goBack");
+  if (back && window.history.length > 1) {
+    back.hidden = false;
+    back.addEventListener("click", function () { window.history.back(); });
+  }
+
+  /* Logo cursor (mouse only), mirroring js/cursor.js. */
+  if (!window.matchMedia || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) { return; }
+  var cursor = document.createElement("div");
+  cursor.className = "cursor";
+  cursor.setAttribute("aria-hidden", "true");
+  cursor.innerHTML =
+    '<svg viewBox="0 0 188.93 100">' +
+      '<polygon points="24.93,0 50.93,0 32.48,74 66.48,74 60,100 0,100"/>' +
+      '<polygon points="96.93,0 122.93,0 111.96,44 154.93,0 188.93,0 135.97,52 167,100 132,100 108.47,58 98,100 72,100"/>' +
+    "</svg>";
+  document.body.appendChild(cursor);
+  root.classList.add("has-cursor");
+
+  var x = 0, y = 0, queued = false;
+  document.addEventListener("pointermove", function (e) {
+    if (e.pointerType && e.pointerType !== "mouse") { return; }
+    x = e.clientX; y = e.clientY;
+    root.classList.add("cursor-on");
+    if (!queued) {
+      queued = true;
+      requestAnimationFrame(function () {
+        queued = false;
+        cursor.style.transform = "translate3d(" + x + "px," + y + "px,0)";
+      });
+    }
+  }, { passive: true });
+  document.addEventListener("pointerover", function (e) {
+    var hit = e.target.closest && e.target.closest("a, button");
+    if (hit) { root.setAttribute("data-cursor-state", "hover"); } else { root.removeAttribute("data-cursor-state"); }
+  }, { passive: true });
+  document.addEventListener("mouseout", function (e) { if (!e.relatedTarget) { root.classList.remove("cursor-on"); } });
+  document.addEventListener("pointerdown", function () { root.classList.add("cursor-down"); }, { passive: true });
+  document.addEventListener("pointerup", function () { root.classList.remove("cursor-down"); }, { passive: true });
+})();
+</script>
+</body>
+</html>

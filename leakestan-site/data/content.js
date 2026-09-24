@@ -24,6 +24,10 @@ window.LEAKESTAN = {
   /* Bestand dat "gedownload" wordt: een leeg tekstbestand, geen archief. */
   BLANK_DOWNLOAD: "assets/blank.txt",
 
+  /* Hoeveel dagen een item het rode "NEW"-label krijgt, gerekend vanaf
+     de datum bij `added`. Zet op 0 om het label uit te zetten. */
+  NEW_DAYS: 7,
+
   /* Het menu in de zijbalk. "home" is bijzonder: die toont alle items. */
   CATEGORIES: [
     { key: "home",     label: "Home",     icon: "home" },
@@ -35,7 +39,13 @@ window.LEAKESTAN = {
 
   /* ---------------------------------------------------------------------
    * Een item heeft maar vier dingen nodig: naam, categorie, afbeelding en
-   * (later) een link. `added` bepaalt alleen de volgorde bij "Newest first".
+   * (later) een link. `added` bepaalt de volgorde én het "NEW"-label, dus
+   * zet bij een nieuwe client de echte datum van vandaag.
+   *
+   * Optioneel:
+   *   tags:  ["MC 1.21.11"]   -> labels rechtsboven op de afbeelding
+   *   focus: "50% 40%"        -> welk deel van de afbeelding in beeld blijft
+   *                              (links/rechts, boven/onder)
    *
    * Nieuw item toevoegen: zet je afbeelding in assets/previews/ en kopieer
    * een blok hieronder. Let op dat `id` uniek blijft.
@@ -46,6 +56,8 @@ window.LEAKESTAN = {
       name: "Base Debug",
       category: "clients",
       image: "assets/previews/base-debug.webp",
+      /* De kaart snijdt bij tot 16:9; zo blijft de kop van het menu in beeld. */
+      focus: "50% 40%",
       download: "",
       added: "2026-09-22",
     },
@@ -62,6 +74,7 @@ window.LEAKESTAN = {
       name: "Swyzzy Client",
       category: "clients",
       image: "assets/previews/swyzzy-client.webp",
+      tags: ["MC 1.21.11"],
       download: "",
       added: "2026-09-20",
     },
@@ -86,6 +99,7 @@ window.LEAKESTAN = {
       name: "67client",
       category: "clients",
       image: "assets/previews/67client.webp",
+      tags: ["MC 1.21.11"],
       download: "",
       added: "2026-09-17",
     },
@@ -110,6 +124,7 @@ window.LEAKESTAN = {
       name: "Code Engine",
       category: "clients",
       image: "assets/previews/code-engine.webp",
+      tags: ["MC 1.21.11"],
       download: "",
       added: "2026-09-14",
     },

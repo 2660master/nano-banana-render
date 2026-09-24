@@ -11,6 +11,7 @@
   var CATEGORIES = Array.isArray(CFG.CATEGORIES) ? CFG.CATEGORIES.slice() : [];
   var BLANK = CFG.BLANK_DOWNLOAD || "assets/blank.txt";
   var INVITE = (CFG.DISCORD_INVITE || "").trim();
+  var NEW_DAYS = typeof CFG.NEW_DAYS === "number" ? CFG.NEW_DAYS : 7;
 
   /* "home" is the catch-all tab — it lists every entry. */
   var HOME = "home";
@@ -98,6 +99,30 @@
       if (ITEMS[i].id === id) { return ITEMS[i]; }
     }
     return null;
+  }
+
+  /* "New" = added today or within the NEW_DAYS days before it. Both sides
+     are compared as whole UTC days, since `added` is a plain YYYY-MM-DD. */
+  function isNew(item) {
+    var added = new Date(item.added);
+    if (isNaN(added.getTime())) { return false; }
+    var now = new Date();
+    var today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    var days = Math.floor((today - added.getTime()) / 86400000);
+    return days >= 0 && days < NEW_DAYS;
+  }
+
+  function tagsFor(item) {
+    return Array.isArray(item.tags) ? item.tags.filter(Boolean) : [];
+  }
+
+  function labelsMarkup(item) {
+    var chips = [];
+    if (isNew(item)) { chips.push('<span class="chip chip--new">New</span>'); }
+    tagsFor(item).forEach(function (tag) {
+      chips.push('<span class="chip">' + esc(tag) + "</span>");
+    });
+    return chips.length ? '<span class="card__labels">' + chips.join("") + "</span>" : "";
   }
 
   function newestFirst(list) {
@@ -224,7 +249,9 @@
     var list = ITEMS.filter(function (item) {
       if (state.category !== HOME && item.category !== state.category) { return false; }
       if (!q) { return true; }
-      return (item.name + " " + item.category).toLowerCase().indexOf(q) !== -1;
+      /* Tags are searchable too, so "1.21" finds every client tagged with it. */
+      return (item.name + " " + item.category + " " + tagsFor(item).join(" "))
+        .toLowerCase().indexOf(q) !== -1;
     });
 
     if (state.sort === "name") {
@@ -243,8 +270,10 @@
       '<button class="card__shot" type="button" data-open="' + esc(item.id) + '" ' +
         'aria-label="Open ' + esc(item.name) + ' preview">' +
         '<img class="card__img" src="' + esc(item.image) + '" alt="' + esc(item.name) + ' preview" ' +
+          (item.focus ? 'style="object-position:' + esc(item.focus) + '" ' : "") +
           'loading="lazy" decoding="async">' +
         '<span class="card__index">' + number + "</span>" +
+        labelsMarkup(item) +
       "</button>" +
       '<div class="card__body">' +
         '<h3 class="card__name">' + esc(item.name) + "</h3>" +
@@ -386,9 +415,10 @@
     $("lbTitle").textContent = item.name;
     $("lbMeta").textContent = [
       "#" + pad(catalogue[item.id] || lbIndex + 1),
+      isNew(item) ? "New" : "",
       categoryLabel(item.category),
       formatDate(item.added),
-    ].filter(Boolean).join(" · ");
+    ].concat(tagsFor(item)).filter(Boolean).join(" · ");
     $("lbCount").textContent = (lbIndex + 1) + " / " + shown.length;
 
     var single = shown.length < 2;
