@@ -906,62 +906,53 @@ kbd {
 
 .has-cursor, .has-cursor * { cursor: none !important; }
 
+/* The wrapper sits exactly on the pointer; its children are offset from there. */
 .cursor {
   position: fixed; top: 0; left: 0; z-index: 2147483000;
+  width: 0; height: 0;
   pointer-events: none;
   opacity: 0;
-  transition: opacity .25s var(--ease);
+  transition: opacity .2s var(--ease);
   will-change: transform;
 }
 .cursor-on .cursor { opacity: 1; }
 
-.cursor__dot {
-  width: 7px; height: 7px; border-radius: 50%;
+/* 32px wide. The L's top-left tip sits 24.93/188.93 of the way in (4.2px),
+   so shifting left by that puts the tip on the click point. The dark
+   outline keeps the red logo readable on top of red buttons. */
+.cursor__logo {
+  position: absolute; left: -4.2px; top: 0;
+  width: 32px; height: 17px;
+  overflow: visible;
+  fill: var(--accent-bright);
+  stroke: #0a0708; stroke-width: 14; stroke-linejoin: round;
+  paint-order: stroke;
+  transform-origin: 4.2px 0;
+  filter: drop-shadow(0 2px 6px rgba(245, 37, 59, .45));
+  transition: transform .22s var(--ease-out), fill .18s var(--ease),
+              filter .22s var(--ease), opacity .15s var(--ease);
+}
+
+.cursor__caret {
+  position: absolute; left: -1px; top: -11px;
+  width: 2px; height: 22px; border-radius: 1px;
   background: var(--accent-bright);
-  box-shadow: 0 0 12px rgba(245, 37, 59, .9);
-  transform: translate(-50%, -50%);
-  transition: width .2s var(--ease), height .2s var(--ease), border-radius .2s var(--ease),
-              opacity .2s var(--ease), transform .15s var(--ease);
+  opacity: 0; transform: scaleY(.4);
+  transition: opacity .15s var(--ease), transform .2s var(--ease-out);
 }
 
-.cursor__ring {
-  display: grid; place-items: center;
-  width: 36px; height: 36px; border-radius: 50%;
-  border: 1.5px solid rgba(255, 84, 100, .7);
-  transform: translate(-50%, -50%);
-  transition: width .32s var(--ease-out), height .32s var(--ease-out),
-              background-color .3s var(--ease), border-color .3s var(--ease),
-              box-shadow .3s var(--ease), transform .18s var(--ease), opacity .2s var(--ease);
-}
-.cursor__label {
-  font-size: 11px; font-weight: 800; letter-spacing: .14em;
-  text-transform: uppercase; white-space: nowrap;
-  color: #fff;
-  opacity: 0; transform: scale(.5);
-  transition: opacity .2s var(--ease), transform .28s var(--ease-out);
+/* Over anything clickable: a touch bigger, white, with a red glow. */
+html[data-cursor-state="hover"] .cursor__logo {
+  fill: #fff;
+  transform: scale(1.2);
+  filter: drop-shadow(0 0 7px rgba(245, 37, 59, .95)) drop-shadow(0 3px 8px rgba(0, 0, 0, .6));
 }
 
-html[data-cursor-state="hover"] .cursor__ring {
-  width: 56px; height: 56px;
-  background-color: rgba(245, 37, 59, .14);
-  border-color: var(--accent-bright);
-}
-html[data-cursor-state="hover"] .cursor__dot { width: 5px; height: 5px; }
+html[data-cursor-state="text"] .cursor__logo { opacity: 0; transform: scale(.6); }
+html[data-cursor-state="text"] .cursor__caret { opacity: 1; transform: none; }
 
-html[data-cursor-state="view"] .cursor__ring {
-  width: 86px; height: 86px;
-  background-color: rgba(245, 37, 59, .92);
-  border-color: transparent;
-  box-shadow: 0 12px 34px -10px rgba(245, 37, 59, .85);
-}
-html[data-cursor-state="view"] .cursor__label { opacity: 1; transform: scale(1); }
-html[data-cursor-state="view"] .cursor__dot { opacity: 0; }
-
-html[data-cursor-state="text"] .cursor__ring { opacity: 0; transform: translate(-50%, -50%) scale(.4); }
-html[data-cursor-state="text"] .cursor__dot { width: 2px; height: 22px; border-radius: 1px; box-shadow: none; }
-
-.cursor-down .cursor__ring { transform: translate(-50%, -50%) scale(.82); }
-.cursor-down .cursor__dot { transform: translate(-50%, -50%) scale(.7); }
+.cursor-down .cursor__logo { transform: scale(.86); }
+html[data-cursor-state="hover"].cursor-down .cursor__logo { transform: scale(1.06); }
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
 

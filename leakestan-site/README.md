@@ -104,10 +104,11 @@ andere formaten worden netjes bijgesneden.
 
 ## Details en effecten
 
-- **Eigen cursor** — rode stip met een ring die meebeweegt. Boven een preview
-  wordt het een rode cirkel met "View", boven de achtergrond van de grote
-  weergave "Close", boven knoppen groeit de ring en in het zoekveld wordt het
-  een tekstcursor. Alleen met een muis; op telefoon en tablet blijft alles normaal.
+- **Eigen cursor** — het LK-logo is de muis. Het puntje linksboven van de L
+  is waar je klikt, net als bij een gewone pijl. Boven alles wat klikbaar is
+  wordt het logo iets groter en wit met een rode gloed; in het zoekveld wordt
+  het een dun tekststreepje. Alleen met een muis; op telefoon en tablet blijft
+  alles normaal.
 - **Intro** — kort LK-scherm bij het eerste bezoek (één keer per sessie).
 - **Kaarten** — schuiven in beeld bij het scrollen, kantelen licht mee met de
   muis met een lichtvlek eroverheen, en tonen een laad-animatie tot de

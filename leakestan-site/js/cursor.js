@@ -1,10 +1,10 @@
 /* ==========================================================================
    LEAKESTAN — custom cursor
-   A red dot that sits exactly on the pointer and a ring that trails it.
-   The ring reacts to what is underneath:
-     hover  → links, buttons, selects: ring grows, dot shrinks
-     view   → previews (and the lightbox backdrop): filled ring with a label
-     text   → inputs: the dot becomes a caret
+   The LK logo is the pointer. The top-left tip of the L is the click point,
+   like a normal arrow, and it follows the mouse exactly (no trailing).
+     hover → over anything clickable the logo grows a little and turns white
+     text  → in text fields it becomes a thin caret
+     down  → squeezes while the button is held
    Only runs for a real mouse. Touch devices and pens keep their own cursor,
    and if this script never runs the native cursor is untouched.
    ========================================================================== */
@@ -14,82 +14,48 @@
   if (!window.matchMedia) { return; }
   if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) { return; }
 
-  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var root = document.documentElement;
 
-  /* Selectors per state, most specific first. An element can also opt in
-     explicitly with data-cursor="view|hover" and data-cursor-label="…". */
   var TEXT = "input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, [contenteditable=true]";
-  var VIEW = "[data-cursor=view], [data-open]";
-  var HOVER = "[data-cursor=hover], a, button, select, label, summary, [role=button]";
+  var HOVER = "[data-cursor], [data-open], a, button, select, label, summary, [role=button]";
 
-  function build(className, inner) {
-    var el = document.createElement("div");
-    el.className = "cursor " + className;
-    el.setAttribute("aria-hidden", "true");
-    el.innerHTML = inner;
-    document.body.appendChild(el);
-    return el;
-  }
+  /* Same outlines as assets/wordmark.svg, inlined so CSS can recolour them. */
+  var LOGO =
+    '<svg class="cursor__logo" viewBox="0 0 188.93 100" aria-hidden="true">' +
+      '<polygon points="24.93,0 50.93,0 32.48,74 66.48,74 60,100 0,100"/>' +
+      '<polygon points="96.93,0 122.93,0 111.96,44 154.93,0 188.93,0 135.97,52 167,100 132,100 108.47,58 98,100 72,100"/>' +
+    "</svg>";
 
-  var ring = build("cursor--ring", '<div class="cursor__ring"><span class="cursor__label"></span></div>');
-  var dot = build("cursor--dot", '<div class="cursor__dot"></div>');
-  var label = ring.querySelector(".cursor__label");
+  var cursor = document.createElement("div");
+  cursor.className = "cursor";
+  cursor.setAttribute("aria-hidden", "true");
+  cursor.innerHTML = LOGO + '<span class="cursor__caret"></span>';
+  document.body.appendChild(cursor);
 
   root.classList.add("has-cursor");
 
-  var x = -200, y = -200;      // pointer
-  var rx = x, ry = y;          // ring, eased toward the pointer
+  var x = -200, y = -200;
   var seen = false;
-  var raf = 0;
-  var EASE = reduced ? 1 : 0.2;
+  var queued = false;
 
-  function place(el, px, py) {
-    el.style.transform = "translate3d(" + px + "px," + py + "px,0)";
+  function paint() {
+    queued = false;
+    cursor.style.transform = "translate3d(" + x + "px," + y + "px,0)";
   }
 
-  function frame() {
-    rx += (x - rx) * EASE;
-    ry += (y - ry) * EASE;
-    place(dot, x, y);
-    place(ring, rx, ry);
-
-    if (Math.abs(x - rx) > 0.1 || Math.abs(y - ry) > 0.1) {
-      raf = window.requestAnimationFrame(frame);
-    } else {
-      raf = 0;
-    }
-  }
-
-  function kick() {
-    if (!raf) { raf = window.requestAnimationFrame(frame); }
-  }
-
-  /* The live state goes on its own attribute. It must not share a name with
-     the data-cursor opt-in, or closest() would match <html> itself and the
-     cursor would stick in whatever state it entered first. */
-  function setState(state, text) {
+  function setState(state) {
     if (state) {
       root.setAttribute("data-cursor-state", state);
     } else {
       root.removeAttribute("data-cursor-state");
     }
-    label.textContent = text || "";
   }
 
   function stateFor(target) {
     if (!target || !target.closest) { return null; }
-
-    if (target.closest(TEXT)) { return { state: "text" }; }
-
-    var view = target.closest(VIEW);
-    if (view) {
-      return { state: "view", label: view.getAttribute("data-cursor-label") || "View" };
-    }
-
+    if (target.closest(TEXT)) { return "text"; }
     var hover = target.closest(HOVER);
-    if (hover && !hover.disabled) { return { state: "hover" }; }
-
+    if (hover && !hover.disabled) { return "hover"; }
     return null;
   }
 
@@ -97,20 +63,13 @@
     if (event.pointerType && event.pointerType !== "mouse") { return; }
     x = event.clientX;
     y = event.clientY;
-
-    if (!seen) {
-      /* First sighting: start the ring on the pointer instead of flying in. */
-      seen = true;
-      rx = x;
-      ry = y;
-    }
+    seen = true;
     root.classList.add("cursor-on");
-    kick();
+    if (!queued) { queued = true; window.requestAnimationFrame(paint); }
   }, { passive: true });
 
   document.addEventListener("pointerover", function (event) {
-    var hit = stateFor(event.target);
-    setState(hit && hit.state, hit && hit.label);
+    setState(stateFor(event.target));
   }, { passive: true });
 
   /* Leaving the window (or the iframe the page lives in). */
@@ -127,12 +86,10 @@
   }, { passive: true });
 
   /* Content under a still pointer can change (a card re-renders, a dialog
-     opens), so re-read the state after clicks and keyboard actions. */
+     opens), so re-read the state after clicks, keys and scrolling. */
   function recheck() {
     if (!seen) { return; }
-    var under = document.elementFromPoint(x, y);
-    var hit = stateFor(under);
-    setState(hit && hit.state, hit && hit.label);
+    setState(stateFor(document.elementFromPoint(x, y)));
   }
   document.addEventListener("click", function () { window.setTimeout(recheck, 30); });
   document.addEventListener("keyup", function () { window.setTimeout(recheck, 30); });
