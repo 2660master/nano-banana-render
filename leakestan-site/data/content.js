@@ -63,16 +63,6 @@ window.LEAKESTAN = {
    * ------------------------------------------------------------------- */
   ITEMS: [
     {
-      id: "base-debug",
-      name: "Base Debug",
-      category: "clients",
-      image: "assets/previews/base-debug.webp",
-      /* De kaart snijdt bij tot 16:9; zo blijft de kop van het menu in beeld. */
-      focus: "50% 40%",
-      download: "",
-      added: "2026-09-22",
-    },
-    {
       id: "water-client-dev-prerelease",
       name: "Water Client Dev Version Pre Release",
       category: "clients",

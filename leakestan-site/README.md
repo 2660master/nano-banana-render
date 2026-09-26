@@ -57,17 +57,17 @@ voor te doen. Beschikbare iconen: `home`, `file`, `tool`, `bug`, `warn`, `dot`.
 Elk item heeft een `download`-veld. Dat staat nu bewust **leeg**:
 
 ```js
-{ id: "base-debug", name: "Base Debug", download: "", ... }
+{ id: "corz-client", name: "Corz Client", download: "", ... }
 ```
 
 Leeg betekent: de knop serveert `assets/blank.txt` (inhoud: het woord `blank`)
-en downloadt als `base-debug-blank.txt`. De knop werkt dus al, maar levert nog
+en downloadt als `corz-client-blank.txt`. De knop werkt dus al, maar levert nog
 niets echts op.
 
 Later vul je de echte link in:
 
 ```js
-download: "https://jouwhost.nl/clients/base-debug.zip",
+download: "https://jouwhost.nl/clients/corz-client.zip",
 ```
 
 Meer hoeft er niet te gebeuren — de knop wordt automatisch een echte download.
@@ -78,10 +78,10 @@ Een item heeft maar vier dingen nodig:
 
 ```js
 {
-  id: "base-debug",              // uniek, gebruikt voor de link #item-base-debug
-  name: "Base Debug",            // naam onder de afbeelding
+  id: "corz-client",             // uniek, gebruikt voor de link #item-corz-client
+  name: "Corz Client",           // naam onder de afbeelding
   category: "clients",           // moet overeenkomen met een key hierboven
-  image: "assets/previews/base-debug.webp",
+  image: "assets/previews/corz-client.png",
   download: "",                  // leeg = blank
   added: "2026-09-22",           // volgorde en het NEW-label (wordt niet getoond)
 
