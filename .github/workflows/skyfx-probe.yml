@@ -1,4 +1,4 @@
-# TEMPORARY: prints API signatures from the 1.21.11 Mojang-mapped sources so the mod can be written against them.
+# TEMPORARY (round 2): prints API signatures from the 1.21.11 Mojang-mapped sources so the mod can be written against them.
 name: SkyFX API probe
 
 on:
@@ -93,68 +93,44 @@ jobs:
               elif mode == 'sig': res = sig(lines)
               elif mode == 'method': res = method(lines, arg)
               elif mode == 'grep': res = ['%d: %s' % (n+1, l.rstrip()) for n, l in enumerate(lines) if re.search(arg, l)]
+              elif mode == 'lines':
+                  a, b = [int(x) for x in arg.split('-')]
+                  res = ['%d: %s' % (n, lines[n-1].rstrip()) for n in range(a, min(b, len(lines)) + 1)]
               print('\n'.join(res))
           EOF
           cat > /tmp/specs.txt <<'EOF'
-          ls net/minecraft/client/renderer
-          ls net/minecraft/client/renderer/state
-          ls net/minecraft/client/renderer/rendertype
-          ls com/mojang/blaze3d/systems
-          ls com/mojang/blaze3d/vertex
-          sig net/minecraft/client/renderer/SkyRenderer.java
-          method net/minecraft/client/renderer/SkyRenderer.java renderSkyDisc
-          method net/minecraft/client/renderer/SkyRenderer.java buildSkyDisc
-          method net/minecraft/client/renderer/LevelRenderer.java addSkyPass
-          method net/minecraft/client/renderer/LevelRenderer.java addCloudsPass
-          method net/minecraft/client/renderer/LevelRenderer.java renderBlockOutline
-          method net/minecraft/client/renderer/LevelRenderer.java extractBlockOutline
-          grep net/minecraft/client/renderer/LevelRenderer.java addSkyPass|addCloudsPass|renderBlockOutline|getModelViewStack|skyRenderer\.
-          full net/minecraft/client/renderer/state/SkyRenderState.java
-          full net/minecraft/client/renderer/state/BlockOutlineRenderState.java
-          sig net/minecraft/client/renderer/state/LevelRenderState.java
-          sig net/minecraft/client/renderer/state/CameraRenderState.java
-          sig net/minecraft/client/renderer/DynamicUniforms.java
-          grep net/minecraft/client/renderer/RenderPipelines.java SKY|GLINT|LINES|SNIPPET|register|STARS|DEBUG_FILLED|DEBUG_QUADS|SUNRISE|CELESTIAL
-          method net/minecraft/client/renderer/RenderPipelines.java register
-          sig com/mojang/blaze3d/pipeline/RenderPipeline.java
-          sig com/mojang/blaze3d/systems/RenderPass.java
-          sig com/mojang/blaze3d/systems/CommandEncoder.java
-          sig com/mojang/blaze3d/systems/GpuDevice.java
-          sig com/mojang/blaze3d/systems/RenderSystem.java
-          sig com/mojang/blaze3d/buffers/GpuBuffer.java
-          sig com/mojang/blaze3d/vertex/BufferBuilder.java
-          sig com/mojang/blaze3d/vertex/MeshData.java
-          sig com/mojang/blaze3d/vertex/ByteBufferBuilder.java
-          sig com/mojang/blaze3d/vertex/Tesselator.java
-          sig com/mojang/blaze3d/vertex/VertexFormat.java
-          grep com/mojang/blaze3d/vertex/DefaultVertexFormat.java public static
-          sig com/mojang/blaze3d/vertex/VertexConsumer.java
-          sig com/mojang/blaze3d/pipeline/BlendFunction.java
-          full com/mojang/blaze3d/platform/DepthTestFunction.java
-          sig com/mojang/blaze3d/shaders/UniformType.java
-          sig net/minecraft/client/renderer/MappableRingBuffer.java
-          sig net/minecraft/client/renderer/CloudRenderer.java
-          method net/minecraft/client/renderer/CloudRenderer.java render
-          sig net/minecraft/client/renderer/GlobalSettingsUniform.java
-          method net/minecraft/client/renderer/GlobalSettingsUniform.java update
-          sig net/minecraft/client/renderer/ShapeRenderer.java
-          grep net/minecraft/client/renderer/rendertype/RenderTypes.java (?i)glint|lines|debugFilled|debugQuad|static RenderType [a-z]+\(\)
-          grep net/minecraft/client/renderer/RenderType.java (?i)glint|lines|debugFilled|debugQuad
-          sig net/minecraft/client/renderer/fog/FogRenderer.java
-          method net/minecraft/client/renderer/fog/FogRenderer.java computeFogColor
-          sig net/minecraft/client/KeyMapping.java
-          sig net/minecraft/client/gui/GuiGraphics.java
-          sig net/minecraft/client/gui/screens/Screen.java
-          sig net/minecraft/client/gui/components/AbstractSliderButton.java
-          sig net/minecraft/client/gui/components/Button.java
-          sig net/minecraft/client/gui/components/CycleButton.java
-          grep net/minecraft/client/gui/components/EditBox.java public EditBox|public void set|public String get
-          grep net/minecraft/client/gui/components/AbstractWidget.java public
-          grep net/minecraft/client/renderer/entity/ItemRenderer.java (?i)glint
-          grep net/minecraft/client/Minecraft.java public .*(getMainRenderTarget|getDeltaTracker|getWindow|reloadResourcePacks|getResourcePackRepository|setScreen)\(
-          sig com/mojang/blaze3d/pipeline/RenderTarget.java
-          grep net/minecraft/client/renderer/GameRenderer.java globalSettings|GlobalSettings
-          sig net/minecraft/util/ARGB.java
-          grep net/minecraft/util/Util.java public static long get
+          lines net/minecraft/client/renderer/RenderPipelines.java 23-26
+          lines net/minecraft/client/renderer/RenderPipelines.java 87-100
+          lines net/minecraft/client/renderer/RenderPipelines.java 591-641
+          lines net/minecraft/client/renderer/RenderPipelines.java 396-408
+          method net/minecraft/client/renderer/ShapeRenderer.java renderShape
+          method net/minecraft/client/renderer/LevelRenderer.java renderHitOutline
+          lines net/minecraft/client/renderer/LevelRenderer.java 498-560
+          lines net/minecraft/client/renderer/LevelRenderer.java 640-700
+          sig net/minecraft/client/gui/components/AbstractButton.java
+          grep net/minecraft/client/gui/components/AbstractWidget.java renderWidget|protected abstract
+          grep net/minecraft/client/Options.java (?i)resourcePacks|updateResourcePacks|loadSelectedResourcePacks|public void save\(
+          sig net/minecraft/server/packs/repository/PackRepository.java
+          method net/minecraft/client/renderer/fog/FogRenderer.java setupFog
+          grep net/minecraft/resources/Identifier.java public static
+          grep com/mojang/blaze3d/platform/InputConstants.java KEY_K |enum Type|KEYSYM|public static .*getKey
+          grep net/minecraft/network/chat/Component.java static .* (literal|translatable|empty)\(
+          grep net/minecraft/client/DeltaTracker.java float|long
+          sig net/minecraft/client/renderer/MultiBufferSource.java
+          grep com/mojang/blaze3d/vertex/PoseStack.java public
+          grep net/minecraft/world/phys/shapes/VoxelShape.java public .*(forAllEdges|forAllBoxes|bounds|toAabbs|isEmpty)\(
+          grep net/minecraft/world/phys/AABB.java public (AABB\(|AABB inflate|AABB move|double get)
+          grep net/minecraft/client/gui/components/Tooltip.java public static
+          grep net/minecraft/client/gui/GuiGraphics.java public void (fill|drawString|renderOutline)\(
+          grep net/minecraft/client/gui/components/AbstractSliderButton.java value
+          grep net/minecraft/util/Mth.java public static float (sin|cos|lerp|clamp)\(
+          grep net/minecraft/client/gui/screens/Screen.java renderBackground|renderBlurredBackground|renderTransparentBackground
+          method net/minecraft/client/gui/screens/Screen.java renderBackground
+          method net/minecraft/client/gui/screens/Screen.java render
+          grep net/minecraft/client/Minecraft.java public .*(level|player|options|font|levelRenderer|gameRenderer|textureManager);
+          grep net/minecraft/client/multiplayer/ClientLevel.java public .*(getGameTime|getDayTime|dimension|getSkyColor|effects)\(
+          grep net/minecraft/client/KeyMapping.java consumeClick|Category
+          method net/minecraft/client/KeyMapping.java label
+          grep net/minecraft/client/gui/components/EditBox.java public boolean (keyPressed|charTyped)
           EOF
           python3 /tmp/probe.py
