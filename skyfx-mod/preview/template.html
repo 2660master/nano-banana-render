@@ -634,7 +634,9 @@ ${glsl('glsl-glint')}
 void main() {
 	vec4 item = texture(uItem, vUv);
 	if (item.a < 0.1) discard;
-	vec2 guv = (uGlintMat * vec3(vUv, 1.0)).xy;
+	// like Minecraft, the glint works on texture-atlas coordinates: a 16px item sprite in a 512px atlas
+	vec2 atlasUv = vec2(0.3, 0.4) + vUv * (16.0 / 512.0);
+	vec2 guv = (uGlintMat * vec3(atlasUv, 1.0)).xy;
 	vec3 tex = texture(uGlintTex, guv).rgb;
 	vec3 glint = uMode < 0.5 ? vec3(0.0) : (uMode < 1.5 ? tex : skyfx_rainbowGlint(tex, guv, uGameTime));
 	// Minecraft blends the glint with (SRC_COLOR, ONE): the added light is glint * glint

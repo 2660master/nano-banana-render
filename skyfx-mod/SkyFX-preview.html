@@ -1146,8 +1146,10 @@ vec3 skyfx_storm(vec3 dir, float t) {
 
 vec3 skyfx_rainbowGlint(vec3 texColor, vec2 uv, float gameTime) {
 	float strength = max(texColor.r, max(texColor.g, texColor.b));
-	// 160 colour cycles per in-game day keeps the hue continuous when GameTime wraps around
-	float hue = fract(uv.x * 0.35 + uv.y * 0.20 + gameTime * 160.0);
+	// Item glint coordinates only cover a small patch of the texture atlas (about 0.1 - 0.25 units),
+	// so a high spatial frequency is needed to get the whole rainbow across one item.
+	// 160 colour cycles per in-game day keeps the hue continuous when GameTime wraps around.
+	float hue = fract((uv.x + uv.y) * 4.0 + gameTime * 160.0);
 	vec3 rainbow = skyfx_hsv2rgb(vec3(hue, 0.85, 1.0));
 	return rainbow * strength * 1.35;
 }
@@ -1459,7 +1461,9 @@ ${glsl('glsl-glint')}
 void main() {
 	vec4 item = texture(uItem, vUv);
 	if (item.a < 0.1) discard;
-	vec2 guv = (uGlintMat * vec3(vUv, 1.0)).xy;
+	// like Minecraft, the glint works on texture-atlas coordinates: a 16px item sprite in a 512px atlas
+	vec2 atlasUv = vec2(0.3, 0.4) + vUv * (16.0 / 512.0);
+	vec2 guv = (uGlintMat * vec3(atlasUv, 1.0)).xy;
 	vec3 tex = texture(uGlintTex, guv).rgb;
 	vec3 glint = uMode < 0.5 ? vec3(0.0) : (uMode < 1.5 ? tex : skyfx_rainbowGlint(tex, guv, uGameTime));
 	// Minecraft blends the glint with (SRC_COLOR, ONE): the added light is glint * glint
