@@ -240,7 +240,7 @@ public class SkyFXScreen extends Screen {
 					SkyFXConfig.save();
 				}));
 		this.addRenderableWidget(new IntSlider(this.contentX, y, half, 20, 1, 10, 1, config.auraGlow,
-				v -> Component.translatable("skyfx.option.glow", v), v -> {
+				v -> Component.translatable("skyfx.option.edge", v), v -> {
 					config.auraGlow = v;
 					SkyFXConfig.save();
 				}));

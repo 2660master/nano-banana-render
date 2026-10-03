@@ -37,11 +37,11 @@ public final class SkyFXConfig {
 	public boolean auraRainbow = false;
 	/** Pulse speed in percent (0 = no pulse, up to 300). */
 	public int auraPulse = 100;
-	/** Glow thickness, 1 - 10. */
-	public int auraGlow = 5;
+	/** Edge line thickness, 1 - 10 (field name kept so old configs still load). */
+	public int auraGlow = 3;
 	/** Fill opacity in percent (0 - 60). */
 	public int auraFill = 18;
-	/** 0 = glowing outline, 1 = galaxy (the block becomes a window into space). */
+	/** 0 = classic (fill + flat edge), 1 = galaxy (the block becomes a window into space). */
 	public int auraStyle = 0;
 
 	// item aura (glowing outline around the held item)

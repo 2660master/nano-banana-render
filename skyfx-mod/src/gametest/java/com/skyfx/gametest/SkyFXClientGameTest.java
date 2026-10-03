@@ -83,6 +83,22 @@ public class SkyFXClientGameTest implements FabricClientGameTest {
 			setGlint(context, GlintType.PALM);
 			context.takeScreenshot("glint_palm");
 
+			// item aura: a bold green outline, then the raw mask (white = item) to prove the hand reaches the mask
+			context.runOnClient(client -> {
+				SkyFXConfig.get().itemAuraColor = 0x3CFF6E;
+				SkyFXConfig.get().itemAuraWidth = 6;
+			});
+			context.waitTicks(3);
+			context.takeScreenshot("item_aura_green");
+			context.runOnClient(client -> System.setProperty("skyfx.debugItemMask", "true"));
+			context.waitTicks(3);
+			context.takeScreenshot("item_aura_mask");
+			context.runOnClient(client -> {
+				System.clearProperty("skyfx.debugItemMask");
+				SkyFXConfig.get().itemAuraColor = 0xFF4FD8;
+				SkyFXConfig.get().itemAuraWidth = 3;
+			});
+
 			// the menu, all three tabs
 			context.runOnClient(client -> SkyFXConfig.get().sky = SkyType.AURORA.id());
 			context.setScreen(() -> new SkyFXScreen(null));

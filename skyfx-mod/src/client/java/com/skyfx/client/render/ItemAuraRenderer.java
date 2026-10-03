@@ -62,6 +62,7 @@ public final class ItemAuraRenderer {
 	private static @Nullable GpuTextureView maskColorView;
 	private static @Nullable GpuTextureView maskDepthView;
 	private static boolean reportedInvalid;
+	private static boolean reportedActive;
 
 	private ItemAuraRenderer() {
 	}
@@ -85,6 +86,10 @@ public final class ItemAuraRenderer {
 			buffers.endBatch();
 			return;
 		}
+		if (!reportedActive) {
+			reportedActive = true;
+			SkyFXClient.LOGGER.info("SkyFX item aura active");
+		}
 		RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
 		ensureMask(main.width, main.height);
 
@@ -105,7 +110,8 @@ public final class ItemAuraRenderer {
 		float scale = Math.max(1.0F, main.height / 540.0F);
 		GpuBufferSlice transforms = RenderSystem.getDynamicUniforms().writeTransform(
 				new Matrix4f(),
-				new Vector4f(((rgb >> 16) & 0xFF) / 255.0F, ((rgb >> 8) & 0xFF) / 255.0F, (rgb & 0xFF) / 255.0F, 1.0F),
+				new Vector4f(((rgb >> 16) & 0xFF) / 255.0F, ((rgb >> 8) & 0xFF) / 255.0F, (rgb & 0xFF) / 255.0F,
+						Boolean.getBoolean("skyfx.debugItemMask") ? -1.0F : 1.0F),
 				new Vector3f(config.itemAuraWidth * scale, config.itemAuraGlow * 2.0F * scale, seconds),
 				new Matrix4f());
 		try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(

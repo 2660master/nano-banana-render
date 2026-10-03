@@ -43,8 +43,8 @@ import com.skyfx.client.SkyFXClient;
 import com.skyfx.client.config.SkyFXConfig;
 
 /**
- * Replaces the thin black block outline with a glowing, pulsing aura in any colour, on every block you look at.
- * It is drawn as a translucent filled box, a few wide soft line passes (the glow) and a crisp core line.
+ * Replaces the thin black block outline with a coloured aura on every block you look at: a translucent (pulsing)
+ * filled box, or the galaxy window, plus one flat solid edge line without any glow.
  */
 public final class AuraRenderer {
 	private static final RenderPipeline GALAXY_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
@@ -85,7 +85,7 @@ public final class AuraRenderer {
 		MultiBufferSource consumers = context.consumers();
 		float baseWidth = Minecraft.getInstance().getWindow().getAppropriateLineWidth();
 
-		// 1) galaxy style: the block turns into a window into space; glow style: a translucent fill
+		// 1) galaxy style: the block turns into a window into space; normal style: a translucent fill
 		if (config.auraStyle == 1) {
 			drawGalaxy(shape.toAabbs(), x, y, z, seconds, rgb);
 		} else if (config.auraFill > 0) {
@@ -96,19 +96,9 @@ public final class AuraRenderer {
 			}
 		}
 
-		// 2) soft glow: wide, faint line passes
-		VertexConsumer glow = consumers.getBuffer(RenderTypes.linesTranslucent());
-		float glowSize = config.auraGlow;
-		float[][] layers = {{4.5F, 0.10F}, {3.0F, 0.18F}, {1.8F, 0.32F}};
-		for (float[] layer : layers) {
-			int alpha = Math.round(255 * layer[1] * pulse);
-			ShapeRenderer.renderShape(poseStack, glow, shape, x, y, z, ARGB.color(alpha, r, g, b), baseWidth * (1.0F + glowSize * layer[0] * 0.5F));
-		}
-
-		// 3) crisp, bright core line
-		VertexConsumer core = consumers.getBuffer(RenderTypes.lines());
-		int coreRgb = brighten(rgb);
-		ShapeRenderer.renderShape(poseStack, core, shape, x, y, z, ARGB.color(255, (coreRgb >> 16) & 0xFF, (coreRgb >> 8) & 0xFF, coreRgb & 0xFF), baseWidth * 1.6F);
+		// 2) one flat, solid edge line in the exact colour: no glow, so the corners stay sharp and flat
+		VertexConsumer edge = consumers.getBuffer(RenderTypes.lines());
+		ShapeRenderer.renderShape(poseStack, edge, shape, x, y, z, ARGB.color(255, r, g, b), edgeWidth(baseWidth, config.auraGlow));
 		return false;
 	}
 
@@ -171,12 +161,9 @@ public final class AuraRenderer {
 		consumer.addVertex(pose, dx, dy, dz).setColor(color);
 	}
 
-	private static int brighten(int rgb) {
-		int r = (rgb >> 16) & 0xFF, g = (rgb >> 8) & 0xFF, b = rgb & 0xFF;
-		r = r + (255 - r) * 2 / 5;
-		g = g + (255 - g) * 2 / 5;
-		b = b + (255 - b) * 2 / 5;
-		return (r << 16) | (g << 8) | b;
+	/** Edge thickness slider 1 - 10: 1 is the vanilla outline width, 10 is about three times as thick. */
+	static float edgeWidth(float baseWidth, int setting) {
+		return baseWidth * (0.75F + 0.25F * setting);
 	}
 
 	public static int hsvToRgb(float h, float s, float v) {
