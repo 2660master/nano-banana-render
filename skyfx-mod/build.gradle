@@ -55,3 +55,12 @@ fabricApi {
 		eula = true
 	}
 }
+
+loom {
+	runs {
+		clientGameTest {
+			// keeps the test from stalling on slow CI machines (Fabric API's own CI does the same)
+			vmArg "-Dfabric.client.gametest.disableNetworkSynchronizer=true"
+		}
+	}
+}

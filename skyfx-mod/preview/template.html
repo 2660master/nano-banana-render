@@ -238,7 +238,7 @@ kbd {
 @media (max-width: 720px) {
 	#menuToggle { display: block; }
 	#menu { top: 60px; left: 16px; right: 16px; width: auto; }
-	#hud .hint { display: none; }
+	#hud .hint, #hud .brand span, #hud .now { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
 	.sky-tile { transition: none; }
@@ -597,9 +597,9 @@ function buildGlintTexture() {
 	};
 	for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
 		const n = value(x / size * lattice, y / size * 2) * 0.7 + value(x / size * lattice * 2 + 3, y / size * 4) * 0.3;
-		const s = Math.pow(Math.max(0, n - 0.25) / 0.75, 1.6);
+		const s = Math.min(1, Math.pow(Math.max(0, n - 0.2) / 0.6, 1.25));
 		const o = (y * size + x) * 4;
-		img.data[o] = Math.round(140 * s); img.data[o + 1] = Math.round(70 * s); img.data[o + 2] = Math.round(230 * s); img.data[o + 3] = 255;
+		img.data[o] = Math.round(175 * s); img.data[o + 1] = Math.round(95 * s); img.data[o + 2] = Math.round(255 * s); img.data[o + 3] = 255;
 	}
 	ctx.putImageData(img, 0, 0);
 	return c;
@@ -881,10 +881,10 @@ void main() {
 	float px = fwidth(e);
 	float a;
 	if (uHalo > 0.5) {
-		a = exp(-e / (0.014 * uGlow)) * 0.6;
+		a = exp(-e / (0.030 * uGlow)) * 0.45;
 	} else {
 		float line = 1.0 - smoothstep(0.0, 0.008 + px * 1.5, e);
-		a = line + exp(-e / (0.009 * uGlow)) * 0.7 + uFill;
+		a = line + exp(-e / (0.022 * uGlow)) * 0.55 + uFill;
 	}
 	fragColor = vec4(uColor * a, 1.0);
 }`;
@@ -1084,7 +1084,7 @@ function frame(now) {
 			const point = far.map((v) => v / w);
 			target = pickBlock(eye, norm([point[0] - eye[0], point[1] - eye[1], point[2] - eye[2]]));
 		}
-		if (!target) target = [0, 1, 0];
+		if (!target) target = [2, 2, 3];
 		const seconds = now / 1000;
 		const pulse = 0.72 + 0.28 * Math.sin(seconds * 3.0 * settings.auraPulse / 100);
 		const color = auraColorNow(seconds).map((c) => c * pulse);
@@ -1102,7 +1102,7 @@ function frame(now) {
 		gl.uniform1f(auraProg.uniforms.uScale, 1.004);
 		gl.drawElements(gl.TRIANGLES, auraMesh.count, gl.UNSIGNED_SHORT, 0);
 		gl.uniform1f(auraProg.uniforms.uHalo, 1);
-		gl.uniform1f(auraProg.uniforms.uScale, 1.0 + 0.012 * settings.auraGlow);
+		gl.uniform1f(auraProg.uniforms.uScale, 1.0 + 0.02 * settings.auraGlow);
 		gl.drawElements(gl.TRIANGLES, auraMesh.count, gl.UNSIGNED_SHORT, 0);
 		gl.bindVertexArray(null);
 		gl.depthMask(true);

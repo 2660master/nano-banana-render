@@ -20,8 +20,13 @@ import com.skyfx.client.gui.SkyFXScreen;
 public class SkyFXClientGameTest implements FabricClientGameTest {
 	@Override
 	public void runTest(ClientGameTestContext context) {
-		context.getInput().resizeWindow(1280, 720);
+		// CI renders in software, keep the world small
+		context.runOnClient(client -> {
+			client.options.renderDistance().set(4);
+			client.options.simulationDistance().set(5);
+		});
 		try (TestSingleplayerContext singleplayer = context.worldBuilder().create()) {
+			context.getInput().resizeWindow(1280, 720);
 			singleplayer.getClientWorld().waitForChunksRender();
 			BlockPos feet = context.computeOnClient(client -> client.player.blockPosition());
 			int x = feet.getX(), y = feet.getY(), z = feet.getZ();

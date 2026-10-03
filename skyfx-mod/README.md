@@ -1,0 +1,57 @@
+# SkyFX – Fabric mod voor Minecraft 1.21.11
+
+Geanimeerde custom skies, custom enchantment glints en een kleurbare block aura, alles in één menu (toets **K**).
+
+Open **`SkyFX-preview.html`** in je browser voor een live preview van alles: de vier luchten, de glints, de block aura en hetzelfde menu als in-game. De preview draait exact dezelfde GLSL-shaders als de mod (ze worden er door `preview/build-preview.mjs` in geplakt).
+
+## Wat zit erin
+
+### 4 geanimeerde luchten
+Alle luchten zijn 100% procedurele shaders: geen plaatjes, dus scherp op elke resolutie en ze bewegen continu.
+
+| Lucht | Wat beweegt er |
+| --- | --- |
+| **Noorderlicht** | Groene gordijnen van noorderlicht die golven, krullen en "ademen", met lichtstralen die erdoorheen rimpelen, twinkelende sterren en vallende sterren. Kleur instelbaar: groen, roze, blauw of regenboog. |
+| **Galaxy** | Diepe ruimte met paarse nevels die langzaam stromen, een draaiende spiraalgalaxie, een grote kraterplaneet met gloeiende paarse scheuren, een ijsmaan die eromheen draait (vóór en achter de planeet langs), een gasreus met ringen, een lavaplaneet, een asteroïdengordel en losse rotsblokken die tuimelend voorbij drijven. |
+| **Anime Wolken** | Zonnige anime-lucht met cel-shaded stapelwolken (perzik/roze aan de zonkant, lavendel in de schaduw) die over de horizon drijven en langzaam van vorm veranderen, sliertige cirruswolken, draaiende zonnestralen en een zwerm vogels die rondvliegt. |
+| **Stormzee** | Je staat boven een zee van stormwolken: torenhoge onweerswolken die kolken, een draaikolk recht boven je, wolkenlagen die langs elkaar schuiven, bliksemflitsen in de wolken (soms met een zichtbare schicht), een koude maan en een gigantische sikkelplaneet die langzaam opschuift. |
+
+Opties: animatiesnelheid (0–300%), helderheid, noorderlicht-kleur, vanilla wolken verbergen, en "mist past bij de lucht" (verre terrein vloeit over in de horizonkleur).
+
+> Tip: de luchten zijn altijd zichtbaar, ook overdag. Voor de nacht-luchten is `/time set night` het mooist omdat de wereld dan ook donker belicht is.
+
+### Glints
+- **Vanilla** – de gewone paarse glint
+- **Regenboog** – een bewegende regenboog op alle betoverde items, boeken en armor
+
+Glints zijn ingebouwde resource packs die de vanilla glint-shader vervangen. Bij wisselen herlaadt SkyFX de textures automatisch (zodra je op *Klaar* drukt). Meer glints toevoegen: maak een map `src/client/resources/resourcepacks/<naam>/` met een `pack.mcmeta` en `assets/minecraft/shaders/core/glint.fsh`, en zet een regel in `GlintType.java`.
+
+### Block aura
+Vervangt de dunne zwarte block-outline door een gloeiende, pulserende aura op elk blok waar je naar kijkt.
+Instelbaar: aan/uit, kleur (hex-code, RGB-sliders of 8 snelkleuren), regenboog-modus, pulse-snelheid, gloed-dikte en vulling.
+
+## Installeren
+1. Installeer [Fabric Loader](https://fabricmc.net/use/) voor Minecraft **1.21.11** (Loader 0.17 of nieuwer).
+2. Zet [Fabric API](https://modrinth.com/mod/fabric-api) (0.141.6+1.21.11 of nieuwer) in je `mods` map.
+3. Zet `skyfx-1.0.0.jar` in je `mods` map.
+4. Start het spel en druk in een wereld op **K**.
+
+**Jar downloaden:** elke push bouwt de mod automatisch via GitHub Actions (workflow *SkyFX mod build*). Open de laatste run onder het tabblad *Actions* en download het artifact **skyfx-mod-jar**. Het artifact **skyfx-screenshots** bevat screenshots die de CI-test in echte Minecraft heeft gemaakt.
+
+Instellingen worden opgeslagen in `config/skyfx.json`. De toets kun je wijzigen bij *Opties → Besturing → SkyFX*.
+
+## Zelf bouwen
+Gradle draait op JDK 25 (Fabric Loom 1.18); de mod zelf is Java 21.
+```
+cd skyfx-mod
+./gradlew build                 # -> build/libs/skyfx-1.0.0.jar
+./gradlew runClient             # start Minecraft met de mod
+./gradlew runClientGameTest     # start Minecraft, test alles en maakt screenshots
+node preview/build-preview.mjs  # bouwt SkyFX-preview.html opnieuw na shader-wijzigingen
+```
+
+## Hoe het werkt
+- **Luchten:** een mixin op `SkyRenderer.renderSkyDisc` tekent een kubus rond de camera met een eigen `RenderPipeline`; de fragment-shader (`assets/skyfx/shaders/core/sky_*.fsh`) rekent per pixel de lucht uit. Tijd, helderheid en palet gaan via het standaard `DynamicTransforms` uniform-block naar de shader. Zon, maan, sterren en zonsopgang van vanilla worden overgeslagen; vanilla wolken optioneel ook. Mocht een shader niet compileren op een GPU, dan valt SkyFX automatisch terug op de vanilla lucht.
+- **Mist:** een mixin op `FogRenderer.computeFogColor` geeft de mist de horizonkleur van de gekozen lucht (niet onder water/lava of met blindness).
+- **Glint:** ingebouwd resource pack `skyfx:rainbow_glint` met een eigen `core/glint.fsh`.
+- **Aura:** Fabric's `WorldRenderEvents.BEFORE_BLOCK_OUTLINE`: een doorschijnend gevuld blok, drie brede zachte lijnlagen (de gloed) en een scherpe kernlijn.

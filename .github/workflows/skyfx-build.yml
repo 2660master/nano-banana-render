@@ -39,6 +39,7 @@ jobs:
 
   client-test:
     runs-on: ubuntu-24.04
+    timeout-minutes: 40
     defaults:
       run:
         working-directory: skyfx-mod
@@ -61,7 +62,12 @@ jobs:
       - name: report SkyFX log lines
         if: always()
         run: |
-          grep -iE "skyfx|failed to compile|shader|mixin.*(error|fail)|exception" build/run/clientGameTest/logs/latest.log | grep -v "DEBUG" | head -80 || true
+          LOG=build/run/clientGameTest/logs/latest.log
+          [ -e "$LOG" ] || exit 0
+          echo "---- SkyFX / error lines ----"
+          grep -iE "skyfx|failed to compile|mixin.*(error|fail)|exception|error" "$LOG" | grep -viE "realms|authlib|flite|OpenAL|narrator" | cut -c1-400 | head -80 || true
+          echo "---- last 60 log lines ----"
+          tail -n 60 "$LOG" | cut -c1-400
       - name: print screenshots
         if: always()
         run: |
