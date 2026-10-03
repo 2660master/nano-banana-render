@@ -1,6 +1,6 @@
 # SkyFX – Fabric mod voor Minecraft 1.21.11
 
-Geanimeerde custom skies, een neon palmboom-glint, een block aura (klassiek of galaxy) en een item aura, alles in één menu (toets **K**).
+Geanimeerde custom skies, vijf custom glints, een block aura (klassiek, galaxy of palmbomen) en een item aura, alles in één menu (toets **K**).
 
 Open **`SkyFX-preview.html`** in je browser voor een live preview van alles: de vier luchten, de glints, de block aura en hetzelfde menu als in-game. De preview draait exact dezelfde GLSL-shaders als de mod (ze worden er door `preview/build-preview.mjs` in geplakt).
 
@@ -11,7 +11,7 @@ Alle luchten zijn 100% procedurele shaders: geen plaatjes, dus scherp op elke re
 
 | Lucht | Wat beweegt er |
 | --- | --- |
-| **Noorderlicht** | Groene gordijnen van noorderlicht die golven, krullen en "ademen", met lichtstralen die erdoorheen rimpelen, twinkelende sterren en vallende sterren. Kleur instelbaar: groen, roze, blauw of regenboog. |
+| **Noorderlicht** | Groene gordijnen van noorderlicht die golven, krullen en "ademen", met lichtstralen die erdoorheen rimpelen, twinkelende sterren en een meteorenregen van vallende sterren. Kleur instelbaar: groen, roze, blauw, regenboog of een eigen kleur (hex-code, RGB-sliders of snelkleuren). |
 | **Galaxy** | Diepe ruimte met scherpe paars-roze-blauwe nevelslierten die langzaam stromen, heldere sterren met glinsterkruisjes, een draaiende spiraalgalaxie, een grote kraterplaneet met gloeiende paarse scheuren, een ijsmaan die eromheen draait (vóór en achter de planeet langs), een gasreus met ringen, een lavaplaneet, een asteroïdengordel en losse rotsblokken die tuimelend voorbij drijven. |
 | **Anime Wolken** | Zonnige anime-lucht met grote bolle stapelwolken uit ronde "puffen", cel-shaded (wit, perzik aan de zonkant, blauw onderin), die over de horizon drijven en zachtjes ademen, sliertige cirruswolken, draaiende zonnestralen, zes zwermen vogels die in V-formatie alle kanten op vliegen en grote meeuwen die rondcirkelen en zweven. |
 | **Stormzee** | Een zee van stormwolken onder een gigantische kratermaan: torenhoge onweerswolken die kolken, veel bliksem met vertakte schichten, regengordijnen, flarden wolk die voor de maan langs trekken, een draaikolk recht boven je, een sikkelplaneet, en een gedetailleerd piratenschip dat op de wolkenzee deint en rond de horizon vaart: houten planken, een gouden reling en sierstreep, een rij kanonpoorten (een paar verlicht, met kanonlopen), verlichte ramen in het achterkasteel, een lantaarn op een paal, een kraaiennest, ra's en touwladders, gerafelde zeilen met naden en een doodshoofd, twee fokken op de boegspriet, een wapperende zwarte Jolly Roger-vlag en schuim bij de boeg. |
@@ -23,6 +23,12 @@ Opties: animatiesnelheid (0–300%), helderheid, noorderlicht-kleur, vanilla wol
 ### Glints
 - **Vanilla** – de gewone paarse glint
 - **Palmbomen** – vijf neon palmbomen (cyaan, oranje, roze, lime, lila) die over alle betoverde items, boeken en armor schuiven
+- **Galaxy** – paars-roze-blauwe nevels met sterren en glinsteringen
+- **Regenboog** – een zachte, vloeiende holografische regenboog (geen strepen)
+- **IJsblauw** – bevroren ijskristallen en barstjes in ijsblauw en wit
+- **Zomer** – zomerkleuren (mango, koraal, roze, turquoise) met kleine zonnetjes
+
+De texturen van galaxy, regenboog, ijsblauw en zomer worden gemaakt door `preview/tools/gen_glints.py`.
 
 Glints zijn ingebouwde resource packs die de vanilla glint-shader vervangen. Bij wisselen herlaadt SkyFX de textures automatisch (zodra je op *Klaar* drukt). Meer glints toevoegen: maak een map `src/client/resources/resourcepacks/<naam>/` met een `pack.mcmeta` en `assets/minecraft/shaders/core/glint.fsh`, en zet een regel in `GlintType.java`.
 
@@ -30,6 +36,7 @@ Glints zijn ingebouwde resource packs die de vanilla glint-shader vervangen. Bij
 Vervangt de dunne zwarte block-outline door een aura op elk blok waar je naar kijkt, met een platte, scherpe rand (geen gloed). Twee stijlen:
 - **Klassiek** – een egale gekleurde rand met een doorschijnende (pulserende) vulling
 - **Galaxy** – het blok wordt een doorschijnend raam naar de ruimte (sterren en nevels), met een platte gekleurde rand
+- **Palmbomen** – de vijf neon palmbomen schuiven over elke kant van het blok, over een donkere doorschijnende achtergrond in je aura-kleur
 
 Instelbaar: aan/uit, stijl, kleur (hex-code, RGB-sliders of 8 snelkleuren), regenboog-modus, pulse-snelheid van de vulling, rand-dikte en vulling.
 

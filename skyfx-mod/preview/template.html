@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SkyFX Preview</title>
-<meta name="description" content="Live preview van de SkyFX Fabric mod (Minecraft 1.21.11): 4 geanimeerde luchten, een neon palmboom-glint, een block aura en een item aura.">
+<meta name="description" content="Live preview van de SkyFX Fabric mod (Minecraft 1.21.11): 4 geanimeerde luchten, 5 glints (palmbomen, galaxy, regenboog, ijsblauw, zomer), een block aura en een item aura.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet">
@@ -212,7 +212,7 @@ kbd {
 .sky-tile.selected .label::after { content: ' ✔'; color: var(--accent); }
 .sky-tile.wide { grid-column: span 2; aspect-ratio: 32 / 7; }
 
-.glint-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.glint-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 .glint-card { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; padding: 10px; min-height: 74px; }
 .glint-card .chip { width: 100%; height: 10px; border: 2px solid #000; }
 .glint-card small { color: #ddd; font-size: 12px; text-shadow: 1px 1px 0 #222; }
@@ -278,6 +278,10 @@ kbd {
 			<div class="mc-slider"><input id="speed" type="range" min="0" max="300" step="5"><span></span></div>
 			<div class="mc-slider"><input id="brightness" type="range" min="50" max="150" step="5"><span></span></div>
 			<button class="mc-btn" type="button" id="auroraPalette"></button>
+			<div class="color-row" id="auroraColorRow">
+				<input type="color" id="auroraColor" aria-label="Noorderlicht kleur">
+				<input class="hex" id="auroraHex" maxlength="7" spellcheck="false" aria-label="Hex kleurcode noorderlicht">
+			</div>
 		</div>
 		<h2>Wereld</h2>
 		<div class="stack">
@@ -314,7 +318,7 @@ kbd {
 			<div class="mc-slider"><input id="auraGlow" type="range" min="1" max="10" step="1"><span></span></div>
 			<div class="mc-slider"><input id="auraFill" type="range" min="0" max="60" step="2"><span></span></div>
 		</div>
-		<p class="note">Beweeg je muis over een blok: de aura volgt het blok waar je naar kijkt, net als de block-outline in Minecraft. Werkt op elk blok. Stijl "Galaxy" maakt van het blok een raam naar de ruimte.</p>
+		<p class="note">Beweeg je muis over een blok: de aura volgt het blok waar je naar kijkt, net als de block-outline in Minecraft. Werkt op elk blok. Stijl "Galaxy" maakt van het blok een raam naar de ruimte, stijl "Palmbomen" zet de neon palmbomen op elke kant.</p>
 	</section>
 
 	<section class="tab-body" id="tab-item">
@@ -390,6 +394,7 @@ const DEFAULTS = {
 	speed: 100,
 	brightness: 100,
 	auroraPalette: 0,
+	auroraColor: '#3dffb0',
 	hideClouds: true,
 	matchFog: true,
 	glint: 'palm',
@@ -407,8 +412,15 @@ const DEFAULTS = {
 	itemAuraGlow: 5,
 	tab: 'sky',
 };
-const STORE_KEY = 'skyfx-preview-v3';
+const STORE_KEY = 'skyfx-preview-v4';
 const PALM_GLINT = '/*@png textures/palm_glint.png*/';
+const GLINT_TEXTURES = {
+	palm: { src: PALM_GLINT, scale: 3.0 },
+	galaxy: { src: '/*@png textures/galaxy_glint.png*/', scale: 2.0 },
+	rainbow: { src: '/*@png textures/rainbow_glint.png*/', scale: 1.5 },
+	ice: { src: '/*@png textures/ice_glint.png*/', scale: 2.0 },
+	summer: { src: '/*@png textures/summer_glint.png*/', scale: 2.0 },
+};
 let settings = { ...DEFAULTS };
 try {
 	settings = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(STORE_KEY) || '{}') };
@@ -419,17 +431,19 @@ function saveSettings() {
 
 const SKIES = [
 	{ id: 'vanilla', name: 'Vanilla', call: 'skyfx_vanilla(dir, uParams.x)', fog: [0.75, 0.85, 1.0], light: [1.0, 1.0, 0.98], amb: [0.45, 0.50, 0.60], hero: [0.3, 0.35, 0.9] },
-	{ id: 'aurora', name: 'Noorderlicht', call: 'skyfx_aurora(dir, uParams.x, uParams.z)', fog: [0.030, 0.085, 0.140], light: [0.30, 0.44, 0.48], amb: [0.07, 0.17, 0.13], hero: [0.15, 0.32, 0.94] },
+	{ id: 'aurora', name: 'Noorderlicht', call: 'skyfx_aurora(dir, uParams.x, uParams.z, uAuroraColor)', fog: [0.030, 0.085, 0.140], light: [0.30, 0.44, 0.48], amb: [0.07, 0.17, 0.13], hero: [0.15, 0.32, 0.94] },
 	{ id: 'galaxy', name: 'Galaxy', call: 'skyfx_galaxy(dir, uParams.x)', fog: [0.03, 0.02, 0.07], light: [0.55, 0.48, 0.72], amb: [0.09, 0.06, 0.16], hero: [0.55, 0.30, -0.78] },
 	{ id: 'anime', name: 'Anime Wolken', call: 'skyfx_anime(dir, uParams.x)', fog: [0.72, 0.89, 1.0], light: [1.05, 1.0, 0.95], amb: [0.42, 0.52, 0.72], hero: [-0.62, 0.18, 0.76] },
 	{ id: 'storm', name: 'Stormzee', call: 'skyfx_storm(dir, uParams.x)', fog: [0.09, 0.16, 0.26], light: [0.36, 0.44, 0.58], amb: [0.07, 0.10, 0.17], hero: [-0.25, 0.20, -0.95] },
 ];
-const PALETTES = ['Groen', 'Roze', 'Blauw', 'Regenboog'];
+const PALETTES = ['Groen', 'Roze', 'Blauw', 'Regenboog', 'Eigen kleur'];
 const GLINTS = [
 	{ id: 'vanilla', name: 'Vanilla', desc: 'Klassiek paars', chip: 'linear-gradient(90deg,#5b2a8f,#b07cff,#5b2a8f)' },
 	{ id: 'palm', name: 'Palmbomen', desc: 'Neon palmbomen', chip: '#000 url(' + PALM_GLINT + ') center 30% / 100% auto' },
-	{ id: 'soon1', name: 'Binnenkort…', desc: 'Meer glints komen eraan', chip: '#2a2a2a', locked: true },
-	{ id: 'soon2', name: 'Binnenkort…', desc: 'Meer glints komen eraan', chip: '#2a2a2a', locked: true },
+	{ id: 'galaxy', name: 'Galaxy', desc: 'Nevels en sterren', chip: '#000 url(' + GLINT_TEXTURES.galaxy.src + ') center / cover' },
+	{ id: 'rainbow', name: 'Regenboog', desc: 'Zachte holografische regenboog', chip: '#000 url(' + GLINT_TEXTURES.rainbow.src + ') center / cover' },
+	{ id: 'ice', name: 'IJsblauw', desc: 'Bevroren ijskristallen', chip: '#000 url(' + GLINT_TEXTURES.ice.src + ') center / cover' },
+	{ id: 'summer', name: 'Zomer', desc: 'Zomerkleuren met zonnetjes', chip: '#000 url(' + GLINT_TEXTURES.summer.src + ') center / cover' },
 ];
 const SWATCHES = ['#7cf7c5', '#ff4d6d', '#ffb02e', '#fff36b', '#4dff88', '#4dc3ff', '#9b6bff', '#ffffff'];
 
@@ -657,6 +671,7 @@ uniform sampler2D uItem;
 uniform sampler2D uGlintTex;
 uniform mat3 uGlintMat;
 uniform float uMode;
+uniform float uScale;
 in vec2 vUv;
 out vec4 fragColor;
 void main() {
@@ -667,8 +682,8 @@ void main() {
 	vec2 guv = (uGlintMat * vec3(atlasUv, 1.0)).xy;
 	vec3 added = vec3(0.0);
 	if (uMode > 1.5) {
-		// palm glint: the pack's glint.vsh shows the texture 3x smaller, its glint.fsh keeps the colours exact
-		added = texture(uGlintTex, guv * 3.0).rgb;
+		// SkyFX glints: the pack's glint.vsh shows the texture uScale times smaller, its glint.fsh keeps the colours exact
+		added = texture(uGlintTex, guv * uScale).rgb;
 	} else if (uMode > 0.5) {
 		// Minecraft blends the glint with (SRC_COLOR, ONE): the added light is glint * glint
 		vec3 tex = texture(uGlintTex, guv).rgb;
@@ -722,25 +737,30 @@ function createItemRenderer(gl) {
 	gl.bindVertexArray(null);
 	const swordTex = makeTexture(gl, buildSword());
 	const glintTex = makeTexture(gl, buildGlintTexture(), { repeat: true, linear: true });
-	let palmTex = null;
-	const palmImage = new Image();
-	palmImage.onload = () => { palmTex = makeTexture(gl, palmImage, { repeat: true, linear: true }); };
-	palmImage.src = PALM_GLINT;
+	const packTex = {};
+	Object.entries(GLINT_TEXTURES).forEach(([id, info]) => {
+		const image = new Image();
+		image.onload = () => { packTex[id] = makeTexture(gl, image, { repeat: true, linear: true }); };
+		image.src = info.src;
+	});
 	return {
-		draw(rect, angle, timeMs, mode, scale = 8) {
+		// glint: 'vanilla' or one of the SkyFX glint ids
+		draw(rect, angle, timeMs, glint, scale = 8) {
+			let mode = glint === 'vanilla' ? 1 : 2;
 			// Same transform as vanilla's TextureTransform.setupGlintTexturing
 			const l = timeMs * 8.0;
 			const f = (l % 110000) / 110000, g = (l % 30000) / 30000;
 			const c = Math.cos(Math.PI / 18) * scale, s = Math.sin(Math.PI / 18) * scale;
-			if (mode === 2 && !palmTex) mode = 1;
+			if (mode === 2 && !packTex[glint]) mode = 1;
 			gl.useProgram(prog.program);
 			gl.uniform4fv(prog.uniforms.uRect, rect);
 			gl.uniform1f(prog.uniforms.uAngle, angle);
 			gl.uniformMatrix3fv(prog.uniforms.uGlintMat, false, [c, s, 0, -s, c, 0, -f, g, 1]);
 			gl.uniform1f(prog.uniforms.uMode, mode);
+			gl.uniform1f(prog.uniforms.uScale, mode === 2 ? GLINT_TEXTURES[glint].scale : 1.0);
 			gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, swordTex);
 			gl.uniform1i(prog.uniforms.uItem, 0);
-			gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, mode === 2 ? palmTex : glintTex);
+			gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, mode === 2 ? packTex[glint] : glintTex);
 			gl.uniform1i(prog.uniforms.uGlintTex, 1);
 			gl.bindVertexArray(vao);
 			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -767,7 +787,6 @@ function createItemRenderer(gl) {
 		},
 	};
 }
-const glintModeIndex = () => (settings.glint === 'palm' ? 2 : 1);
 
 // ---------------------------------------------------------------------------------------------
 // Main scene
@@ -790,6 +809,7 @@ function skyFragment(sky) {
 precision highp float;
 uniform mat4 uInvViewProj;
 uniform vec4 uParams;
+uniform vec3 uAuroraColor;
 in vec2 vNdc;
 out vec4 fragColor;
 ${glsl('glsl-common')}
@@ -827,6 +847,7 @@ function drawSky(id, invViewProj, time) {
 	gl.useProgram(prog.program);
 	gl.uniformMatrix4fv(prog.uniforms.uInvViewProj, false, invViewProj);
 	gl.uniform4f(prog.uniforms.uParams, time, settings.brightness / 100, settings.auroraPalette, 0);
+	if (prog.uniforms.uAuroraColor) gl.uniform3fv(prog.uniforms.uAuroraColor, hexToRgb(settings.auroraColor));
 	gl.bindVertexArray(triVao);
 	gl.drawArrays(gl.TRIANGLES, 0, 3);
 	gl.bindVertexArray(null);
@@ -969,12 +990,26 @@ uniform float uGlow;
 uniform float uHalo;
 uniform vec3 uCam;
 uniform float uTime;
+uniform vec3 uCenterF;
+uniform sampler2D uPalm;
 in vec2 vFace;
 in vec3 vWorld;
 out vec4 fragColor;
 ${glsl('glsl-common')}
 ${glsl('glsl-auragalaxy')}
 void main() {
+	if (uHalo > 2.5) {
+		// palm tree style (the mod's aura_palm.fsh): neon palms drifting over a dark see-through backdrop
+		vec3 l = vWorld - uCenterF;
+		vec3 a = abs(l);
+		vec2 f = a.x > a.y && a.x > a.z ? l.zy : (a.z > a.y ? l.xy : l.xz);
+		vec2 tc = vec2(f.x + 0.5, 0.5 - f.y);
+		vec3 palms = texture(uPalm, tc + vec2(uTime * 0.03, 0.0)).rgb;
+		float glow = max(palms.r, max(palms.g, palms.b));
+		vec3 back = mix(uColor * 0.35 + vec3(0.06, 0.02, 0.10), vec3(0.03, 0.02, 0.08), smoothstep(0.0, 1.0, tc.y));
+		fragColor = vec4(back + palms * 1.15, clamp(0.45 + glow * 0.6, 0.0, 0.95));
+		return;
+	}
 	if (uHalo > 1.5) {
 		// galaxy style: the block becomes a window into space (the mod's aura_galaxy.glsl)
 		fragColor = skyfx_galaxyAura(normalize(vWorld - uCam), uTime, uColor);
@@ -988,6 +1023,12 @@ void main() {
 	fragColor = vec4(uColor, max(line, uFill * uHalo));
 }`;
 const auraProg = makeProgram(gl, AURA_VS, AURA_FS);
+let auraPalmTex = null;
+(() => {
+	const image = new Image();
+	image.onload = () => { auraPalmTex = makeTexture(gl, image, { repeat: true, linear: true }); };
+	image.src = PALM_GLINT;
+})();
 const auraMesh = (() => {
 	const verts = [], idx = [];
 	FACES.forEach((face) => {
@@ -1188,17 +1229,28 @@ function frame(now) {
 		const pulse = settings.auraPulse <= 0 ? 1 : 0.72 + 0.28 * Math.sin(seconds * 3.0 * settings.auraPulse / 100);
 		const color = auraColorNow(seconds);
 		const galaxy = settings.auraStyle === 1;
+		const palm = settings.auraStyle === 2 && auraPalmTex;
 		gl.enable(gl.BLEND);
 		gl.depthMask(false);
 		gl.useProgram(auraProg.program);
 		gl.uniformMatrix4fv(auraProg.uniforms.uViewProj, false, viewProj);
 		gl.uniform3f(auraProg.uniforms.uCenter, target[0] + 0.5, target[1] + 0.5, target[2] + 0.5);
 		gl.uniform3fv(auraProg.uniforms.uColor, color);
-		gl.uniform1f(auraProg.uniforms.uFill, galaxy ? 0 : settings.auraFill / 100);
+		gl.uniform1f(auraProg.uniforms.uFill, galaxy || palm ? 0 : settings.auraFill / 100);
+		gl.uniform3f(auraProg.uniforms.uCenterF, target[0] + 0.5, target[1] + 0.5, target[2] + 0.5);
 		gl.uniform1f(auraProg.uniforms.uGlow, settings.auraGlow);
 		gl.uniform3fv(auraProg.uniforms.uCam, eye);
 		gl.uniform1f(auraProg.uniforms.uTime, seconds);
 		gl.bindVertexArray(auraMesh.vao);
+		if (palm) {
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+			gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, auraPalmTex);
+			gl.uniform1i(auraProg.uniforms.uPalm, 3);
+			gl.activeTexture(gl.TEXTURE0);
+			gl.uniform1f(auraProg.uniforms.uHalo, 3);
+			gl.uniform1f(auraProg.uniforms.uScale, 1.006);
+			gl.drawElements(gl.TRIANGLES, auraMesh.count, gl.UNSIGNED_SHORT, 0);
+		}
 		if (galaxy) {
 			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 			gl.uniform1f(auraProg.uniforms.uHalo, 2);
@@ -1225,7 +1277,7 @@ function frame(now) {
 		const itemColor = settings.itemAuraRainbow ? hsv((now / 1000 * 0.12) % 1, 0.75, 1.0) : hexToRgb(settings.itemAuraColor);
 		itemRenderer.drawAura(itemRect, 0.15, size, itemColor, settings.itemAuraWidth * scale, settings.itemAuraGlow * 2 * scale);
 	}
-	itemRenderer.draw(itemRect, 0.15, now, glintModeIndex());
+	itemRenderer.draw(itemRect, 0.15, now, settings.glint);
 
 	// fps + adaptive resolution
 	frames++;
@@ -1254,8 +1306,8 @@ let glintPreview = null;
 		g2.viewport(0, 0, c.width, c.height);
 		g2.clearColor(0, 0, 0, 0);
 		g2.clear(g2.COLOR_BUFFER_BIT);
-		renderer.draw([-0.5, 0.0, 0.85, 1.7], 0.0, now, 1);
-		renderer.draw([0.5, 0.0, 0.85, 1.7], 0.0, now, 2);
+		renderer.draw([-0.5, 0.0, 0.85, 1.7], 0.0, now, 'vanilla');
+		renderer.draw([0.5, 0.0, 0.85, 1.7], 0.0, now, settings.glint === 'vanilla' ? 'palm' : settings.glint);
 	};
 	const loop = (now) => { glintPreview(now); requestAnimationFrame(loop); };
 	requestAnimationFrame(loop);
@@ -1354,7 +1406,7 @@ const refreshers = [
 	bindToggle('matchFog', () => 'Mist past bij de lucht: ' + onOff(settings.matchFog), () => { settings.matchFog = !settings.matchFog; }),
 	bindToggle('auraOn', () => 'Block Aura: ' + onOff(settings.auraOn), () => { settings.auraOn = !settings.auraOn; }),
 	bindToggle('auraRainbow', () => 'Regenboog modus: ' + onOff(settings.auraRainbow), () => { settings.auraRainbow = !settings.auraRainbow; }),
-	bindToggle('auraStyle', () => 'Stijl: ' + (settings.auraStyle === 1 ? 'Galaxy' : 'Klassiek'), () => { settings.auraStyle = settings.auraStyle === 1 ? 0 : 1; }),
+	bindToggle('auraStyle', () => 'Stijl: ' + ['Klassiek', 'Galaxy', 'Palmbomen'][settings.auraStyle], () => { settings.auraStyle = (settings.auraStyle + 1) % 3; }),
 	bindToggle('itemAuraOn', () => 'Item Aura: ' + onOff(settings.itemAuraOn), () => { settings.itemAuraOn = !settings.itemAuraOn; }),
 	bindToggle('itemAuraRainbow', () => 'Regenboog modus: ' + onOff(settings.itemAuraRainbow), () => { settings.itemAuraRainbow = !settings.itemAuraRainbow; }),
 	bindSlider('itemAuraWidth', (v) => 'Rand: ' + v + ' px'),
@@ -1369,6 +1421,16 @@ hexInput.addEventListener('input', () => {
 	const ok = /^#[0-9a-fA-F]{6}$/.test(v);
 	hexInput.classList.toggle('bad', !ok);
 	if (ok) { settings.auraColor = v.toLowerCase(); settings.auraRainbow = false; colorInput.value = settings.auraColor; saveSettings(); refreshers.forEach((r) => r()); }
+});
+const auroraColorInput = $('#auroraColor');
+const auroraHexInput = $('#auroraHex');
+auroraColorInput.addEventListener('input', () => { settings.auroraColor = auroraColorInput.value; refresh(); });
+auroraHexInput.addEventListener('input', () => {
+	let v = auroraHexInput.value.trim();
+	if (!v.startsWith('#')) v = '#' + v;
+	const ok = /^#[0-9a-fA-F]{6}$/.test(v);
+	auroraHexInput.classList.toggle('bad', !ok);
+	if (ok) { settings.auroraColor = v.toLowerCase(); auroraColorInput.value = settings.auroraColor; saveSettings(); }
 });
 const itemColorInput = $('#itemColor');
 const itemHexInput = $('#itemHex');
@@ -1386,6 +1448,9 @@ function refresh() {
 	document.querySelectorAll('.sky-tile').forEach((t) => t.classList.toggle('selected', t.dataset.sky === settings.sky));
 	document.querySelectorAll('.glint-card').forEach((c) => c.classList.toggle('selected', c.dataset.glint === settings.glint));
 	$('#auroraPalette').style.display = settings.sky === 'aurora' ? '' : 'none';
+	$('#auroraColorRow').style.display = settings.sky === 'aurora' && settings.auroraPalette === 4 ? '' : 'none';
+	auroraColorInput.value = settings.auroraColor;
+	if (document.activeElement !== auroraHexInput) { auroraHexInput.value = settings.auroraColor; auroraHexInput.classList.remove('bad'); }
 	colorInput.value = settings.auraColor;
 	if (document.activeElement !== hexInput) { hexInput.value = settings.auraColor; hexInput.classList.remove('bad'); }
 	itemColorInput.value = settings.itemAuraColor;

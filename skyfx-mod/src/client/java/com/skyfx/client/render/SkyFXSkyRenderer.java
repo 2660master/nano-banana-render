@@ -111,7 +111,7 @@ public final class SkyFXSkyRenderer {
 		GpuBufferSlice transforms = RenderSystem.getDynamicUniforms().writeTransform(
 				RenderSystem.getModelViewMatrix(),
 				new Vector4f(time, config.brightness / 100.0F, config.auroraPalette, 0.0F),
-				new Vector3f(),
+				new Vector3f(((config.auroraColor >> 16) & 0xFF) / 255.0F, ((config.auroraColor >> 8) & 0xFF) / 255.0F, (config.auroraColor & 0xFF) / 255.0F),
 				new Matrix4f());
 		RenderTarget target = Minecraft.getInstance().getMainRenderTarget();
 		try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(

@@ -27,7 +27,11 @@ public final class SkyFXConfig {
 	/** Sky brightness in percent (50 - 150). */
 	public int brightness = 100;
 	/** 0 = green, 1 = pink, 2 = blue, 3 = rainbow. */
+	/** Palette value for a custom northern lights colour (0 green, 1 pink, 2 blue, 3 rainbow). */
+	public static final int AURORA_CUSTOM = 4;
 	public int auroraPalette = 0;
+	/** Northern lights colour used when {@link #auroraPalette} is {@link #AURORA_CUSTOM}. */
+	public int auroraColor = 0x3DFFB0;
 	public boolean hideVanillaClouds = true;
 	public boolean matchFog = true;
 
@@ -41,7 +45,7 @@ public final class SkyFXConfig {
 	public int auraGlow = 3;
 	/** Fill opacity in percent (0 - 60). */
 	public int auraFill = 18;
-	/** 0 = classic (fill + flat edge), 1 = galaxy (the block becomes a window into space). */
+	/** 0 = classic (fill + flat edge), 2 = palm trees, 1 = galaxy (the block becomes a window into space). */
 	public int auraStyle = 0;
 
 	// item aura (glowing outline around the held item)
@@ -96,12 +100,13 @@ public final class SkyFXConfig {
 		this.sky = SkyType.byId(this.sky).id();
 		this.speed = Math.clamp(this.speed, 0, 300);
 		this.brightness = Math.clamp(this.brightness, 50, 150);
-		this.auroraPalette = Math.floorMod(this.auroraPalette, 4);
+		this.auroraPalette = Math.floorMod(this.auroraPalette, 5);
+		this.auroraColor &= 0xFFFFFF;
 		this.auraColor &= 0xFFFFFF;
 		this.auraPulse = Math.clamp(this.auraPulse, 0, 300);
 		this.auraGlow = Math.clamp(this.auraGlow, 1, 10);
 		this.auraFill = Math.clamp(this.auraFill, 0, 60);
-		this.auraStyle = Math.clamp(this.auraStyle, 0, 1);
+		this.auraStyle = Math.clamp(this.auraStyle, 0, 2);
 		this.itemAuraColor &= 0xFFFFFF;
 		this.itemAuraWidth = Math.clamp(this.itemAuraWidth, 1, 8);
 		this.itemAuraGlow = Math.clamp(this.itemAuraGlow, 0, 10);

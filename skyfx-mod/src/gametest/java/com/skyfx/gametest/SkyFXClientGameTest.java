@@ -67,6 +67,12 @@ public class SkyFXClientGameTest implements FabricClientGameTest {
 			});
 			context.waitTicks(3);
 			context.takeScreenshot("aura_galaxy");
+			context.runOnClient(client -> {
+				SkyFXConfig.get().auraStyle = 2;
+				SkyFXConfig.get().auraColor = 0xFF8A3D;
+			});
+			context.waitTicks(3);
+			context.takeScreenshot("aura_palm");
 
 			// storm sea towards the giant moon and the pirate ship
 			context.runOnClient(client -> {
@@ -78,10 +84,11 @@ public class SkyFXClientGameTest implements FabricClientGameTest {
 
 			// glints on the held sword
 			context.runOnClient(client -> look(client, 0.0F, -10.0F));
-			setGlint(context, GlintType.VANILLA);
-			context.takeScreenshot("glint_vanilla");
+			for (GlintType glint : GlintType.values()) {
+				setGlint(context, glint);
+				context.takeScreenshot("glint_" + glint.id());
+			}
 			setGlint(context, GlintType.PALM);
-			context.takeScreenshot("glint_palm");
 
 			// item aura: a bold green outline, then the raw silhouette from the depth buffer (white = item)
 			context.runOnClient(client -> {

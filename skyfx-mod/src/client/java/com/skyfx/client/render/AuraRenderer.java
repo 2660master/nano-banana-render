@@ -12,6 +12,8 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -58,6 +60,19 @@ public final class AuraRenderer {
 			.withVertexFormat(DefaultVertexFormat.POSITION, VertexFormat.Mode.TRIANGLES)
 			.build();
 
+	private static final RenderPipeline PALM_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET)
+			.withLocation(Identifier.fromNamespaceAndPath(SkyFXClient.MOD_ID, "pipeline/aura_palm"))
+			.withVertexShader(Identifier.fromNamespaceAndPath(SkyFXClient.MOD_ID, "core/aura_palm"))
+			.withFragmentShader(Identifier.fromNamespaceAndPath(SkyFXClient.MOD_ID, "core/aura_palm"))
+			.withSampler("Sampler0")
+			.withBlend(BlendFunction.TRANSLUCENT)
+			.withDepthWrite(false)
+			.withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
+			.withCull(false)
+			.withVertexFormat(DefaultVertexFormat.POSITION_TEX, VertexFormat.Mode.TRIANGLES)
+			.build();
+	private static final Identifier PALM_TEXTURE = Identifier.fromNamespaceAndPath(SkyFXClient.MOD_ID, "textures/aura/palm.png");
+
 	private AuraRenderer() {
 	}
 
@@ -88,6 +103,8 @@ public final class AuraRenderer {
 		// 1) galaxy style: the block turns into a window into space; normal style: a translucent fill
 		if (config.auraStyle == 1) {
 			drawGalaxy(shape.toAabbs(), x, y, z, seconds, rgb);
+		} else if (config.auraStyle == 2) {
+			drawPalms(shape.toAabbs(), x, y, z, seconds, rgb);
 		} else if (config.auraFill > 0) {
 			int fillAlpha = Math.round(255 * config.auraFill / 100.0F * pulse);
 			VertexConsumer fill = consumers.getBuffer(RenderTypes.debugFilledBox());
@@ -132,6 +149,48 @@ public final class AuraRenderer {
 					pass.setPipeline(GALAXY_PIPELINE);
 					RenderSystem.bindDefaultUniforms(pass);
 					pass.setUniform("DynamicTransforms", transforms);
+					pass.setVertexBuffer(0, buffer);
+					pass.draw(0, vertices);
+				}
+			}
+		}
+	}
+
+	/** Palm style: every face of the block shows the neon palm trees, drawn with the texture from photo 1. */
+	private static void drawPalms(List<AABB> boxes, double x, double y, double z, float seconds, int rgb) {
+		if (!RenderSystem.getDevice().precompilePipeline(PALM_PIPELINE).isValid()) return;
+		GpuTextureView texture = Minecraft.getInstance().getTextureManager().getTexture(PALM_TEXTURE).getTextureView();
+		int vertices = boxes.size() * 36;
+		try (ByteBufferBuilder bytes = ByteBufferBuilder.exactlySized(vertices * DefaultVertexFormat.POSITION_TEX.getVertexSize())) {
+			BufferBuilder builder = new BufferBuilder(bytes, VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_TEX);
+			for (AABB box : boxes) {
+				AABB b = box.inflate(0.003).move(x, y, z);
+				float x0 = (float) b.minX, y0 = (float) b.minY, z0 = (float) b.minZ;
+				float x1 = (float) b.maxX, y1 = (float) b.maxY, z1 = (float) b.maxZ;
+				float[][] c = {{x0, y0, z0}, {x1, y0, z0}, {x1, y1, z0}, {x0, y1, z0}, {x0, y0, z1}, {x1, y0, z1}, {x1, y1, z1}, {x0, y1, z1}};
+				// each face: corners in order bottom-left, bottom-right, top-right, top-left (seen from outside)
+				int[][] faces = {{1, 0, 3, 2}, {4, 5, 6, 7}, {0, 4, 7, 3}, {5, 1, 2, 6}, {7, 6, 2, 3}, {0, 1, 5, 4}};
+				float[][] uv = {{0, 1}, {1, 1}, {1, 0}, {0, 0}};
+				for (int[] f : faces) {
+					for (int k : new int[] {0, 1, 2, 0, 2, 3}) {
+						builder.addVertex(c[f[k]][0], c[f[k]][1], c[f[k]][2]).setUv(uv[k][0], uv[k][1]);
+					}
+				}
+			}
+			try (MeshData mesh = builder.buildOrThrow()) {
+				GpuBuffer buffer = DefaultVertexFormat.POSITION_TEX.uploadImmediateVertexBuffer(mesh.vertexBuffer());
+				GpuBufferSlice transforms = RenderSystem.getDynamicUniforms().writeTransform(
+						RenderSystem.getModelViewMatrix(),
+						new Vector4f(seconds, ((rgb >> 16) & 0xFF) / 255.0F, ((rgb >> 8) & 0xFF) / 255.0F, (rgb & 0xFF) / 255.0F),
+						new Vector3f(),
+						new Matrix4f());
+				RenderTarget target = Minecraft.getInstance().getMainRenderTarget();
+				try (RenderPass pass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(
+						() -> "SkyFX palm aura", target.getColorTextureView(), OptionalInt.empty(), target.getDepthTextureView(), OptionalDouble.empty())) {
+					pass.setPipeline(PALM_PIPELINE);
+					RenderSystem.bindDefaultUniforms(pass);
+					pass.setUniform("DynamicTransforms", transforms);
+					pass.bindTexture("Sampler0", texture, RenderSystem.getSamplerCache().getRepeat(FilterMode.LINEAR));
 					pass.setVertexBuffer(0, buffer);
 					pass.draw(0, vertices);
 				}

@@ -1,7 +1,12 @@
 // SkyFX "Noorderlicht" - a polar night with swirling aurora curtains (needs skyfx_common.glsl).
-// palette: 0 = green, 1 = pink, 2 = blue, 3 = rainbow
+// palette: 0 = green, 1 = pink, 2 = blue, 3 = rainbow, 4 = custom colour
 
-vec3 skyfx_auroraPalette(float h, float palette, float hueShift) {
+vec3 skyfx_auroraPalette(float h, float palette, float hueShift, vec3 custom) {
+	if (palette > 3.5) {
+		// custom colour: the chosen colour at the bottom, fading to a lighter, slightly hue-shifted tip
+		vec3 tip = mix(custom, custom.brg, 0.35) * 0.8 + 0.1;
+		return mix(custom, tip, smoothstep(0.3, 1.0, h));
+	}
 	if (palette < 0.5) {
 		vec3 c = mix(vec3(0.10, 1.00, 0.42), vec3(0.05, 0.85, 0.65), smoothstep(0.0, 0.45, h));
 		return mix(c, vec3(0.62, 0.22, 0.95), smoothstep(0.45, 1.0, h));
@@ -15,7 +20,7 @@ vec3 skyfx_auroraPalette(float h, float palette, float hueShift) {
 	return skyfx_hsv2rgb(vec3(fract(hueShift + h * 0.35), 0.75, 1.0));
 }
 
-vec4 skyfx_auroraCurtains(vec3 dir, float t, float palette) {
+vec4 skyfx_auroraCurtains(vec3 dir, float t, float palette, vec3 custom) {
 	vec4 acc = vec4(0.0);
 	if (dir.y <= 0.0) return acc;
 	const int STEPS = 36;
@@ -39,7 +44,7 @@ vec4 skyfx_auroraCurtains(vec3 dir, float t, float palette) {
 		rays *= rays;
 		float vertical = exp(-fi * 2.3) * (1.0 + 1.5 * exp(-fi * 14.0));
 		float intensity = band * rays * vertical;
-		vec3 col = skyfx_auroraPalette(fi, palette, t * 0.03 + q.x * 0.08);
+		vec3 col = skyfx_auroraPalette(fi, palette, t * 0.03 + q.x * 0.08, custom);
 		acc.rgb += col * intensity;
 		acc.a += intensity;
 	}
@@ -50,7 +55,7 @@ vec4 skyfx_auroraCurtains(vec3 dir, float t, float palette) {
 	return acc;
 }
 
-vec3 skyfx_aurora(vec3 dir, float t, float palette) {
+vec3 skyfx_aurora(vec3 dir, float t, float palette, vec3 custom) {
 	float y = dir.y;
 	vec3 zenith = vec3(0.004, 0.012, 0.040);
 	vec3 horizon = vec3(0.030, 0.085, 0.140);
@@ -65,13 +70,19 @@ vec3 skyfx_aurora(vec3 dir, float t, float palette) {
 
 	col += skyfx_stars(dir, t, 1.0) * smoothstep(-0.02, 0.18, y);
 
-	vec4 aurora = skyfx_auroraCurtains(dir, t, palette);
+	vec4 aurora = skyfx_auroraCurtains(dir, t, palette, custom);
 	col = col * (1.0 - clamp(aurora.a * 0.2, 0.0, 0.6)) + aurora.rgb;
 
 	// green airglow hugging the horizon, reflecting the aurora
-	vec3 glowColor = skyfx_auroraPalette(0.05, palette, t * 0.03);
+	vec3 glowColor = skyfx_auroraPalette(0.05, palette, t * 0.03, custom);
 	col += glowColor * 0.05 * exp(-abs(y) * 9.0);
 
-	col += skyfx_meteors(dir, t, 0.55, vec3(0.80, 0.95, 1.00));
+	// a meteor shower: six independent streams of shooting stars, some tinted by the aurora
+	col += skyfx_meteors(dir, t, 0.85, vec3(0.80, 0.95, 1.00));
+	col += skyfx_meteors(dir, t * 1.37 + 11.0, 0.85, vec3(1.00, 0.95, 0.85));
+	col += skyfx_meteors(dir, t * 0.81 + 23.0, 0.85, mix(vec3(0.85, 0.95, 1.0), glowColor, 0.5));
+	col += skyfx_meteors(dir, t * 1.73 + 37.0, 0.75, vec3(0.75, 0.90, 1.00));
+	col += skyfx_meteors(dir, t * 2.11 + 51.0, 0.70, mix(vec3(1.0), glowColor, 0.3));
+	col += skyfx_meteors(dir, t * 0.63 + 67.0, 0.80, vec3(0.90, 0.92, 1.00));
 	return col;
 }

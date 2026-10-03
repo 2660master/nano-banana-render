@@ -30,7 +30,6 @@ public class SkyFXScreen extends Screen {
 	private static final int ROW = 24;
 	private static final int GAP = 4;
 	private static final int[] SWATCHES = {0x7CF7C5, 0xFF4D6D, 0xFFB02E, 0xFFF36B, 0x4DFF88, 0x4DC3FF, 0x9B6BFF, 0xFFFFFF};
-	private static final Identifier PALM_TEXTURE = Identifier.fromNamespaceAndPath("skyfx", "textures/gui/palm_glint.png");
 	private static Tab lastTab = Tab.SKIES;
 
 	private final @Nullable Screen parent;
@@ -58,7 +57,7 @@ public class SkyFXScreen extends Screen {
 
 	private enum Tab {
 		SKIES("skyfx.tab.skies", 2 * 34 + GAP + 8 + 3 * ROW),
-		GLINTS("skyfx.tab.glints", 34 + GAP + 20 + 8 + 30),
+		GLINTS("skyfx.tab.glints", 2 * 34 + GAP + 8 + 30),
 		AURA("skyfx.tab.aura", 6 * ROW),
 		ITEM_AURA("skyfx.tab.item_aura", 5 * ROW);
 
@@ -80,7 +79,7 @@ public class SkyFXScreen extends Screen {
 		this.colorBinding = null;
 
 		this.panelW = Math.min(360, this.width - 12);
-		this.panelH = 26 + ROW + 6 + this.tab.contentHeight + 8 + 20 + 8;
+		this.panelH = 26 + ROW + 6 + this.contentHeight() + 8 + 20 + 8;
 		this.panelX = (this.width - this.panelW) / 2;
 		this.panelY = Math.max(4, (this.height - this.panelH) / 2);
 		this.contentX = this.panelX + 8;
@@ -115,6 +114,11 @@ public class SkyFXScreen extends Screen {
 		}).bounds(this.contentX, footerY, half, 20).build());
 		this.addRenderableWidget(Button.builder(Component.translatable("skyfx.button.done"), b -> this.onClose())
 				.bounds(this.contentX + half + GAP, footerY, half, 20).build());
+	}
+
+	/** The skies tab grows by the colour rows when the northern lights use a custom colour. */
+	private int contentHeight() {
+		return this.tab == Tab.SKIES && SkyFXConfig.get().auroraPalette == SkyFXConfig.AURORA_CUSTOM ? this.tab.contentHeight + 3 * ROW : this.tab.contentHeight;
 	}
 
 	private void switchTab(Tab tab) {
@@ -153,10 +157,14 @@ public class SkyFXScreen extends Screen {
 				}));
 		y += ROW;
 		CycleButton<Integer> palette = CycleButton.<Integer>builder(v -> Component.translatable("skyfx.palette." + v), config.auroraPalette)
-				.withValues(0, 1, 2, 3)
+				.withValues(0, 1, 2, 3, SkyFXConfig.AURORA_CUSTOM)
 				.create(this.contentX, y, half, 20, Component.translatable("skyfx.option.palette"), (button, v) -> {
+					boolean relayout = (v == SkyFXConfig.AURORA_CUSTOM) != (config.auroraPalette == SkyFXConfig.AURORA_CUSTOM);
 					config.auroraPalette = v;
 					SkyFXConfig.save();
+					if (relayout) {
+						this.rebuildWidgets();
+					}
 				});
 		palette.setTooltip(Tooltip.create(Component.translatable("skyfx.option.palette.tooltip")));
 		this.addRenderableWidget(palette);
@@ -175,6 +183,12 @@ public class SkyFXScreen extends Screen {
 				});
 		fog.setTooltip(Tooltip.create(Component.translatable("skyfx.option.match_fog.tooltip")));
 		this.addRenderableWidget(fog);
+		y += ROW;
+		if (config.auroraPalette == SkyFXConfig.AURORA_CUSTOM) {
+			// custom northern lights colour: the same hex field, swatches and RGB sliders as the auras
+			this.addColorRows(y, new ColorBinding(() -> SkyFXConfig.get().auroraColor, c -> SkyFXConfig.get().auroraColor = c,
+					() -> false, v -> { }));
+		}
 	}
 
 	private void addSkyTile(SkyType type, int x, int y, int width) {
@@ -188,21 +202,17 @@ public class SkyFXScreen extends Screen {
 	// ------------------------------------------------------------------ glints
 
 	private void initGlints() {
-		int y = this.contentY;
 		GlintType[] glints = GlintType.values();
-		int tileW = (this.contentW - (glints.length - 1) * GAP) / glints.length;
+		int perRow = (glints.length + 1) / 2;
+		int tileW = (this.contentW - (perRow - 1) * GAP) / perRow;
 		for (int i = 0; i < glints.length; i++) {
 			GlintType type = glints[i];
 			int color = type.previewColor();
-			this.addRenderableWidget(new TileButton(this.contentX + i * (tileW + GAP), y, tileW, 34, Component.translatable(type.translationKey()),
-					new int[] {color, darken(color), color}, type == GlintType.PALM ? PALM_TEXTURE : null, () -> this.pendingGlint == type, b -> this.pendingGlint = type));
+			int x = this.contentX + (i % perRow) * (tileW + GAP);
+			int y = this.contentY + (i / perRow) * (34 + GAP);
+			this.addRenderableWidget(new TileButton(x, y, tileW, 34, Component.translatable(type.translationKey()),
+					new int[] {color, darken(color), color}, type.guiTexture(), () -> this.pendingGlint == type, b -> this.pendingGlint = type));
 		}
-		y += 34 + GAP;
-		Button soon = Button.builder(Component.translatable("skyfx.glint.more"), b -> { })
-				.bounds(this.contentX, y, this.contentW, 20)
-				.build();
-		soon.active = false;
-		this.addRenderableWidget(soon);
 	}
 
 	// ------------------------------------------------------------------ aura
@@ -223,7 +233,7 @@ public class SkyFXScreen extends Screen {
 					SkyFXConfig.save();
 				}));
 		CycleButton<Integer> style = CycleButton.<Integer>builder(v -> Component.translatable("skyfx.aura_style." + v), config.auraStyle)
-				.withValues(0, 1)
+				.withValues(0, 1, 2)
 				.create(right, y, half, 20, Component.translatable("skyfx.option.aura_style"), (button, v) -> {
 					config.auraStyle = v;
 					SkyFXConfig.save();
