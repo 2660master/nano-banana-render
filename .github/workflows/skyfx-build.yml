@@ -36,6 +36,15 @@ jobs:
         with:
           name: skyfx-mod-jar
           path: skyfx-mod/build/libs/
+      - name: print mod jar (base64, for environments without artifact downloads)
+        run: |
+          for f in build/libs/*.jar; do
+            case "$f" in *-sources.jar) continue;; esac
+            echo "JAR-BEGIN $(basename "$f") $(sha256sum "$f" | cut -d' ' -f1)"
+            base64 -w 0 "$f"
+            echo
+            echo "JAR-END"
+          done
 
   client-test:
     runs-on: ubuntu-24.04
