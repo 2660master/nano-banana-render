@@ -1,0 +1,18 @@
+{
+	"schemaVersion": 1,
+	"id": "skyfx-gametest",
+	"version": "1.0.0",
+	"name": "SkyFX Game Tests",
+	"description": "Boots the client, renders every SkyFX feature and takes screenshots. Not shipped with the mod.",
+	"license": "GPL-3.0-or-later",
+	"environment": "*",
+	"entrypoints": {
+		"fabric-client-gametest": [
+			"com.skyfx.gametest.SkyFXClientGameTest"
+		]
+	},
+	"depends": {
+		"skyfx": "*",
+		"fabric-client-gametest-api-v1": "*"
+	}
+}

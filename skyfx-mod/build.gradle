@@ -44,3 +44,14 @@ java {
 	sourceCompatibility = JavaVersion.VERSION_21
 	targetCompatibility = JavaVersion.VERSION_21
 }
+
+// Client game test (src/gametest): boots Minecraft, renders every SkyFX feature and takes screenshots.
+// Run with ./gradlew runClientGameTest (CI runs it under xvfb).
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "skyfx-gametest"
+		enableGameTests = false
+		eula = true
+	}
+}

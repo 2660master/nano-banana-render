@@ -1,4 +1,5 @@
-# Builds the SkyFX Fabric mod (skyfx-mod/) and uploads the jar as a workflow artifact.
+# Builds the SkyFX Fabric mod (skyfx-mod/), uploads the jar, and runs the client game test that boots
+# Minecraft and screenshots every feature.
 name: SkyFX mod build
 
 on:
@@ -35,3 +36,46 @@ jobs:
         with:
           name: skyfx-mod-jar
           path: skyfx-mod/build/libs/
+
+  client-test:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: skyfx-mod
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+      - name: setup jdk
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - name: install xvfb and mesa
+        run: sudo apt-get update -q && sudo apt-get install -y -q xvfb libgl1-mesa-dri imagemagick
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: run client game test
+        run: xvfb-run -a -s "-screen 0 1920x1080x24" ./gradlew runClientGameTest --stacktrace
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+      - name: report SkyFX log lines
+        if: always()
+        run: |
+          grep -iE "skyfx|failed to compile|shader|mixin.*(error|fail)|exception" build/run/clientGameTest/logs/latest.log | grep -v "DEBUG" | head -80 || true
+      - name: print screenshots
+        if: always()
+        run: |
+          for f in build/run/clientGameTest/screenshots/*.png; do
+            [ -e "$f" ] || continue
+            convert "$f" -resize 800x450 -quality 80 /tmp/shot.jpg
+            echo "SHOT-BEGIN $(basename "$f")"
+            base64 -w 0 /tmp/shot.jpg
+            echo
+            echo "SHOT-END"
+          done
+      - name: upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: skyfx-screenshots
+          path: skyfx-mod/build/run/clientGameTest/screenshots/
