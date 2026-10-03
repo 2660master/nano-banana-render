@@ -30,7 +30,7 @@ public final class GlintManager {
 					Identifier.fromNamespaceAndPath(SkyFXClient.MOD_ID, pack),
 					mod,
 					Component.translatable("skyfx.pack." + pack),
-					type == GlintType.RAINBOW ? PackActivationType.DEFAULT_ENABLED : PackActivationType.NORMAL);
+					type == GlintType.PALM ? PackActivationType.DEFAULT_ENABLED : PackActivationType.NORMAL);
 			if (!ok) {
 				SkyFXClient.LOGGER.warn("Could not register the built-in glint pack {}", pack);
 			}

@@ -1,6 +1,6 @@
 # SkyFX – Fabric mod voor Minecraft 1.21.11
 
-Geanimeerde custom skies, custom enchantment glints en een kleurbare block aura, alles in één menu (toets **K**).
+Geanimeerde custom skies, een neon palmboom-glint, een block aura (gloed of galaxy) en een item aura, alles in één menu (toets **K**).
 
 Open **`SkyFX-preview.html`** in je browser voor een live preview van alles: de vier luchten, de glints, de block aura en hetzelfde menu als in-game. De preview draait exact dezelfde GLSL-shaders als de mod (ze worden er door `preview/build-preview.mjs` in geplakt).
 
@@ -12,9 +12,9 @@ Alle luchten zijn 100% procedurele shaders: geen plaatjes, dus scherp op elke re
 | Lucht | Wat beweegt er |
 | --- | --- |
 | **Noorderlicht** | Groene gordijnen van noorderlicht die golven, krullen en "ademen", met lichtstralen die erdoorheen rimpelen, twinkelende sterren en vallende sterren. Kleur instelbaar: groen, roze, blauw of regenboog. |
-| **Galaxy** | Diepe ruimte met paarse nevels die langzaam stromen, een draaiende spiraalgalaxie, een grote kraterplaneet met gloeiende paarse scheuren, een ijsmaan die eromheen draait (vóór en achter de planeet langs), een gasreus met ringen, een lavaplaneet, een asteroïdengordel en losse rotsblokken die tuimelend voorbij drijven. |
-| **Anime Wolken** | Zonnige anime-lucht met cel-shaded stapelwolken (perzik/roze aan de zonkant, lavendel in de schaduw) die over de horizon drijven en langzaam van vorm veranderen, sliertige cirruswolken, draaiende zonnestralen en een zwerm vogels die rondvliegt. |
-| **Stormzee** | Je staat boven een zee van stormwolken: torenhoge onweerswolken die kolken, een draaikolk recht boven je, wolkenlagen die langs elkaar schuiven, bliksemflitsen in de wolken (soms met een zichtbare schicht), een koude maan en een gigantische sikkelplaneet die langzaam opschuift. |
+| **Galaxy** | Diepe ruimte met scherpe paars-roze-blauwe nevelslierten die langzaam stromen, heldere sterren met glinsterkruisjes, een draaiende spiraalgalaxie, een grote kraterplaneet met gloeiende paarse scheuren, een ijsmaan die eromheen draait (vóór en achter de planeet langs), een gasreus met ringen, een lavaplaneet, een asteroïdengordel en losse rotsblokken die tuimelend voorbij drijven. |
+| **Anime Wolken** | Zonnige anime-lucht met grote bolle stapelwolken uit ronde "puffen", cel-shaded (wit, perzik aan de zonkant, blauw onderin), die over de horizon drijven en zachtjes ademen, sliertige cirruswolken, draaiende zonnestralen en een zwerm vogels die rondvliegt. |
+| **Stormzee** | Een zee van stormwolken onder een gigantische kratermaan: torenhoge onweerswolken die kolken, veel bliksem met vertakte schichten, regengordijnen, flarden wolk die voor de maan langs trekken, een draaikolk recht boven je, een sikkelplaneet, en een piratenschip met lantaarns dat op de wolkenzee deint en rond de horizon vaart. |
 
 Opties: animatiesnelheid (0–300%), helderheid, noorderlicht-kleur, vanilla wolken verbergen, en "mist past bij de lucht" (verre terrein vloeit over in de horizonkleur).
 
@@ -22,13 +22,19 @@ Opties: animatiesnelheid (0–300%), helderheid, noorderlicht-kleur, vanilla wol
 
 ### Glints
 - **Vanilla** – de gewone paarse glint
-- **Regenboog** – een bewegende regenboog op alle betoverde items, boeken en armor
+- **Palmbomen** – vijf neon palmbomen (cyaan, oranje, roze, lime, lila) die over alle betoverde items, boeken en armor schuiven
 
 Glints zijn ingebouwde resource packs die de vanilla glint-shader vervangen. Bij wisselen herlaadt SkyFX de textures automatisch (zodra je op *Klaar* drukt). Meer glints toevoegen: maak een map `src/client/resources/resourcepacks/<naam>/` met een `pack.mcmeta` en `assets/minecraft/shaders/core/glint.fsh`, en zet een regel in `GlintType.java`.
 
 ### Block aura
-Vervangt de dunne zwarte block-outline door een gloeiende, pulserende aura op elk blok waar je naar kijkt.
-Instelbaar: aan/uit, kleur (hex-code, RGB-sliders of 8 snelkleuren), regenboog-modus, pulse-snelheid, gloed-dikte en vulling.
+Vervangt de dunne zwarte block-outline door een aura op elk blok waar je naar kijkt. Twee stijlen:
+- **Gloed** – een gloeiende, pulserende rand met doorschijnende vulling
+- **Galaxy** – het blok wordt een doorschijnend raam naar de ruimte (sterren en nevels), met een gloeiende rand
+
+Instelbaar: aan/uit, stijl, kleur (hex-code, RGB-sliders of 8 snelkleuren), regenboog-modus, pulse-snelheid, gloed-dikte en vulling.
+
+### Item aura
+Een gloeiende rand (standaard roze) rond het item dat je vasthoudt in first person. Instelbaar: aan/uit, kleur, regenboog-modus, randdikte en gloed.
 
 ## Installeren
 1. Installeer [Fabric Loader](https://fabricmc.net/use/) voor Minecraft **1.21.11** (Loader 0.17 of nieuwer).
@@ -53,5 +59,6 @@ node preview/build-preview.mjs  # bouwt SkyFX-preview.html opnieuw na shader-wij
 ## Hoe het werkt
 - **Luchten:** een mixin op `SkyRenderer.renderSkyDisc` tekent een kubus rond de camera met een eigen `RenderPipeline`; de fragment-shader (`assets/skyfx/shaders/core/sky_*.fsh`) rekent per pixel de lucht uit. Tijd, helderheid en palet gaan via het standaard `DynamicTransforms` uniform-block naar de shader. Zon, maan, sterren en zonsopgang van vanilla worden overgeslagen; vanilla wolken optioneel ook. Mocht een shader niet compileren op een GPU, dan valt SkyFX automatisch terug op de vanilla lucht.
 - **Mist:** een mixin op `FogRenderer.computeFogColor` geeft de mist de horizonkleur van de gekozen lucht (niet onder water/lava of met blindness).
-- **Glint:** ingebouwd resource pack `skyfx:rainbow_glint` met een eigen `core/glint.fsh`.
-- **Aura:** Fabric's `WorldRenderEvents.BEFORE_BLOCK_OUTLINE`: een doorschijnend gevuld blok, drie brede zachte lijnlagen (de gloed) en een scherpe kernlijn.
+- **Glint:** ingebouwd resource pack `skyfx:palm_glint` met een eigen glint-textuur en `core/glint.vsh`/`glint.fsh` (textuur 3x kleiner zodat hele palmbomen op een item passen, kleuren exact).
+- **Item aura:** een mixin op `GameRenderer.renderItemInHand` tekent de hand één keer extra naar een eigen masker-textuur; een fullscreen-shader tekent daar de rand en gloed omheen, waarna de hand normaal wordt getekend.
+- **Block aura:** Fabric's `WorldRenderEvents.BEFORE_BLOCK_OUTLINE`: een doorschijnend gevuld blok (of de galaxy-shader), drie brede zachte lijnlagen (de gloed) en een scherpe kernlijn.

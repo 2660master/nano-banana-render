@@ -41,6 +41,17 @@ public final class SkyFXConfig {
 	public int auraGlow = 5;
 	/** Fill opacity in percent (0 - 60). */
 	public int auraFill = 18;
+	/** 0 = glowing outline, 1 = galaxy (the block becomes a window into space). */
+	public int auraStyle = 0;
+
+	// item aura (glowing outline around the held item)
+	public boolean itemAuraEnabled = true;
+	public int itemAuraColor = 0xFF4FD8;
+	public boolean itemAuraRainbow = false;
+	/** Outline thickness in pixels (at 1080p), 1 - 8. */
+	public int itemAuraWidth = 3;
+	/** Soft glow size, 0 - 10. */
+	public int itemAuraGlow = 5;
 
 	public static SkyFXConfig get() {
 		return instance;
@@ -90,5 +101,9 @@ public final class SkyFXConfig {
 		this.auraPulse = Math.clamp(this.auraPulse, 0, 300);
 		this.auraGlow = Math.clamp(this.auraGlow, 1, 10);
 		this.auraFill = Math.clamp(this.auraFill, 0, 60);
+		this.auraStyle = Math.clamp(this.auraStyle, 0, 1);
+		this.itemAuraColor &= 0xFFFFFF;
+		this.itemAuraWidth = Math.clamp(this.itemAuraWidth, 1, 8);
+		this.itemAuraGlow = Math.clamp(this.itemAuraGlow, 0, 10);
 	}
 }

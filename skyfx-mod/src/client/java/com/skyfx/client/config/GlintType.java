@@ -8,7 +8,7 @@ import org.jspecify.annotations.Nullable;
  */
 public enum GlintType {
 	VANILLA("vanilla", null, 0x8A4FD8),
-	RAINBOW("rainbow", "rainbow_glint", 0xFF4D88);
+	PALM("palm", "palm_glint", 0x5FF2E4);
 
 	private final String id;
 	private final @Nullable String packName;

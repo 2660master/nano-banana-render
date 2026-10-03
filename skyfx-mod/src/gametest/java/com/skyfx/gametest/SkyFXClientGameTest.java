@@ -15,7 +15,7 @@ import com.skyfx.client.gui.SkyFXScreen;
 
 /**
  * Boots the client, creates a flat test world and screenshots every SkyFX feature: the four skies, the vanilla and
- * rainbow glints on a held sword, the block aura and all three tabs of the menu.
+ * palm glints on a held sword (with the item aura), the block aura in both styles and every tab of the menu.
  */
 public class SkyFXClientGameTest implements FabricClientGameTest {
 	@Override
@@ -61,13 +61,27 @@ public class SkyFXClientGameTest implements FabricClientGameTest {
 			context.runOnClient(client -> SkyFXConfig.get().auraColor = 0xFF4D6D);
 			context.waitTicks(3);
 			context.takeScreenshot("aura_red");
+			context.runOnClient(client -> {
+				SkyFXConfig.get().auraStyle = 1;
+				SkyFXConfig.get().auraColor = 0x9B6BFF;
+			});
+			context.waitTicks(3);
+			context.takeScreenshot("aura_galaxy");
+
+			// storm sea towards the giant moon and the pirate ship
+			context.runOnClient(client -> {
+				SkyFXConfig.get().sky = SkyType.STORM.id();
+				look(client, 172.0F, -8.0F);
+			});
+			context.waitTicks(6);
+			context.takeScreenshot("storm_moon_ship");
 
 			// glints on the held sword
 			context.runOnClient(client -> look(client, 0.0F, -10.0F));
 			setGlint(context, GlintType.VANILLA);
 			context.takeScreenshot("glint_vanilla");
-			setGlint(context, GlintType.RAINBOW);
-			context.takeScreenshot("glint_rainbow");
+			setGlint(context, GlintType.PALM);
+			context.takeScreenshot("glint_palm");
 
 			// the menu, all three tabs
 			context.runOnClient(client -> SkyFXConfig.get().sky = SkyType.AURORA.id());
@@ -80,6 +94,9 @@ public class SkyFXClientGameTest implements FabricClientGameTest {
 			context.clickScreenButton("skyfx.tab.aura");
 			context.waitTicks(3);
 			context.takeScreenshot("gui_aura");
+			context.clickScreenButton("skyfx.tab.item_aura");
+			context.waitTicks(3);
+			context.takeScreenshot("gui_item_aura");
 			context.setScreen(() -> null);
 			context.waitTicks(2);
 		}

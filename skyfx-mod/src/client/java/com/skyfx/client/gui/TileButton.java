@@ -2,25 +2,27 @@ package com.skyfx.client.gui;
 
 import java.util.function.BooleanSupplier;
 
+import org.jspecify.annotations.Nullable;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-
-import com.skyfx.client.render.AuraRenderer;
+import net.minecraft.resources.Identifier;
 
 /** A coloured tile used for the sky, glint and colour pickers in the SkyFX menu. */
 public class TileButton extends Button {
 	public static final int ACCENT = 0xFF7CF7C5;
 
 	private final int[] colors;
-	private final boolean rainbow;
+	private final @Nullable Identifier texture;
 	private final BooleanSupplier selected;
 
-	public TileButton(int x, int y, int width, int height, Component label, int[] colors, boolean rainbow, BooleanSupplier selected, OnPress onPress) {
+	public TileButton(int x, int y, int width, int height, Component label, int[] colors, @Nullable Identifier texture, BooleanSupplier selected, OnPress onPress) {
 		super(x, y, width, height, label, onPress, DEFAULT_NARRATION);
 		this.colors = colors;
-		this.rainbow = rainbow;
+		this.texture = texture;
 		this.selected = selected;
 	}
 
@@ -38,13 +40,10 @@ public class TileButton extends Button {
 		}
 		int inset = isSelected ? 2 : 1;
 		int x0 = x + inset, y0 = y + inset, x1 = x + w - inset, y1 = y + h - inset;
-		if (this.rainbow) {
-			int segments = 12;
-			for (int i = 0; i < segments; i++) {
-				int sx0 = x0 + (x1 - x0) * i / segments;
-				int sx1 = x0 + (x1 - x0) * (i + 1) / segments;
-				graphics.fill(sx0, y0, sx1, y1, 0xFF000000 | AuraRenderer.hsvToRgb(i / (float) segments, 0.75F, 1.0F));
-			}
+		if (this.texture != null) {
+			// show the top half of the 512x512 texture, scaled into the tile
+			graphics.fill(x0, y0, x1, y1, 0xFF000000);
+			graphics.blit(RenderPipelines.GUI_TEXTURED, this.texture, x0, y0, 0.0F, 0.0F, x1 - x0, y1 - y0, 512, 256, 512, 512);
 		} else {
 			graphics.fillGradient(x0, y0, x1, y1, 0xFF000000 | this.colors[0], 0xFF000000 | this.colors[1]);
 			if (this.colors.length > 2 && this.colors[2] != this.colors[1]) {

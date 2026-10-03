@@ -33,12 +33,13 @@ vec3 skyfx_planetRock(vec3 n, vec3 l, vec3 axis, float spin, float t) {
 	albedo *= 0.85 + 0.25 * clamp(h, -1.0, 1.0);
 	float ndl = dot(n, l);
 	float diffuse = clamp(ndl + bump * 0.35, 0.0, 1.0) * smoothstep(-0.15, 0.25, ndl);
-	vec3 col = albedo * (0.035 + 1.15 * diffuse);
+	vec3 col = albedo * (0.05 + 1.45 * diffuse);
 	// glowing violet fissures that pulse, strongest on the night side
 	float v = abs(skyfx_fbm3(q * 3.0 + 11.0, 4) - 0.5);
-	float vein = 1.0 - smoothstep(0.0, 0.03, v);
+	float vein = 1.0 - smoothstep(0.0, 0.035, v);
+	float veinGlow = exp(-v * 40.0) * 0.35;
 	float pulse = 0.55 + 0.45 * sin(t * 1.7 + base * 12.0);
-	col += vec3(0.78, 0.48, 1.0) * vein * pulse * (0.35 + 0.9 * (1.0 - diffuse));
+	col += vec3(0.82, 0.50, 1.0) * (vein + veinGlow) * pulse * (0.45 + 1.0 * (1.0 - diffuse));
 	return col;
 }
 
@@ -116,18 +117,45 @@ float skyfx_asteroid(vec3 rd, vec3 pos, float radius, float seed, float t, vec3 
 }
 
 vec3 skyfx_nebula(vec3 dir, float t) {
-	vec3 p = skyfx_rotY(dir, t * 0.003) * 2.2;
+	vec3 p = skyfx_rotY(dir, t * 0.003) * 2.0;
 	vec3 warp = vec3(
-		skyfx_fbm3(p + vec3(0.0, t * 0.010, 0.0), 3),
-		skyfx_fbm3(p + vec3(5.2, 1.3, t * 0.012), 3),
-		skyfx_fbm3(p + vec3(2.1, t * 0.008, 7.7), 3)
+		skyfx_fbm3(p + vec3(0.0, t * 0.010, 0.0), 4),
+		skyfx_fbm3(p + vec3(5.2, 1.3, t * 0.012), 4),
+		skyfx_fbm3(p + vec3(2.1, t * 0.008, 7.7), 4)
 	);
-	float n = skyfx_fbm3(p * 1.4 + warp * 1.8, 5);
-	float region = smoothstep(0.32, 0.72, skyfx_fbm3(dir * 0.9 + 3.0, 3));
-	float density = smoothstep(0.40, 0.85, n) * region;
-	vec3 col = mix(vec3(0.20, 0.10, 0.42), vec3(0.64, 0.44, 0.96), smoothstep(0.5, 0.9, n));
-	col = mix(col, vec3(0.88, 0.42, 0.78), smoothstep(0.55, 0.80, warp.x) * 0.5);
-	return col * density * 0.6;
+	vec3 q = p * 1.5 + warp * 2.0;
+	float n = skyfx_fbm3(q, 6);
+	float ridge = 1.0 - abs(2.0 * skyfx_fbm3(q * 1.7 + 5.0, 5) - 1.0);
+	float filaments = pow(ridge, 7.0);
+	float region = smoothstep(0.30, 0.70, skyfx_fbm3(dir * 0.9 + 3.0, 3));
+	float gas = smoothstep(0.38, 0.85, n) * region;
+	float dust = smoothstep(0.50, 0.68, skyfx_fbm3(q * 2.6 + 11.0, 4)) * region;
+	vec3 violet = vec3(0.32, 0.10, 0.60);
+	vec3 pink = vec3(0.95, 0.32, 0.78);
+	vec3 blue = vec3(0.22, 0.42, 1.00);
+	vec3 col = mix(violet, blue, smoothstep(0.40, 0.80, warp.y));
+	col = mix(col, pink, smoothstep(0.55, 0.80, warp.x) * 0.7);
+	vec3 neb = col * gas * 0.95 + mix(pink, vec3(1.0, 0.88, 1.0), 0.5) * filaments * gas * 1.3;
+	return neb * (1.0 - dust * 0.75);
+}
+
+// The brightest stars, each with a soft glow and four diffraction spikes.
+vec3 skyfx_brightStars(vec3 dir, float t) {
+	vec3 acc = vec3(0.0);
+	for (int i = 0; i < 30; i++) {
+		vec3 h = skyfx_hash33(vec3(float(i), 3.3, 7.1));
+		vec3 s = normalize(skyfx_hash33(vec3(float(i), 9.7, 1.3)) * 2.0 - 1.0);
+		if (dot(dir, s) < 0.993) continue;
+		vec3 e1 = normalize(cross(s, abs(s.y) < 0.9 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0)));
+		vec3 e2 = cross(s, e1);
+		vec2 p = vec2(dot(dir, e1), dot(dir, e2)) * 420.0;
+		float r = length(p);
+		float twinkle = 0.75 + 0.25 * sin(t * (1.0 + h.x * 2.0) + h.y * SKYFX_TAU);
+		float spikes = exp(-abs(p.x) * 1.3) * exp(-abs(p.y) * 0.07) + exp(-abs(p.y) * 1.3) * exp(-abs(p.x) * 0.07);
+		vec3 tint = mix(vec3(0.70, 0.80, 1.00), vec3(1.00, 0.78, 0.95), h.z);
+		acc += tint * (exp(-r * r * 0.35) * 2.2 + exp(-r * 0.3) * 0.22 + spikes * 0.35) * twinkle * (0.5 + h.z);
+	}
+	return acc;
 }
 
 vec3 skyfx_milkyBand(vec3 dir, float t) {
@@ -177,7 +205,8 @@ vec3 skyfx_galaxy(vec3 dir, float t) {
 	col += vec3(0.10, 0.06, 0.24) * pow(max(dot(dir, normalize(vec3(-0.8, -0.1, -0.3))), 0.0), 4.0) * 0.5;
 	col += skyfx_milkyBand(dir, t);
 	col += skyfx_nebula(dir, t);
-	col += skyfx_stars(dir, t, 1.15);
+	col += skyfx_stars(dir, t, 1.5);
+	col += skyfx_brightStars(dir, t);
 	col += skyfx_spiralGalaxy(dir, normalize(vec3(-0.55, 0.62, -0.56)), normalize(vec3(0.35, 0.55, 0.76)), 0.16, t);
 	float sd = max(dot(dir, sun), 0.0);
 	col += vec3(1.0, 0.92, 1.0) * (pow(sd, 3000.0) * 8.0 + pow(sd, 220.0) * 0.6 + pow(sd, 12.0) * 0.05);

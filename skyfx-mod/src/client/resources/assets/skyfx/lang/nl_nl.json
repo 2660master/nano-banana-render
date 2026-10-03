@@ -1,7 +1,6 @@
 {
 	"key.skyfx.open_menu": "SkyFX menu openen",
 	"key.category.skyfx.main": "SkyFX",
-
 	"skyfx.title": "SkyFX",
 	"skyfx.subtitle": "Luchten · Glints · Aura",
 	"skyfx.tab.skies": "Luchten",
@@ -9,7 +8,6 @@
 	"skyfx.tab.aura": "Block Aura",
 	"skyfx.button.reset": "Standaard",
 	"skyfx.button.done": "Klaar",
-
 	"skyfx.sky.vanilla": "Vanilla",
 	"skyfx.sky.aurora": "Noorderlicht",
 	"skyfx.sky.galaxy": "Galaxy",
@@ -27,15 +25,13 @@
 	"skyfx.option.hide_clouds.tooltip": "Verbergt de blokkige vanilla wolken zolang een SkyFX lucht aan staat",
 	"skyfx.option.match_fog": "Mist past bij de lucht",
 	"skyfx.option.match_fog.tooltip": "Kleurt de mist in de verte in de horizonkleur van de lucht, zodat het landschap erin overloopt",
-
 	"skyfx.glint.vanilla": "Vanilla",
-	"skyfx.glint.rainbow": "Regenboog",
+	"skyfx.glint.palm": "Palmbomen",
 	"skyfx.glint.more": "Meer glints komen binnenkort...",
 	"skyfx.glint.info1": "Glints werken via een ingebouwd resource pack.",
 	"skyfx.glint.info2": "Op elk betoverd item, boek en stuk armor.",
 	"skyfx.glint.pending": "Textures herladen als je op Klaar drukt.",
-	"skyfx.pack.rainbow_glint": "SkyFX Regenboog Glint",
-
+	"skyfx.pack.palm_glint": "SkyFX Neon Palmboom Glint",
 	"skyfx.option.aura": "Block Aura",
 	"skyfx.option.aura_rainbow": "Regenboog modus",
 	"skyfx.option.aura_hex": "Hex kleur",
@@ -45,5 +41,13 @@
 	"skyfx.option.pulse": "Pulse snelheid: %s%%",
 	"skyfx.option.pulse_off": "Pulse snelheid: UIT",
 	"skyfx.option.glow": "Gloed dikte: %s",
-	"skyfx.option.fill": "Vulling: %s%%"
+	"skyfx.option.fill": "Vulling: %s%%",
+	"skyfx.tab.item_aura": "Item Aura",
+	"skyfx.option.aura_style": "Stijl",
+	"skyfx.option.aura_style.tooltip": "Gloed: een gloeiende rand. Galaxy: het blok wordt een raam naar de ruimte.",
+	"skyfx.aura_style.0": "Gloed",
+	"skyfx.aura_style.1": "Galaxy",
+	"skyfx.option.item_aura": "Item Aura",
+	"skyfx.option.item_aura.tooltip": "Een gloeiende rand om het item in je hand",
+	"skyfx.option.item_aura_width": "Rand: %s px"
 }

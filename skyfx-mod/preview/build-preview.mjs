@@ -1,4 +1,4 @@
-// Builds SkyFX-preview.html: inlines the mod's real GLSL include files into preview/template.html,
+// Builds SkyFX-preview.html: inlines the mod's real GLSL include files (and preview/textures) into preview/template.html,
 // so the preview always runs exactly the same sky and glint shaders as the mod.
 //
 //   node preview/build-preview.mjs
@@ -16,6 +16,8 @@ const html = template.replace(/\/\*@include ([\w.]+)\*\//g, (_, file) => {
 	return `// ---- ${file} (from the mod) ----\n${source}`;
 });
 
+const withImages = html.replace(/\/\*@png ([\w./-]+)\*\//g, (_, file) => 'data:image/png;base64,' + readFileSync(join(here, file)).toString('base64'));
+
 const out = join(here, '..', 'SkyFX-preview.html');
-writeFileSync(out, html);
-console.log(`wrote ${out} (${(html.length / 1024).toFixed(1)} KiB)`);
+writeFileSync(out, withImages);
+console.log(`wrote ${out} (${(withImages.length / 1024).toFixed(1)} KiB)`);

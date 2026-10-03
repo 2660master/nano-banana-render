@@ -3,10 +3,9 @@
 #moj_import <minecraft:fog.glsl>
 #moj_import <minecraft:globals.glsl>
 #moj_import <minecraft:dynamictransforms.glsl>
-#moj_import <skyfx:skyfx_common.glsl>
-#moj_import <skyfx:skyfx_glint.glsl>
 
-// SkyFX rainbow glint: the vanilla glint shader, recoloured with a scrolling rainbow.
+// SkyFX palm glint: the glint is blended as (colour * colour + background), so the square root
+// is written here to keep the neon palm colours exactly as they are in the texture.
 
 uniform sampler2D Sampler0;
 
@@ -22,6 +21,5 @@ void main() {
         discard;
     }
     float fade = (1.0f - total_fog_value(sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd)) * GlintAlpha;
-    vec3 rainbow = skyfx_rainbowGlint(color.rgb, texCoord0, GameTime);
-    fragColor = vec4(rainbow * fade, color.a);
+    fragColor = vec4(sqrt(max(color.rgb * fade, vec3(0.0))), color.a);
 }
