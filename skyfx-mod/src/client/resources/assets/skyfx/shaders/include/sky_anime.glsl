@@ -92,21 +92,58 @@ float skyfx_segment(vec2 p, vec2 a, vec2 b) {
 }
 
 // A small flock gliding around the sky, flapping their wings.
+// One gull-shaped bird in bird space (wingspan -1..1): bent wings that flap, or glide when flap is near 0.3.
+float skyfx_bird(vec2 p, float flap, float thick) {
+	p.x = abs(p.x);
+	vec2 shoulder = vec2(0.45, 0.06 + 0.30 * flap);
+	vec2 tip = vec2(1.0, -0.10 + 0.55 * flap);
+	float d = min(skyfx_segment(p, vec2(0.0), shoulder), skyfx_segment(p, shoulder, tip));
+	float w = thick * (1.0 - 0.55 * clamp(p.x, 0.0, 1.0));
+	return 1.0 - smoothstep(w, w + 0.10, d);
+}
+
+// Flocks of birds flying around in V formations in both directions, plus a few big gulls circling close by.
 float skyfx_birds(vec3 dir, float t) {
 	float acc = 0.0;
-	for (int k = 0; k < 6; k++) {
-		float fk = float(k);
-		float az = mod(t * 0.018 + fk * 0.045 + sin(fk * 3.1) * 0.02, SKYFX_TAU);
-		float el = 0.30 + 0.025 * sin(fk * 1.7) + 0.012 * sin(t * 0.5 + fk) + fk * 0.006;
-		vec3 c = vec3(cos(az) * cos(el), sin(el), sin(az) * cos(el));
-		if (dot(dir, c) < 0.995) continue;
-		vec3 e1 = normalize(cross(c, vec3(0.0, 1.0, 0.0)));
-		vec3 e2 = cross(e1, c);
-		vec2 p = vec2(dot(dir, e1), dot(dir, e2)) / (0.0075 - fk * 0.0004);
-		float flap = sin(t * 9.0 + fk * 2.1);
-		float wingY = 0.32 * flap + 0.12;
-		float d = min(skyfx_segment(p, vec2(0.0), vec2(1.0, wingY)), skyfx_segment(p, vec2(0.0), vec2(-1.0, wingY)));
-		acc = max(acc, 1.0 - smoothstep(0.07, 0.17, d));
+	float az = atan(dir.z, dir.x);
+	float el = asin(clamp(dir.y, -1.0, 1.0));
+	if (el < 0.02 || el > 0.85) return 0.0;
+	for (int f = 0; f < 6; f++) {
+		float ff = float(f);
+		float heading = mod(ff, 2.0) < 0.5 ? 1.0 : -1.0;
+		float speed = (0.014 + 0.008 * fract(ff * 0.618)) * heading;
+		float fAz = ff * 1.05 + 0.4 + t * speed + 0.06 * sin(t * 0.21 + ff * 2.0);
+		float fEl = 0.16 + 0.22 * fract(ff * 0.37 + 0.2) + 0.03 * sin(t * 0.27 + ff);
+		float size = 0.010 + 0.006 * fract(ff * 0.53);
+		float dazF = atan(sin(az - fAz), cos(az - fAz));
+		if (abs(dazF) * cos(el) > 0.26 || abs(el - fEl) > 0.15) continue;
+		int count = 7 + int(mod(ff, 3.0));
+		for (int b = 0; b < 9; b++) {
+			if (b >= count) break;
+			float fb = float(b);
+			float side = mod(fb, 2.0) < 0.5 ? 1.0 : -1.0;
+			float rank = floor((fb + 1.0) * 0.5);
+			// V formation: each pair trails the leader and spreads out, with a little drift of its own
+			float bAz = fAz - heading * rank * size * 2.6 + 0.004 * sin(t * 0.9 + fb * 1.7);
+			float bEl = fEl + side * rank * size * 1.5 + 0.003 * sin(t * 1.1 + fb * 2.3);
+			vec2 p = vec2(atan(sin(az - bAz), cos(az - bAz)) * cos(el), el - bEl) / size;
+			if (dot(p, p) > 2.0) continue;
+			float flap = sin(t * (8.0 + fract(fb * 0.31) * 3.0) + fb * 2.1 + ff);
+			acc = max(acc, skyfx_bird(p, flap, 0.07) * (0.75 + 0.25 * fract(ff * 0.7)));
+		}
+	}
+	// big gulls circling close by, gliding most of the time and flapping now and then
+	for (int g = 0; g < 4; g++) {
+		float fg = float(g);
+		float w = (0.18 + 0.05 * fg) * (mod(fg, 2.0) < 0.5 ? 1.0 : -1.0);
+		float gAz = fg * 1.6 + 2.2 + 0.30 * cos(t * w + fg) + t * 0.004;
+		float gEl = 0.30 + 0.08 * fg + 0.09 * sin(t * w + fg);
+		float size = 0.022 + 0.005 * fg;
+		vec2 p = vec2(atan(sin(az - gAz), cos(az - gAz)) * cos(el), el - gEl) / size;
+		if (dot(p, p) > 2.0) continue;
+		float glide = smoothstep(-0.3, 0.3, sin(t * 0.45 + fg * 1.9));
+		float flap = mix(sin(t * 6.5 + fg), 0.3 + 0.05 * sin(t * 1.5 + fg), glide);
+		acc = max(acc, skyfx_bird(p, flap, 0.05));
 	}
 	return acc;
 }
