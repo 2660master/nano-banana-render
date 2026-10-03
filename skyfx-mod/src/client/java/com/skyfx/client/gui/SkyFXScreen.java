@@ -400,7 +400,7 @@ public class SkyFXScreen extends Screen {
 		graphics.drawString(this.font, subtitle, this.panelX + this.panelW - 8 - this.font.width(subtitle), this.panelY + 9, 0xFFA9ABC0, true);
 
 		if (this.tab == Tab.GLINTS) {
-			int y = this.contentY + 34 + GAP + 20 + 8;
+			int y = this.contentY + 2 * 34 + GAP + 8;
 			graphics.drawString(this.font, Component.translatable("skyfx.glint.info1"), this.contentX, y, 0xFFA9ABC0, true);
 			graphics.drawString(this.font, Component.translatable("skyfx.glint.info2"), this.contentX, y + 11, 0xFFA9ABC0, true);
 			if (this.pendingGlint != GlintManager.current()) {

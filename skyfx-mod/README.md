@@ -35,7 +35,7 @@ Glints zijn ingebouwde resource packs die de vanilla glint-shader vervangen. Bij
 ### Block aura
 Vervangt de dunne zwarte block-outline door een aura op elk blok waar je naar kijkt, met een platte, scherpe rand (geen gloed). Twee stijlen:
 - **Klassiek** – een egale gekleurde rand met een doorschijnende (pulserende) vulling
-- **Galaxy** – het blok wordt een doorschijnend raam naar de ruimte (sterren en nevels), met een platte gekleurde rand
+- **Galaxy** – het blok wordt een doorzichtig raam naar de ruimte: je kijkt door het blok heen, met alleen de nevels en sterren erover, en een platte gekleurde rand
 - **Palmbomen** – de vijf neon palmbomen schuiven over elke kant van het blok, over een donkere doorschijnende achtergrond in je aura-kleur
 
 Instelbaar: aan/uit, stijl, kleur (hex-code, RGB-sliders of 8 snelkleuren), regenboog-modus, pulse-snelheid van de vulling, rand-dikte en vulling.

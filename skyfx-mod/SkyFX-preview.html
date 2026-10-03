@@ -1603,6 +1603,7 @@ vec3 skyfx_storm(vec3 dir, float t) {
 <script type="x-shader/x-glsl" id="glsl-auragalaxy">// ---- aura_galaxy.glsl (from the mod) ----
 // SkyFX galaxy block aura: the block becomes a translucent window into deep space (needs skyfx_common.glsl).
 // dir is the view direction through the pixel, so the star field stays put like a portal.
+// The block stays see-through: only the nebula wisps and stars are (partly) opaque, the dark space between them is clear.
 
 vec4 skyfx_galaxyAura(vec3 dir, float t, vec3 tint) {
 	vec3 d = skyfx_rotY(dir, t * 0.03);
@@ -1614,7 +1615,9 @@ vec4 skyfx_galaxyAura(vec3 dir, float t, vec3 tint) {
 	col += skyfx_starLayer(d, 70.0, 0.35, t, 1.4);
 	col += skyfx_starLayer(skyfx_rotX(d, 1.3), 160.0, 0.45, t * 1.4, 1.0);
 	col += skyfx_starLayer(skyfx_rotY(d, 2.1), 340.0, 0.5, t * 0.8, 0.6);
-	return vec4(skyfx_tonemap(col), 0.86);
+	vec3 mapped = skyfx_tonemap(col);
+	float lum = dot(mapped, vec3(0.30, 0.50, 0.20));
+	return vec4(mapped, clamp(0.10 + lum * 1.5, 0.10, 0.75));
 }
 </script>
 <script type="x-shader/x-glsl" id="glsl-vanilla">
