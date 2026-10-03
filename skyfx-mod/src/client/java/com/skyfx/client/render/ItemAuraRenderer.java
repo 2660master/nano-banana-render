@@ -62,7 +62,7 @@ public final class ItemAuraRenderer {
 	private static @Nullable GpuTextureView maskColorView;
 	private static @Nullable GpuTextureView maskDepthView;
 	private static boolean reportedInvalid;
-	private static boolean reportedActive;
+	private static int reportedFrames;
 
 	private ItemAuraRenderer() {
 	}
@@ -86,9 +86,13 @@ public final class ItemAuraRenderer {
 			buffers.endBatch();
 			return;
 		}
-		if (!reportedActive) {
-			reportedActive = true;
-			SkyFXClient.LOGGER.info("SkyFX item aura active");
+		if (reportedFrames < 3) {
+			reportedFrames++;
+			int items = 0;
+			for (var collection : dispatcher.getSubmitNodeStorage().getSubmitsPerOrder().values()) {
+				items += collection.getItemSubmits().size();
+			}
+			SkyFXClient.LOGGER.info("SkyFX item aura active, {} item(s) in the mask pass, model view {}", items, RenderSystem.getModelViewMatrix());
 		}
 		RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
 		ensureMask(main.width, main.height);

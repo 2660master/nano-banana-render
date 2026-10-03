@@ -21,7 +21,7 @@ void main() {
     if (ColorModulator.a < 0.0) {
         // debug (-Dskyfx.debugItemMask=true): show the mask itself, magenta where it is empty
         float c = coverage(texCoord);
-        fragColor = vec4(mix(vec3(0.5, 0.0, 0.5), vec3(1.0), c), 0.35 + 0.65 * c);
+        fragColor = vec4(mix(vec3(0.5, 0.0, 0.5), vec3(1.0), c), 0.5 + 0.5 * c);
         return;
     }
     if (coverage(texCoord) > 0.5) {

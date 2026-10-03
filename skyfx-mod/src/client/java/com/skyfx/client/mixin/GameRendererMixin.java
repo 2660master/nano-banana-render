@@ -50,6 +50,9 @@ public abstract class GameRendererMixin {
 			} finally {
 				modelView.pushMatrix().set(handModelView);
 			}
+			if (Boolean.getBoolean("skyfx.debugItemMask")) {
+				return;
+			}
 		}
 		original.call(renderer, partialTick, poseStack, collector, player, light);
 	}
