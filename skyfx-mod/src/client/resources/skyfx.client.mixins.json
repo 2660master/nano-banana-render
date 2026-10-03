@@ -3,6 +3,9 @@
 	"package": "com.skyfx.client.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
+		"FogRendererMixin",
+		"LevelRendererMixin",
+		"SkyRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

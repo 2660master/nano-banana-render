@@ -1,0 +1,1304 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkyFX Preview</title>
+<meta name="description" content="Live preview van de SkyFX Fabric mod (Minecraft 1.21.11): 4 geanimeerde luchten, regenboog glint en een kleurbare block aura.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+	--panel: rgba(10, 11, 18, 0.78);
+	--panel-line: rgba(255, 255, 255, 0.10);
+	--text: #f4f4f8;
+	--muted: #a9abc0;
+	--accent: #7cf7c5;
+	--btn-top: #7b7b7b;
+	--btn-bottom: #5b5b5b;
+	--btn-sel-top: #4f9e66;
+	--btn-sel-bottom: #357448;
+	--focus: #ffffff;
+	--danger: #ff8a8a;
+}
+* { box-sizing: border-box; }
+html, body {
+	margin: 0;
+	height: 100%;
+	overflow: hidden;
+	background: #05060a;
+	color: var(--text);
+	font-family: 'Pixelify Sans', ui-rounded, 'Segoe UI', system-ui, sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+#scene {
+	position: fixed;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	display: block;
+	cursor: grab;
+	touch-action: none;
+}
+#scene.dragging { cursor: grabbing; }
+
+/* ---------- HUD ---------- */
+#hud {
+	position: fixed;
+	right: 16px;
+	top: 14px;
+	text-align: right;
+	pointer-events: none;
+	text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+}
+#hud .brand { font-size: 22px; font-weight: 600; letter-spacing: 0.5px; }
+#hud .brand span { display: block; font-size: 13px; font-weight: 400; color: var(--muted); }
+#hud .hint { margin-top: 6px; font-size: 13px; color: var(--muted); }
+#hud .now { margin-top: 10px; font-size: 15px; }
+#hud .now b { color: var(--accent); font-weight: 600; }
+#fps { margin-top: 4px; font-size: 12px; color: var(--muted); }
+kbd {
+	font-family: inherit;
+	padding: 0 5px;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	border-bottom-width: 2px;
+	border-radius: 3px;
+	background: rgba(0, 0, 0, 0.35);
+}
+#error {
+	position: fixed;
+	left: 50%;
+	top: 40%;
+	transform: translate(-50%, -50%);
+	max-width: min(560px, calc(100% - 32px));
+	padding: 18px 20px;
+	background: var(--panel);
+	border: 2px solid #000;
+	display: none;
+	white-space: pre-wrap;
+	font-size: 14px;
+}
+
+/* ---------- Minecraft style widgets ---------- */
+.mc-btn {
+	font: inherit;
+	font-size: 15px;
+	color: #fff;
+	text-shadow: 2px 2px 0 #3a3a3a;
+	background: linear-gradient(var(--btn-top), var(--btn-bottom));
+	border: 2px solid #000;
+	box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.30), inset -2px -3px 0 rgba(0, 0, 0, 0.35);
+	padding: 7px 12px;
+	cursor: pointer;
+	min-height: 36px;
+	line-height: 1.1;
+}
+.mc-btn:hover, .mc-btn:focus-visible { border-color: var(--focus); outline: none; }
+.mc-btn.selected { background: linear-gradient(var(--btn-sel-top), var(--btn-sel-bottom)); }
+.mc-btn:disabled { color: #9a9a9a; background: #2b2b2b; cursor: not-allowed; text-shadow: none; border-color: #000; }
+
+.mc-slider {
+	position: relative;
+	height: 36px;
+	border: 2px solid #000;
+	background: #2a2a2a;
+	box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.45);
+}
+.mc-slider:hover, .mc-slider:focus-within { border-color: var(--focus); }
+.mc-slider input {
+	-webkit-appearance: none;
+	appearance: none;
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	background: transparent;
+	cursor: pointer;
+}
+.mc-slider input:focus { outline: none; }
+.mc-slider input::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	width: 14px;
+	height: 32px;
+	background: linear-gradient(#c6c6c6, #8d8d8d);
+	border: 2px solid #000;
+	box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.5);
+}
+.mc-slider input::-moz-range-thumb {
+	width: 10px;
+	height: 28px;
+	background: linear-gradient(#c6c6c6, #8d8d8d);
+	border: 2px solid #000;
+	border-radius: 0;
+}
+.mc-slider span {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	pointer-events: none;
+	font-size: 15px;
+	text-shadow: 2px 2px 0 #222;
+}
+
+/* ---------- Menu panel ---------- */
+#menuToggle {
+	position: fixed;
+	left: 16px;
+	top: 14px;
+	z-index: 3;
+	display: none;
+}
+#menu {
+	position: fixed;
+	left: 16px;
+	top: 14px;
+	bottom: 14px;
+	width: 420px;
+	max-width: calc(100% - 32px);
+	display: flex;
+	flex-direction: column;
+	background: var(--panel);
+	-webkit-backdrop-filter: blur(10px);
+	backdrop-filter: blur(10px);
+	border: 2px solid #000;
+	box-shadow: inset 0 0 0 2px var(--panel-line), 0 12px 40px rgba(0, 0, 0, 0.45);
+	z-index: 2;
+}
+#menu.hidden { display: none; }
+.panel-head { padding: 14px 16px 6px; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.panel-head h1 { margin: 0; font-size: 26px; font-weight: 600; text-shadow: 2px 2px 0 #000; }
+.panel-head h1 span { color: var(--accent); }
+.panel-head p { margin: 0; font-size: 13px; color: var(--muted); }
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 6px 16px 10px; }
+.tab-body { flex: 1; overflow-y: auto; padding: 4px 16px 12px; display: none; }
+.tab-body.active { display: block; }
+.tab-body h2 { font-size: 14px; font-weight: 400; color: var(--muted); margin: 14px 0 8px; text-transform: uppercase; letter-spacing: 1px; }
+.stack { display: grid; gap: 8px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.note { font-size: 13px; color: var(--muted); line-height: 1.45; margin: 10px 0 0; }
+.panel-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px 16px 14px; border-top: 1px solid var(--panel-line); }
+
+.sky-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sky-tile {
+	position: relative;
+	padding: 0;
+	border: 2px solid #000;
+	background: #111;
+	cursor: pointer;
+	text-align: left;
+	color: #fff;
+	font: inherit;
+	overflow: hidden;
+	aspect-ratio: 16 / 9;
+}
+.sky-tile canvas, .sky-tile .thumb { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.sky-tile .label {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	padding: 14px 8px 5px;
+	font-size: 15px;
+	text-shadow: 2px 2px 0 #000;
+	background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+}
+.sky-tile:hover, .sky-tile:focus-visible { border-color: var(--focus); outline: none; }
+.sky-tile.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.sky-tile.selected .label::after { content: ' ✔'; color: var(--accent); }
+.sky-tile.wide { grid-column: span 2; aspect-ratio: 32 / 7; }
+
+.glint-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.glint-card { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; padding: 10px; min-height: 74px; }
+.glint-card .chip { width: 100%; height: 10px; border: 2px solid #000; }
+.glint-card small { color: #ddd; font-size: 12px; text-shadow: 1px 1px 0 #222; }
+#glintPreview { width: 100%; aspect-ratio: 2 / 1; display: block; border: 2px solid #000; background: radial-gradient(circle at 50% 40%, #2c2d3d, #12131b); image-rendering: pixelated; }
+
+.color-row { display: grid; grid-template-columns: 52px 1fr; gap: 8px; align-items: stretch; }
+.color-row input[type=color] { width: 52px; height: 36px; padding: 0; border: 2px solid #000; background: none; cursor: pointer; }
+.hex {
+	font: inherit;
+	font-size: 15px;
+	color: #fff;
+	background: #000;
+	border: 2px solid #a0a0a0;
+	padding: 6px 10px;
+	min-height: 36px;
+	width: 100%;
+}
+.hex:focus { border-color: var(--focus); outline: none; }
+.hex.bad { border-color: var(--danger); }
+.swatches { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.swatches button { aspect-ratio: 1; border: 2px solid #000; cursor: pointer; padding: 0; }
+.swatches button:hover, .swatches button:focus-visible { border-color: var(--focus); outline: none; }
+
+@media (max-width: 720px) {
+	#menuToggle { display: block; }
+	#menu { top: 60px; left: 16px; right: 16px; width: auto; }
+	#hud .hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.sky-tile { transition: none; }
+}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="3D preview van de gekozen lucht met een zwevend eiland"></canvas>
+
+<div id="hud">
+	<div class="brand">SkyFX <span>Preview · Minecraft 1.21.11 · Fabric</span></div>
+	<div class="hint">Sleep = rondkijken · Scroll = zoom · <kbd>K</kbd> = menu</div>
+	<div class="now">Lucht: <b id="nowSky">-</b> · Glint: <b id="nowGlint">-</b></div>
+	<div id="fps"></div>
+</div>
+<div id="error"></div>
+
+<button id="menuToggle" class="mc-btn" type="button">☰ SkyFX menu</button>
+
+<div id="menu" role="dialog" aria-label="SkyFX instellingen">
+	<div class="panel-head">
+		<h1>Sky<span>FX</span></h1>
+		<p>Zelfde menu als in-game (<kbd>K</kbd>)</p>
+	</div>
+	<div class="tabs" role="tablist">
+		<button class="mc-btn tab" type="button" data-tab="sky">Luchten</button>
+		<button class="mc-btn tab" type="button" data-tab="glint">Glints</button>
+		<button class="mc-btn tab" type="button" data-tab="aura">Block Aura</button>
+	</div>
+
+	<section class="tab-body" id="tab-sky">
+		<div class="sky-grid" id="skyGrid"></div>
+		<h2>Animatie</h2>
+		<div class="stack">
+			<div class="mc-slider"><input id="speed" type="range" min="0" max="300" step="5"><span></span></div>
+			<div class="mc-slider"><input id="brightness" type="range" min="50" max="150" step="5"><span></span></div>
+			<button class="mc-btn" type="button" id="auroraPalette"></button>
+		</div>
+		<h2>Wereld</h2>
+		<div class="stack">
+			<button class="mc-btn" type="button" id="hideClouds"></button>
+			<button class="mc-btn" type="button" id="matchFog"></button>
+		</div>
+		<p class="note">Alle luchten zijn 100% procedureel en geanimeerd met shaders: precies dezelfde GLSL-code draait in de mod.</p>
+	</section>
+
+	<section class="tab-body" id="tab-glint">
+		<canvas id="glintPreview" width="512" height="256" aria-label="Voorbeeld van de gekozen glint op een diamanten zwaard"></canvas>
+		<h2>Kies een glint</h2>
+		<div class="glint-cards" id="glintCards"></div>
+		<p class="note">In Minecraft wisselt SkyFX automatisch het ingebouwde glint resource pack en herlaadt het de textures. De glint werkt op alle betoverde items, boeken en armor.</p>
+	</section>
+
+	<section class="tab-body" id="tab-aura">
+		<div class="stack">
+			<button class="mc-btn" type="button" id="auraOn"></button>
+		</div>
+		<h2>Kleur</h2>
+		<div class="stack">
+			<div class="color-row">
+				<input type="color" id="auraColor" aria-label="Aura kleur">
+				<input class="hex" id="auraHex" maxlength="7" spellcheck="false" aria-label="Hex kleurcode">
+			</div>
+			<div class="swatches" id="swatches"></div>
+			<button class="mc-btn" type="button" id="auraRainbow"></button>
+		</div>
+		<h2>Effect</h2>
+		<div class="stack">
+			<div class="mc-slider"><input id="auraPulse" type="range" min="0" max="300" step="5"><span></span></div>
+			<div class="mc-slider"><input id="auraGlow" type="range" min="1" max="10" step="1"><span></span></div>
+			<div class="mc-slider"><input id="auraFill" type="range" min="0" max="60" step="2"><span></span></div>
+		</div>
+		<p class="note">Beweeg je muis over een blok: de aura volgt het blok waar je naar kijkt, net als de block-outline in Minecraft. Werkt op elk blok.</p>
+	</section>
+
+	<div class="panel-foot">
+		<button class="mc-btn" type="button" id="reset">Standaard</button>
+		<button class="mc-btn" type="button" id="done">Klaar</button>
+	</div>
+</div>
+
+<!-- Shader code below is inlined from the mod by preview/build-preview.mjs -->
+<script type="x-shader/x-glsl" id="glsl-common">/*@include skyfx_common.glsl*/</script>
+<script type="x-shader/x-glsl" id="glsl-aurora">/*@include sky_aurora.glsl*/</script>
+<script type="x-shader/x-glsl" id="glsl-galaxy">/*@include sky_galaxy.glsl*/</script>
+<script type="x-shader/x-glsl" id="glsl-anime">/*@include sky_anime.glsl*/</script>
+<script type="x-shader/x-glsl" id="glsl-storm">/*@include sky_storm.glsl*/</script>
+<script type="x-shader/x-glsl" id="glsl-glint">/*@include skyfx_glint.glsl*/</script>
+<script type="x-shader/x-glsl" id="glsl-vanilla">
+// Preview-only stand-in for the untouched vanilla sky (the mod simply leaves Minecraft's own sky alone).
+vec3 skyfx_vanilla(vec3 dir, float t) {
+	vec3 top = vec3(0.47, 0.65, 1.00);
+	vec3 fog = vec3(0.75, 0.85, 1.00);
+	vec3 col = mix(fog, top, smoothstep(-0.02, 0.45, dir.y));
+	vec3 sun = normalize(vec3(-0.45, 0.70, 0.35));
+	vec3 e1 = normalize(cross(sun, vec3(0.0, 0.0, 1.0)));
+	vec3 e2 = cross(e1, sun);
+	vec2 local = vec2(dot(dir, e1), dot(dir, e2));
+	if (dot(dir, sun) > 0.0) {
+		float square = max(abs(local.x), abs(local.y));
+		col = mix(col, vec3(1.0, 1.0, 0.85), 1.0 - smoothstep(0.050, 0.054, square));
+		col += vec3(1.0, 0.95, 0.7) * exp(-square * 10.0) * 0.2;
+	}
+	if (dir.y > 0.01) {
+		vec2 uv = dir.xz / dir.y * 0.9 + vec2(t * 0.02, 0.0);
+		vec2 cell = floor(uv * 3.0);
+		float cloud = step(0.78, skyfx_hash12(cell)) * smoothstep(0.02, 0.2, dir.y);
+		col = mix(col, vec3(1.0), cloud * 0.85);
+	}
+	return col;
+}
+</script>
+
+<script>
+'use strict';
+(() => {
+const $ = (selector) => document.querySelector(selector);
+const glsl = (id) => document.getElementById(id).textContent;
+
+// ---------------------------------------------------------------------------------------------
+// Settings - mirrors config/skyfx.json of the mod
+// ---------------------------------------------------------------------------------------------
+const DEFAULTS = {
+	sky: 'aurora',
+	speed: 100,
+	brightness: 100,
+	auroraPalette: 0,
+	hideClouds: true,
+	matchFog: true,
+	glint: 'rainbow',
+	auraOn: true,
+	auraColor: '#7cf7c5',
+	auraRainbow: false,
+	auraPulse: 100,
+	auraGlow: 5,
+	auraFill: 18,
+	tab: 'sky',
+};
+const STORE_KEY = 'skyfx-preview-v1';
+let settings = { ...DEFAULTS };
+try {
+	settings = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(STORE_KEY) || '{}') };
+} catch (e) { /* storage unavailable */ }
+function saveSettings() {
+	try { localStorage.setItem(STORE_KEY, JSON.stringify(settings)); } catch (e) { /* ignore */ }
+}
+
+const SKIES = [
+	{ id: 'vanilla', name: 'Vanilla', call: 'skyfx_vanilla(dir, uParams.x)', fog: [0.75, 0.85, 1.0], light: [1.0, 1.0, 0.98], amb: [0.45, 0.50, 0.60], hero: [0.3, 0.35, 0.9] },
+	{ id: 'aurora', name: 'Noorderlicht', call: 'skyfx_aurora(dir, uParams.x, uParams.z)', fog: [0.030, 0.085, 0.140], light: [0.30, 0.44, 0.48], amb: [0.07, 0.17, 0.13], hero: [0.15, 0.32, 0.94] },
+	{ id: 'galaxy', name: 'Galaxy', call: 'skyfx_galaxy(dir, uParams.x)', fog: [0.03, 0.02, 0.07], light: [0.55, 0.48, 0.72], amb: [0.09, 0.06, 0.16], hero: [0.55, 0.30, -0.78] },
+	{ id: 'anime', name: 'Anime Wolken', call: 'skyfx_anime(dir, uParams.x)', fog: [0.72, 0.89, 1.0], light: [1.05, 1.0, 0.95], amb: [0.42, 0.52, 0.72], hero: [-0.62, 0.18, 0.76] },
+	{ id: 'storm', name: 'Stormzee', call: 'skyfx_storm(dir, uParams.x)', fog: [0.09, 0.16, 0.26], light: [0.36, 0.44, 0.58], amb: [0.07, 0.10, 0.17], hero: [-0.25, 0.20, -0.95] },
+];
+const PALETTES = ['Groen', 'Roze', 'Blauw', 'Regenboog'];
+const GLINTS = [
+	{ id: 'vanilla', name: 'Vanilla', desc: 'Klassiek paars', chip: 'linear-gradient(90deg,#5b2a8f,#b07cff,#5b2a8f)' },
+	{ id: 'rainbow', name: 'Regenboog', desc: 'Bewegende regenboog', chip: 'linear-gradient(90deg,#ff4d4d,#ffb84d,#fff04d,#4dff88,#4dc3ff,#9b6bff,#ff4dd2)' },
+	{ id: 'soon1', name: 'Binnenkort…', desc: 'Meer glints komen eraan', chip: '#2a2a2a', locked: true },
+	{ id: 'soon2', name: 'Binnenkort…', desc: 'Meer glints komen eraan', chip: '#2a2a2a', locked: true },
+];
+const SWATCHES = ['#7cf7c5', '#ff4d6d', '#ffb02e', '#fff36b', '#4dff88', '#4dc3ff', '#9b6bff', '#ffffff'];
+
+// ---------------------------------------------------------------------------------------------
+// Small math helpers (column-major 4x4 matrices)
+// ---------------------------------------------------------------------------------------------
+const M4 = {
+	perspective(fovy, aspect, near, far) {
+		const f = 1 / Math.tan(fovy / 2), nf = 1 / (near - far);
+		return [f / aspect, 0, 0, 0, 0, f, 0, 0, 0, 0, (far + near) * nf, -1, 0, 0, 2 * far * near * nf, 0];
+	},
+	lookDir(eye, fwd, up) {
+		const z = norm([-fwd[0], -fwd[1], -fwd[2]]);
+		const x = norm(cross(up, z));
+		const y = cross(z, x);
+		return [x[0], y[0], z[0], 0, x[1], y[1], z[1], 0, x[2], y[2], z[2], 0,
+			-dot(x, eye), -dot(y, eye), -dot(z, eye), 1];
+	},
+	mul(a, b) {
+		const o = new Array(16);
+		for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) {
+			let s = 0;
+			for (let k = 0; k < 4; k++) s += a[k * 4 + r] * b[c * 4 + k];
+			o[c * 4 + r] = s;
+		}
+		return o;
+	},
+	invert(m) {
+		const inv = new Array(16);
+		inv[0] = m[5] * m[10] * m[15] - m[5] * m[11] * m[14] - m[9] * m[6] * m[15] + m[9] * m[7] * m[14] + m[13] * m[6] * m[11] - m[13] * m[7] * m[10];
+		inv[4] = -m[4] * m[10] * m[15] + m[4] * m[11] * m[14] + m[8] * m[6] * m[15] - m[8] * m[7] * m[14] - m[12] * m[6] * m[11] + m[12] * m[7] * m[10];
+		inv[8] = m[4] * m[9] * m[15] - m[4] * m[11] * m[13] - m[8] * m[5] * m[15] + m[8] * m[7] * m[13] + m[12] * m[5] * m[11] - m[12] * m[7] * m[9];
+		inv[12] = -m[4] * m[9] * m[14] + m[4] * m[10] * m[13] + m[8] * m[5] * m[14] - m[8] * m[6] * m[13] - m[12] * m[5] * m[10] + m[12] * m[6] * m[9];
+		inv[1] = -m[1] * m[10] * m[15] + m[1] * m[11] * m[14] + m[9] * m[2] * m[15] - m[9] * m[3] * m[14] - m[13] * m[2] * m[11] + m[13] * m[3] * m[10];
+		inv[5] = m[0] * m[10] * m[15] - m[0] * m[11] * m[14] - m[8] * m[2] * m[15] + m[8] * m[3] * m[14] + m[12] * m[2] * m[11] - m[12] * m[3] * m[10];
+		inv[9] = -m[0] * m[9] * m[15] + m[0] * m[11] * m[13] + m[8] * m[1] * m[15] - m[8] * m[3] * m[13] - m[12] * m[1] * m[11] + m[12] * m[3] * m[9];
+		inv[13] = m[0] * m[9] * m[14] - m[0] * m[10] * m[13] - m[8] * m[1] * m[14] + m[8] * m[2] * m[13] + m[12] * m[1] * m[10] - m[12] * m[2] * m[9];
+		inv[2] = m[1] * m[6] * m[15] - m[1] * m[7] * m[14] - m[5] * m[2] * m[15] + m[5] * m[3] * m[14] + m[13] * m[2] * m[7] - m[13] * m[3] * m[6];
+		inv[6] = -m[0] * m[6] * m[15] + m[0] * m[7] * m[14] + m[4] * m[2] * m[15] - m[4] * m[3] * m[14] - m[12] * m[2] * m[7] + m[12] * m[3] * m[6];
+		inv[10] = m[0] * m[5] * m[15] - m[0] * m[7] * m[13] - m[4] * m[1] * m[15] + m[4] * m[3] * m[13] + m[12] * m[1] * m[7] - m[12] * m[3] * m[5];
+		inv[14] = -m[0] * m[5] * m[14] + m[0] * m[6] * m[13] + m[4] * m[1] * m[14] - m[4] * m[2] * m[13] - m[12] * m[1] * m[6] + m[12] * m[2] * m[5];
+		inv[3] = -m[1] * m[6] * m[11] + m[1] * m[7] * m[10] + m[5] * m[2] * m[11] - m[5] * m[3] * m[10] - m[9] * m[2] * m[7] + m[9] * m[3] * m[6];
+		inv[7] = m[0] * m[6] * m[11] - m[0] * m[7] * m[10] - m[4] * m[2] * m[11] + m[4] * m[3] * m[10] + m[8] * m[2] * m[7] - m[8] * m[3] * m[6];
+		inv[11] = -m[0] * m[5] * m[11] + m[0] * m[7] * m[9] + m[4] * m[1] * m[11] - m[4] * m[3] * m[9] - m[8] * m[1] * m[7] + m[8] * m[3] * m[5];
+		inv[15] = m[0] * m[5] * m[10] - m[0] * m[6] * m[9] - m[4] * m[1] * m[10] + m[4] * m[2] * m[9] + m[8] * m[1] * m[6] - m[8] * m[2] * m[5];
+		const det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
+		return inv.map((v) => v / det);
+	},
+};
+function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+function norm(a) { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; }
+function hexToRgb(hex) {
+	const n = parseInt(hex.slice(1), 16);
+	return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+}
+function hsv(h, s, v) {
+	const f = (n) => { const k = (n + h * 6) % 6; return v - v * s * Math.max(0, Math.min(k, 4 - k, 1)); };
+	return [f(5), f(3), f(1)];
+}
+function mulberry32(seed) {
+	return () => {
+		seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+		let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+		t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+	};
+}
+
+// ---------------------------------------------------------------------------------------------
+// WebGL helpers
+// ---------------------------------------------------------------------------------------------
+function fail(message) {
+	const box = $('#error');
+	box.textContent = message;
+	box.style.display = 'block';
+}
+function makeProgram(gl, vsSource, fsSource) {
+	const compile = (type, source) => {
+		const shader = gl.createShader(type);
+		gl.shaderSource(shader, source);
+		gl.compileShader(shader);
+		if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+			throw new Error(gl.getShaderInfoLog(shader) || 'shader compile error');
+		}
+		return shader;
+	};
+	const program = gl.createProgram();
+	gl.attachShader(program, compile(gl.VERTEX_SHADER, vsSource));
+	gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fsSource));
+	gl.linkProgram(program);
+	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program) || 'link error');
+	const uniforms = {};
+	const count = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+	for (let i = 0; i < count; i++) {
+		const info = gl.getActiveUniform(program, i);
+		uniforms[info.name] = gl.getUniformLocation(program, info.name);
+	}
+	return { program, uniforms };
+}
+function makeTexture(gl, canvasOrImage, { repeat = false, linear = false } = {}) {
+	const tex = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, tex);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvasOrImage);
+	const filter = linear ? gl.LINEAR : gl.NEAREST;
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+	const wrap = repeat ? gl.REPEAT : gl.CLAMP_TO_EDGE;
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrap);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap);
+	return tex;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Procedural pixel-art textures
+// ---------------------------------------------------------------------------------------------
+const TILE = 16, ATLAS_TILES = 4;
+const T = { GRASS_TOP: 0, GRASS_SIDE: 1, DIRT: 2, STONE: 3, LOG_SIDE: 4, LOG_TOP: 5, LEAVES: 6, DIAMOND: 7, AMETHYST: 8, GLOW: 9 };
+function buildAtlas() {
+	const size = TILE * ATLAS_TILES;
+	const c = document.createElement('canvas');
+	c.width = c.height = size;
+	const ctx = c.getContext('2d');
+	const img = ctx.createImageData(size, size);
+	const rnd = mulberry32(1337);
+	const put = (tile, x, y, rgb, a = 255) => {
+		const px = (tile % ATLAS_TILES) * TILE + x, py = Math.floor(tile / ATLAS_TILES) * TILE + y;
+		const o = (py * size + px) * 4;
+		img.data[o] = rgb[0]; img.data[o + 1] = rgb[1]; img.data[o + 2] = rgb[2]; img.data[o + 3] = a;
+	};
+	const vary = (rgb, amount) => { const v = (rnd() - 0.5) * amount; return rgb.map((c) => Math.max(0, Math.min(255, Math.round(c + v)))); };
+	for (let y = 0; y < TILE; y++) for (let x = 0; x < TILE; x++) {
+		put(T.GRASS_TOP, x, y, vary([95, 159, 53], 46));
+		put(T.DIRT, x, y, vary([134, 96, 67], 40));
+		const grassDepth = 3 + ((x * 7) % 3 === 0 ? 1 : 0);
+		put(T.GRASS_SIDE, x, y, y < grassDepth ? vary([95, 159, 53], 40) : vary([134, 96, 67], 40));
+		put(T.STONE, x, y, vary(rnd() < 0.12 ? [100, 100, 100] : [128, 128, 128], 30));
+		const stripe = (x % 4 === 0) ? -26 : 0;
+		put(T.LOG_SIDE, x, y, vary([104 + stripe, 82 + stripe, 50 + stripe], 22));
+		const ring = Math.max(Math.abs(x - 7.5), Math.abs(y - 7.5));
+		put(T.LOG_TOP, x, y, ring > 6.5 ? vary([104, 82, 50], 20) : vary(Math.floor(ring) % 2 ? [176, 143, 88] : [150, 118, 70], 18));
+		put(T.LEAVES, x, y, rnd() < 0.18 ? [28, 64, 22] : vary([58, 122, 40], 50));
+		const ore = rnd() < 0.16 && x > 1 && x < 14 && y > 1 && y < 14;
+		put(T.DIAMOND, x, y, ore ? vary([90, 230, 220], 40) : vary([128, 128, 128], 30));
+		const facet = ((x + y) % 5 === 0) || ((x - y + 16) % 6 === 0);
+		put(T.AMETHYST, x, y, facet ? vary([206, 160, 255], 30) : vary([140, 90, 200], 36));
+		put(T.GLOW, x, y, rnd() < 0.35 ? vary([255, 230, 140], 30) : vary([190, 140, 70], 40));
+	}
+	ctx.putImageData(img, 0, 0);
+	return c;
+}
+
+function buildSword() {
+	const c = document.createElement('canvas');
+	c.width = c.height = 16;
+	const ctx = c.getContext('2d');
+	const cells = new Map();
+	const set = (x, y, color) => cells.set(x + ',' + y, color);
+	for (let y = 1; y <= 9; y++) set(15 - y, y, '#d3fff7');
+	for (let y = 2; y <= 9; y++) set(16 - y, y, '#3fd6c6');
+	for (let x = 3; x <= 7; x++) set(x, x + 5, '#1d8f86');
+	for (let y = 11; y <= 13; y++) set(15 - y, y, '#6b4a2b');
+	set(1, 14, '#3fd6c6');
+	set(14, 1, '#d3fff7');
+	const filled = new Set(cells.keys());
+	for (const k of filled) {
+		const [x, y] = k.split(',').map(Number);
+		for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+			const nk = (x + dx) + ',' + (y + dy);
+			if (!filled.has(nk) && x + dx >= 0 && x + dx < 16 && y + dy >= 0 && y + dy < 16) cells.set(nk, cells.get(nk) || '#0c2f2c');
+		}
+	}
+	for (const [k, color] of cells) {
+		const [x, y] = k.split(',').map(Number);
+		ctx.fillStyle = color;
+		ctx.fillRect(x, y, 1, 1);
+	}
+	return c;
+}
+
+// Tileable purple streak texture, standing in for Mojang's enchanted_glint_item.png.
+function buildGlintTexture() {
+	const size = 64;
+	const c = document.createElement('canvas');
+	c.width = c.height = size;
+	const ctx = c.getContext('2d');
+	const img = ctx.createImageData(size, size);
+	const rnd = mulberry32(42);
+	const lattice = 8;
+	const grid = Array.from({ length: lattice * lattice }, () => rnd());
+	const value = (x, y) => {
+		const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+		const g = (i, j) => grid[((j % lattice + lattice) % lattice) * lattice + ((i % lattice + lattice) % lattice)];
+		const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+		return (g(xi, yi) * (1 - u) + g(xi + 1, yi) * u) * (1 - v) + (g(xi, yi + 1) * (1 - u) + g(xi + 1, yi + 1) * u) * v;
+	};
+	for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+		const n = value(x / size * lattice, y / size * 2) * 0.7 + value(x / size * lattice * 2 + 3, y / size * 4) * 0.3;
+		const s = Math.pow(Math.max(0, n - 0.25) / 0.75, 1.6);
+		const o = (y * size + x) * 4;
+		img.data[o] = Math.round(140 * s); img.data[o + 1] = Math.round(70 * s); img.data[o + 2] = Math.round(230 * s); img.data[o + 3] = 255;
+	}
+	ctx.putImageData(img, 0, 0);
+	return c;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Item + glint renderer (used in the scene and in the glint tab)
+// ---------------------------------------------------------------------------------------------
+const ITEM_VS = `#version 300 es
+in vec2 aPos;
+uniform vec4 uRect;
+uniform float uAngle;
+out vec2 vUv;
+void main() {
+	vUv = vec2(aPos.x, 1.0 - aPos.y);
+	vec2 p = (aPos - 0.5) * uRect.zw;
+	float c = cos(uAngle), s = sin(uAngle);
+	p = vec2(c * p.x - s * p.y, s * p.x + c * p.y);
+	gl_Position = vec4(uRect.xy + p, 0.0, 1.0);
+}`;
+const ITEM_FS = `#version 300 es
+precision highp float;
+uniform sampler2D uItem;
+uniform sampler2D uGlintTex;
+uniform mat3 uGlintMat;
+uniform float uMode;
+uniform float uGameTime;
+in vec2 vUv;
+out vec4 fragColor;
+${glsl('glsl-common')}
+${glsl('glsl-glint')}
+void main() {
+	vec4 item = texture(uItem, vUv);
+	if (item.a < 0.1) discard;
+	vec2 guv = (uGlintMat * vec3(vUv, 1.0)).xy;
+	vec3 tex = texture(uGlintTex, guv).rgb;
+	vec3 glint = uMode < 0.5 ? vec3(0.0) : (uMode < 1.5 ? tex : skyfx_rainbowGlint(tex, guv, uGameTime));
+	// Minecraft blends the glint with (SRC_COLOR, ONE): the added light is glint * glint
+	fragColor = vec4(item.rgb + glint * glint, 1.0);
+}`;
+function createItemRenderer(gl) {
+	const prog = makeProgram(gl, ITEM_VS, ITEM_FS);
+	const quad = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), gl.STATIC_DRAW);
+	const vao = gl.createVertexArray();
+	gl.bindVertexArray(vao);
+	const loc = gl.getAttribLocation(prog.program, 'aPos');
+	gl.enableVertexAttribArray(loc);
+	gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+	gl.bindVertexArray(null);
+	const swordTex = makeTexture(gl, buildSword());
+	const glintTex = makeTexture(gl, buildGlintTexture(), { repeat: true, linear: true });
+	return {
+		draw(rect, angle, timeMs, mode, scale = 8) {
+			// Same transform as vanilla's TextureTransform.setupGlintTexturing
+			const l = timeMs * 8.0;
+			const f = (l % 110000) / 110000, g = (l % 30000) / 30000;
+			const c = Math.cos(Math.PI / 18) * scale, s = Math.sin(Math.PI / 18) * scale;
+			const gameTime = ((timeMs / 50) % 24000) / 24000;
+			gl.useProgram(prog.program);
+			gl.uniform4fv(prog.uniforms.uRect, rect);
+			gl.uniform1f(prog.uniforms.uAngle, angle);
+			gl.uniformMatrix3fv(prog.uniforms.uGlintMat, false, [c, s, 0, -s, c, 0, -f, g, 1]);
+			gl.uniform1f(prog.uniforms.uMode, mode);
+			gl.uniform1f(prog.uniforms.uGameTime, gameTime);
+			gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, swordTex);
+			gl.uniform1i(prog.uniforms.uItem, 0);
+			gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, glintTex);
+			gl.uniform1i(prog.uniforms.uGlintTex, 1);
+			gl.bindVertexArray(vao);
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+			gl.bindVertexArray(null);
+		},
+	};
+}
+const glintModeIndex = () => (settings.glint === 'rainbow' ? 2 : 1);
+
+// ---------------------------------------------------------------------------------------------
+// Main scene
+// ---------------------------------------------------------------------------------------------
+const canvas = $('#scene');
+const gl = canvas.getContext('webgl2', { antialias: true, alpha: false });
+if (!gl) {
+	fail('WebGL2 wordt niet ondersteund in deze browser. Probeer een recente Chrome, Edge of Firefox.');
+	return;
+}
+
+// Sky ---------------------------------------------------------------------------------------
+const SKY_VS = `#version 300 es
+in vec2 aPos;
+out vec2 vNdc;
+void main() { vNdc = aPos; gl_Position = vec4(aPos, 0.0, 1.0); }`;
+function skyFragment(sky) {
+	const body = sky.id === 'vanilla' ? glsl('glsl-vanilla') : glsl('glsl-' + sky.id);
+	return `#version 300 es
+precision highp float;
+uniform mat4 uInvViewProj;
+uniform vec4 uParams;
+in vec2 vNdc;
+out vec4 fragColor;
+${glsl('glsl-common')}
+${body}
+void main() {
+	vec4 p = uInvViewProj * vec4(vNdc, 1.0, 1.0);
+	vec3 dir = normalize(p.xyz / p.w);
+	vec3 col = ${sky.call} * uParams.y;
+	fragColor = vec4(skyfx_tonemap(col), 1.0);
+}`;
+}
+const skyPrograms = {};
+function skyProgram(id) {
+	if (!skyPrograms[id]) {
+		const sky = SKIES.find((s) => s.id === id);
+		try {
+			skyPrograms[id] = makeProgram(gl, SKY_VS, skyFragment(sky));
+		} catch (e) {
+			fail('Shader fout in lucht "' + sky.name + '":\n' + e.message);
+			throw e;
+		}
+	}
+	return skyPrograms[id];
+}
+const triBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, triBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+const triVao = gl.createVertexArray();
+gl.bindVertexArray(triVao);
+gl.enableVertexAttribArray(0);
+gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+gl.bindVertexArray(null);
+function drawSky(id, invViewProj, time) {
+	const prog = skyProgram(id);
+	gl.useProgram(prog.program);
+	gl.uniformMatrix4fv(prog.uniforms.uInvViewProj, false, invViewProj);
+	gl.uniform4f(prog.uniforms.uParams, time, settings.brightness / 100, settings.auroraPalette, 0);
+	gl.bindVertexArray(triVao);
+	gl.drawArrays(gl.TRIANGLES, 0, 3);
+	gl.bindVertexArray(null);
+}
+
+// Voxel island --------------------------------------------------------------------------------
+const blocks = new Map();
+const bkey = (x, y, z) => x + ',' + y + ',' + z;
+(function buildIsland() {
+	const rnd = mulberry32(7);
+	const R = 6;
+	for (let x = -R; x <= R; x++) for (let z = -R; z <= R; z++) {
+		const d = Math.hypot(x, z) + (rnd() - 0.5) * 0.9;
+		if (d > R + 0.2) continue;
+		const top = (d < 2.6 ? 1 : 0) + (x > 1 && z < -1 && d < 4.5 ? 1 : 0);
+		const depth = Math.max(1, Math.floor((R - d) * 0.95 + rnd() * 1.5));
+		for (let y = top - depth; y <= top; y++) {
+			let type = y === top ? 'grass' : (y >= top - 2 ? 'dirt' : 'stone');
+			if (type === 'stone' && rnd() < 0.10) type = 'diamond';
+			blocks.set(bkey(x, y, z), type);
+		}
+	}
+	const tx = -2, tz = 1, base = 2;
+	for (let y = base; y < base + 4; y++) blocks.set(bkey(tx, y, tz), 'log');
+	for (let x = -2; x <= 2; x++) for (let y = 0; y <= 2; y++) for (let z = -2; z <= 2; z++) {
+		if (Math.abs(x) + Math.abs(z) + y > 4 || (x === 0 && z === 0 && y < 2)) continue;
+		const k = bkey(tx + x, base + 2 + y, tz + z);
+		if (!blocks.has(k)) blocks.set(k, 'leaves');
+	}
+	blocks.set(bkey(3, 2, -3), 'amethyst');
+	blocks.set(bkey(2, 2, 3), 'glow');
+})();
+const FACES = [
+	{ n: [0, 1, 0], shade: 1.0, v: [[0, 1, 0], [0, 1, 1], [1, 1, 1], [1, 1, 0]] },
+	{ n: [0, -1, 0], shade: 0.5, v: [[0, 0, 0], [1, 0, 0], [1, 0, 1], [0, 0, 1]] },
+	{ n: [1, 0, 0], shade: 0.75, v: [[1, 1, 1], [1, 0, 1], [1, 0, 0], [1, 1, 0]] },
+	{ n: [-1, 0, 0], shade: 0.75, v: [[0, 1, 0], [0, 0, 0], [0, 0, 1], [0, 1, 1]] },
+	{ n: [0, 0, 1], shade: 0.86, v: [[0, 1, 1], [0, 0, 1], [1, 0, 1], [1, 1, 1]] },
+	{ n: [0, 0, -1], shade: 0.62, v: [[1, 1, 0], [1, 0, 0], [0, 0, 0], [0, 1, 0]] },
+];
+function tileFor(type, face) {
+	switch (type) {
+		case 'grass': return face === 0 ? T.GRASS_TOP : (face === 1 ? T.DIRT : T.GRASS_SIDE);
+		case 'dirt': return T.DIRT;
+		case 'log': return face < 2 ? T.LOG_TOP : T.LOG_SIDE;
+		case 'leaves': return T.LEAVES;
+		case 'diamond': return T.DIAMOND;
+		case 'amethyst': return T.AMETHYST;
+		case 'glow': return T.GLOW;
+		default: return T.STONE;
+	}
+}
+const blockMesh = (() => {
+	const verts = [], idx = [];
+	for (const [k, type] of blocks) {
+		const [x, y, z] = k.split(',').map(Number);
+		FACES.forEach((face, fi) => {
+			const nb = blocks.get(bkey(x + face.n[0], y + face.n[1], z + face.n[2]));
+			if (nb && nb !== 'leaves') return;
+			const tile = tileFor(type, fi);
+			const u0 = (tile % ATLAS_TILES) / ATLAS_TILES, v0 = Math.floor(tile / ATLAS_TILES) / ATLAS_TILES;
+			const span = 1 / ATLAS_TILES, inset = 0.0008;
+			const uvs = [[u0 + inset, v0 + inset], [u0 + inset, v0 + span - inset], [u0 + span - inset, v0 + span - inset], [u0 + span - inset, v0 + inset]];
+			const emissive = type === 'glow' ? 1.6 : 0.0;
+			const base = verts.length / 7;
+			face.v.forEach((c, i) => verts.push(x + c[0], y + c[1], z + c[2], uvs[i][0], uvs[i][1], face.shade, emissive));
+			idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+		});
+	}
+	const vao = gl.createVertexArray();
+	gl.bindVertexArray(vao);
+	const vb = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW);
+	const ib = gl.createBuffer();
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(idx), gl.STATIC_DRAW);
+	gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 28, 0);
+	gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 28, 12);
+	gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 28, 20);
+	gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3, 1, gl.FLOAT, false, 28, 24);
+	gl.bindVertexArray(null);
+	return { vao, count: idx.length };
+})();
+const BLOCK_VS = `#version 300 es
+layout(location = 0) in vec3 aPos;
+layout(location = 1) in vec2 aUv;
+layout(location = 2) in float aShade;
+layout(location = 3) in float aEmissive;
+uniform mat4 uViewProj;
+uniform vec3 uCam;
+out vec2 vUv;
+out float vShade;
+out float vEmissive;
+out float vDist;
+void main() {
+	vUv = aUv; vShade = aShade; vEmissive = aEmissive;
+	vDist = length(aPos - uCam);
+	gl_Position = uViewProj * vec4(aPos, 1.0);
+}`;
+const BLOCK_FS = `#version 300 es
+precision highp float;
+uniform sampler2D uAtlas;
+uniform vec3 uLight;
+uniform vec3 uAmb;
+uniform vec3 uFog;
+in vec2 vUv;
+in float vShade;
+in float vEmissive;
+in float vDist;
+out vec4 fragColor;
+void main() {
+	vec4 c = texture(uAtlas, vUv);
+	vec3 col = c.rgb * (uLight * vShade + uAmb) + c.rgb * vEmissive;
+	col = mix(col, uFog, smoothstep(16.0, 46.0, vDist) * 0.7);
+	fragColor = vec4(col, 1.0);
+}`;
+const blockProg = makeProgram(gl, BLOCK_VS, BLOCK_FS);
+const atlasTex = makeTexture(gl, buildAtlas());
+
+// Block aura -----------------------------------------------------------------------------------
+const AURA_VS = `#version 300 es
+layout(location = 0) in vec3 aPos;
+layout(location = 1) in vec2 aFace;
+uniform mat4 uViewProj;
+uniform vec3 uCenter;
+uniform float uScale;
+out vec2 vFace;
+void main() {
+	vFace = aFace;
+	gl_Position = uViewProj * vec4(uCenter + aPos * uScale, 1.0);
+}`;
+const AURA_FS = `#version 300 es
+precision highp float;
+uniform vec3 uColor;
+uniform float uFill;
+uniform float uGlow;
+uniform float uHalo;
+in vec2 vFace;
+out vec4 fragColor;
+void main() {
+	float e = min(min(vFace.x, 1.0 - vFace.x), min(vFace.y, 1.0 - vFace.y));
+	float px = fwidth(e);
+	float a;
+	if (uHalo > 0.5) {
+		a = exp(-e / (0.014 * uGlow)) * 0.6;
+	} else {
+		float line = 1.0 - smoothstep(0.0, 0.008 + px * 1.5, e);
+		a = line + exp(-e / (0.009 * uGlow)) * 0.7 + uFill;
+	}
+	fragColor = vec4(uColor * a, 1.0);
+}`;
+const auraProg = makeProgram(gl, AURA_VS, AURA_FS);
+const auraMesh = (() => {
+	const verts = [], idx = [];
+	FACES.forEach((face) => {
+		const base = verts.length / 5;
+		const uv = [[0, 0], [0, 1], [1, 1], [1, 0]];
+		face.v.forEach((c, i) => verts.push(c[0] - 0.5, c[1] - 0.5, c[2] - 0.5, uv[i][0], uv[i][1]));
+		idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+	});
+	const vao = gl.createVertexArray();
+	gl.bindVertexArray(vao);
+	const vb = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW);
+	const ib = gl.createBuffer();
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(idx), gl.STATIC_DRAW);
+	gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 20, 0);
+	gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 20, 12);
+	gl.bindVertexArray(null);
+	return { vao, count: idx.length };
+})();
+function auraColorNow(seconds) {
+	if (settings.auraRainbow) return hsv((seconds * 0.12) % 1, 0.8, 1.0);
+	return hexToRgb(settings.auraColor);
+}
+
+const itemRenderer = createItemRenderer(gl);
+
+// Camera & picking ----------------------------------------------------------------------------
+const camera = { yaw: 0, pitch: 0.28, radius: 13, target: [0, 1.0, 0], height: 2.6, fov: 1.05 };
+let targetView = null;
+function heroView(sky) {
+	const h = norm(sky.hero);
+	targetView = { yaw: Math.atan2(h[0], h[2]), pitch: Math.asin(h[1]) };
+}
+function viewDir() {
+	const cp = Math.cos(camera.pitch);
+	return [Math.sin(camera.yaw) * cp, Math.sin(camera.pitch), Math.cos(camera.yaw) * cp];
+}
+// The camera circles the island at a fixed height and looks out along (yaw, pitch), so the island sits
+// in the lower part of the frame and the sky fills the rest.
+function eyePos() {
+	const orbit = camera.yaw - 0.42;
+	return [camera.target[0] - Math.sin(orbit) * camera.radius, camera.target[1] + camera.height, camera.target[2] - Math.cos(orbit) * camera.radius];
+}
+let pointer = null;
+let lastInteraction = -1e9;
+let dragging = false;
+let lastPos = null;
+canvas.addEventListener('pointerdown', (e) => {
+	dragging = true;
+	lastPos = [e.clientX, e.clientY];
+	canvas.classList.add('dragging');
+	canvas.setPointerCapture(e.pointerId);
+	lastInteraction = performance.now();
+	targetView = null;
+});
+canvas.addEventListener('pointermove', (e) => {
+	pointer = [e.clientX, e.clientY];
+	if (!dragging) return;
+	camera.yaw -= (e.clientX - lastPos[0]) * 0.005;
+	camera.pitch = Math.max(-0.75, Math.min(0.95, camera.pitch + (e.clientY - lastPos[1]) * 0.004));
+	lastPos = [e.clientX, e.clientY];
+	lastInteraction = performance.now();
+});
+const endDrag = () => { dragging = false; canvas.classList.remove('dragging'); };
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);
+canvas.addEventListener('pointerleave', () => { pointer = null; });
+canvas.addEventListener('wheel', (e) => {
+	e.preventDefault();
+	camera.radius = Math.max(6, Math.min(24, camera.radius * Math.exp(e.deltaY * 0.001)));
+	lastInteraction = performance.now();
+}, { passive: false });
+
+function pickBlock(eye, dir) {
+	let x = Math.floor(eye[0]), y = Math.floor(eye[1]), z = Math.floor(eye[2]);
+	const step = dir.map((d) => (d > 0 ? 1 : -1));
+	const tDelta = dir.map((d) => Math.abs(1 / (d || 1e-9)));
+	const pos = [x, y, z];
+	const tMax = dir.map((d, i) => {
+		const edge = d > 0 ? pos[i] + 1 - eye[i] : eye[i] - pos[i];
+		return edge * tDelta[i];
+	});
+	for (let i = 0; i < 200; i++) {
+		if (blocks.has(bkey(pos[0], pos[1], pos[2]))) return pos.slice();
+		const axis = tMax[0] < tMax[1] ? (tMax[0] < tMax[2] ? 0 : 2) : (tMax[1] < tMax[2] ? 1 : 2);
+		if (tMax[axis] > 60) return null;
+		pos[axis] += step[axis];
+		tMax[axis] += tDelta[axis];
+	}
+	return null;
+}
+
+// Thumbnails -----------------------------------------------------------------------------------
+function renderThumbnails() {
+	const w = 256, h = 144;
+	const fbo = gl.createFramebuffer();
+	const tex = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, tex);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+	gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+	const pixels = new Uint8Array(w * h * 4);
+	const proj = M4.perspective(1.15, w / h, 0.05, 100);
+	for (const sky of SKIES) {
+		const tile = document.querySelector('.sky-tile[data-sky="' + sky.id + '"] canvas');
+		if (!tile) continue;
+		const fwd = norm([sky.hero[0], sky.hero[1] + 0.12, sky.hero[2]]);
+		const view = M4.lookDir([0, 0, 0], fwd, [0, 1, 0]);
+		gl.viewport(0, 0, w, h);
+		gl.disable(gl.DEPTH_TEST);
+		drawSky(sky.id, M4.invert(M4.mul(proj, view)), 40.0);
+		gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+		const ctx = tile.getContext('2d');
+		const img = ctx.createImageData(w, h);
+		for (let y = 0; y < h; y++) img.data.set(pixels.subarray((h - 1 - y) * w * 4, (h - y) * w * 4), y * w * 4);
+		ctx.putImageData(img, 0, 0);
+	}
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	gl.deleteFramebuffer(fbo);
+	gl.deleteTexture(tex);
+}
+
+// Frame loop -----------------------------------------------------------------------------------
+let skyTime = 20.0;
+let lastFrame = performance.now();
+let renderScale = Math.min(window.devicePixelRatio || 1, 1.5);
+let fpsSmooth = 60, frames = 0, fpsTimer = 0, slowFrames = 0;
+function resize() {
+	const w = Math.max(1, Math.round(canvas.clientWidth * renderScale));
+	const h = Math.max(1, Math.round(canvas.clientHeight * renderScale));
+	if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+}
+function frame(now) {
+	const dt = Math.min(0.1, (now - lastFrame) / 1000);
+	lastFrame = now;
+	skyTime = (skyTime + dt * settings.speed / 100) % 7200;
+	resize();
+
+	// idle auto-pan / easing towards the hero view of the selected sky
+	if (targetView) {
+		let dy = targetView.yaw - camera.yaw;
+		dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+		camera.yaw += dy * Math.min(1, dt * 2.2);
+		camera.pitch += (targetView.pitch - camera.pitch) * Math.min(1, dt * 2.2);
+		if (Math.abs(dy) < 0.002 && Math.abs(targetView.pitch - camera.pitch) < 0.002) targetView = null;
+	} else if (!dragging && now - lastInteraction > 6000) {
+		camera.yaw += dt * 0.04;
+	}
+
+	const sky = SKIES.find((s) => s.id === settings.sky) || SKIES[0];
+	const aspect = canvas.width / canvas.height;
+	const proj = M4.perspective(camera.fov, aspect, 0.05, 200);
+	const dir = viewDir();
+	const eye = eyePos();
+	const rotView = M4.lookDir([0, 0, 0], dir, [0, 1, 0]);
+	const view = M4.lookDir(eye, dir, [0, 1, 0]);
+	const viewProj = M4.mul(proj, view);
+
+	gl.viewport(0, 0, canvas.width, canvas.height);
+	gl.disable(gl.DEPTH_TEST);
+	gl.disable(gl.BLEND);
+	drawSky(sky.id, M4.invert(M4.mul(proj, rotView)), skyTime);
+
+	gl.clear(gl.DEPTH_BUFFER_BIT);
+	gl.enable(gl.DEPTH_TEST);
+	gl.depthFunc(gl.LEQUAL);
+	gl.enable(gl.CULL_FACE);
+	gl.useProgram(blockProg.program);
+	gl.uniformMatrix4fv(blockProg.uniforms.uViewProj, false, viewProj);
+	gl.uniform3fv(blockProg.uniforms.uCam, eye);
+	gl.uniform3fv(blockProg.uniforms.uLight, sky.light);
+	gl.uniform3fv(blockProg.uniforms.uAmb, sky.amb);
+	gl.uniform3fv(blockProg.uniforms.uFog, settings.matchFog ? sky.fog : SKIES[0].fog);
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, atlasTex);
+	gl.uniform1i(blockProg.uniforms.uAtlas, 0);
+	gl.bindVertexArray(blockMesh.vao);
+	gl.drawElements(gl.TRIANGLES, blockMesh.count, gl.UNSIGNED_INT, 0);
+	gl.bindVertexArray(null);
+	gl.disable(gl.CULL_FACE);
+
+	if (settings.auraOn) {
+		let target = null;
+		if (pointer && !dragging) {
+			const rect = canvas.getBoundingClientRect();
+			const nx = ((pointer[0] - rect.left) / rect.width) * 2 - 1;
+			const ny = 1 - ((pointer[1] - rect.top) / rect.height) * 2;
+			const inv = M4.invert(viewProj);
+			const far = [0, 1, 2].map((i) => inv[i] * nx + inv[4 + i] * ny + inv[8 + i] + inv[12 + i]);
+			const w = inv[3] * nx + inv[7] * ny + inv[11] + inv[15];
+			const point = far.map((v) => v / w);
+			target = pickBlock(eye, norm([point[0] - eye[0], point[1] - eye[1], point[2] - eye[2]]));
+		}
+		if (!target) target = [0, 1, 0];
+		const seconds = now / 1000;
+		const pulse = 0.72 + 0.28 * Math.sin(seconds * 3.0 * settings.auraPulse / 100);
+		const color = auraColorNow(seconds).map((c) => c * pulse);
+		gl.enable(gl.BLEND);
+		gl.blendFunc(gl.ONE, gl.ONE);
+		gl.depthMask(false);
+		gl.useProgram(auraProg.program);
+		gl.uniformMatrix4fv(auraProg.uniforms.uViewProj, false, viewProj);
+		gl.uniform3f(auraProg.uniforms.uCenter, target[0] + 0.5, target[1] + 0.5, target[2] + 0.5);
+		gl.uniform3fv(auraProg.uniforms.uColor, color);
+		gl.uniform1f(auraProg.uniforms.uFill, settings.auraFill / 100);
+		gl.uniform1f(auraProg.uniforms.uGlow, settings.auraGlow);
+		gl.bindVertexArray(auraMesh.vao);
+		gl.uniform1f(auraProg.uniforms.uHalo, 0);
+		gl.uniform1f(auraProg.uniforms.uScale, 1.004);
+		gl.drawElements(gl.TRIANGLES, auraMesh.count, gl.UNSIGNED_SHORT, 0);
+		gl.uniform1f(auraProg.uniforms.uHalo, 1);
+		gl.uniform1f(auraProg.uniforms.uScale, 1.0 + 0.012 * settings.auraGlow);
+		gl.drawElements(gl.TRIANGLES, auraMesh.count, gl.UNSIGNED_SHORT, 0);
+		gl.bindVertexArray(null);
+		gl.depthMask(true);
+		gl.disable(gl.BLEND);
+	}
+
+	// held item with the selected glint, bottom right like the first-person hand
+	gl.disable(gl.DEPTH_TEST);
+	const size = Math.min(canvas.width, canvas.height) * 0.30;
+	const bob = Math.sin(now / 700) * 0.01;
+	itemRenderer.draw([1 - (size * 0.75) / canvas.width * 2, -1 + (size * 0.72) / canvas.height * 2 + bob, size / canvas.width * 2, size / canvas.height * 2], 0.15, now, glintModeIndex());
+
+	// fps + adaptive resolution
+	frames++;
+	fpsTimer += dt;
+	if (fpsTimer >= 0.5) {
+		fpsSmooth = frames / fpsTimer;
+		frames = 0; fpsTimer = 0;
+		$('#fps').textContent = Math.round(fpsSmooth) + ' fps · ' + Math.round(renderScale * 100) + '% resolutie';
+		if (fpsSmooth < 32 && renderScale > 0.5) { slowFrames++; if (slowFrames >= 2) { renderScale = Math.max(0.5, renderScale * 0.85); slowFrames = 0; } }
+		else slowFrames = 0;
+	}
+	requestAnimationFrame(frame);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Glint preview canvas (second context)
+// ---------------------------------------------------------------------------------------------
+let glintPreview = null;
+(function setupGlintPreview() {
+	const c = $('#glintPreview');
+	const g2 = c.getContext('webgl2', { antialias: false, alpha: true, premultipliedAlpha: false });
+	if (!g2) return;
+	const renderer = createItemRenderer(g2);
+	glintPreview = (now) => {
+		if (!$('#tab-glint').classList.contains('active') || $('#menu').classList.contains('hidden')) return;
+		g2.viewport(0, 0, c.width, c.height);
+		g2.clearColor(0, 0, 0, 0);
+		g2.clear(g2.COLOR_BUFFER_BIT);
+		renderer.draw([-0.5, 0.0, 0.85, 1.7], 0.0, now, 1);
+		renderer.draw([0.5, 0.0, 0.85, 1.7], 0.0, now, 2);
+	};
+	const loop = (now) => { glintPreview(now); requestAnimationFrame(loop); };
+	requestAnimationFrame(loop);
+})();
+
+// ---------------------------------------------------------------------------------------------
+// Menu UI (mirrors the in-game SkyFX screen)
+// ---------------------------------------------------------------------------------------------
+const menu = $('#menu');
+function setTab(tab) {
+	settings.tab = tab;
+	document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('selected', b.dataset.tab === tab));
+	document.querySelectorAll('.tab-body').forEach((s) => s.classList.toggle('active', s.id === 'tab-' + tab));
+	saveSettings();
+}
+document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab)));
+
+const skyGrid = $('#skyGrid');
+SKIES.forEach((sky) => {
+	const tile = document.createElement('button');
+	tile.type = 'button';
+	tile.className = 'sky-tile' + (sky.id === 'vanilla' ? ' wide' : '');
+	tile.dataset.sky = sky.id;
+	tile.innerHTML = '<canvas width="256" height="144"></canvas><span class="label"></span>';
+	tile.querySelector('.label').textContent = sky.name;
+	tile.addEventListener('click', () => {
+		settings.sky = sky.id;
+		heroView(sky);
+		refresh();
+	});
+	skyGrid.appendChild(tile);
+});
+const vanillaTile = skyGrid.querySelector('[data-sky="vanilla"]');
+skyGrid.appendChild(vanillaTile);
+
+const glintCards = $('#glintCards');
+GLINTS.forEach((glint) => {
+	const card = document.createElement('button');
+	card.type = 'button';
+	card.className = 'mc-btn glint-card';
+	card.dataset.glint = glint.id;
+	card.disabled = !!glint.locked;
+	card.innerHTML = '<span class="name"></span><span class="chip"></span><small></small>';
+	card.querySelector('.name').textContent = glint.name;
+	card.querySelector('.chip').style.background = glint.chip;
+	card.querySelector('small').textContent = glint.desc;
+	card.addEventListener('click', () => { settings.glint = glint.id; refresh(); });
+	glintCards.appendChild(card);
+});
+
+const swatches = $('#swatches');
+SWATCHES.forEach((hex) => {
+	const b = document.createElement('button');
+	b.type = 'button';
+	b.style.background = hex;
+	b.title = hex;
+	b.setAttribute('aria-label', 'Kleur ' + hex);
+	b.addEventListener('click', () => { settings.auraColor = hex; settings.auraRainbow = false; refresh(); });
+	swatches.appendChild(b);
+});
+
+function bindSlider(id, format) {
+	const input = $('#' + id);
+	const label = input.nextElementSibling;
+	input.addEventListener('input', () => {
+		settings[id] = Number(input.value);
+		label.textContent = format(settings[id]);
+		saveSettings();
+	});
+	return () => { input.value = settings[id]; label.textContent = format(settings[id]); };
+}
+function bindToggle(id, format, onChange) {
+	const btn = $('#' + id);
+	btn.addEventListener('click', () => { onChange(); refresh(); });
+	return () => { btn.textContent = format(); };
+}
+const onOff = (v) => (v ? 'AAN' : 'UIT');
+const refreshers = [
+	bindSlider('speed', (v) => 'Animatiesnelheid: ' + v + '%'),
+	bindSlider('brightness', (v) => 'Helderheid: ' + v + '%'),
+	bindSlider('auraPulse', (v) => 'Pulse snelheid: ' + (v === 0 ? 'UIT' : v + '%')),
+	bindSlider('auraGlow', (v) => 'Gloed dikte: ' + v),
+	bindSlider('auraFill', (v) => 'Vulling: ' + v + '%'),
+	bindToggle('auroraPalette', () => 'Noorderlicht kleur: ' + PALETTES[settings.auroraPalette], () => { settings.auroraPalette = (settings.auroraPalette + 1) % PALETTES.length; }),
+	bindToggle('hideClouds', () => 'Vanilla wolken verbergen: ' + onOff(settings.hideClouds), () => { settings.hideClouds = !settings.hideClouds; }),
+	bindToggle('matchFog', () => 'Mist past bij de lucht: ' + onOff(settings.matchFog), () => { settings.matchFog = !settings.matchFog; }),
+	bindToggle('auraOn', () => 'Block Aura: ' + onOff(settings.auraOn), () => { settings.auraOn = !settings.auraOn; }),
+	bindToggle('auraRainbow', () => 'Regenboog modus: ' + onOff(settings.auraRainbow), () => { settings.auraRainbow = !settings.auraRainbow; }),
+];
+const colorInput = $('#auraColor');
+const hexInput = $('#auraHex');
+colorInput.addEventListener('input', () => { settings.auraColor = colorInput.value; settings.auraRainbow = false; refresh(); });
+hexInput.addEventListener('input', () => {
+	let v = hexInput.value.trim();
+	if (!v.startsWith('#')) v = '#' + v;
+	const ok = /^#[0-9a-fA-F]{6}$/.test(v);
+	hexInput.classList.toggle('bad', !ok);
+	if (ok) { settings.auraColor = v.toLowerCase(); settings.auraRainbow = false; colorInput.value = settings.auraColor; saveSettings(); refreshers.forEach((r) => r()); }
+});
+
+function refresh() {
+	refreshers.forEach((r) => r());
+	document.querySelectorAll('.sky-tile').forEach((t) => t.classList.toggle('selected', t.dataset.sky === settings.sky));
+	document.querySelectorAll('.glint-card').forEach((c) => c.classList.toggle('selected', c.dataset.glint === settings.glint));
+	$('#auroraPalette').style.display = settings.sky === 'aurora' ? '' : 'none';
+	colorInput.value = settings.auraColor;
+	if (document.activeElement !== hexInput) { hexInput.value = settings.auraColor; hexInput.classList.remove('bad'); }
+	const sky = SKIES.find((s) => s.id === settings.sky);
+	$('#nowSky').textContent = sky ? sky.name : '-';
+	$('#nowGlint').textContent = (GLINTS.find((g) => g.id === settings.glint) || GLINTS[0]).name;
+	saveSettings();
+}
+
+function toggleMenu(show) {
+	const visible = show !== undefined ? show : menu.classList.contains('hidden');
+	menu.classList.toggle('hidden', !visible);
+}
+$('#done').addEventListener('click', () => toggleMenu(false));
+$('#menuToggle').addEventListener('click', () => toggleMenu());
+$('#reset').addEventListener('click', () => {
+	const tab = settings.tab;
+	settings = { ...DEFAULTS, tab };
+	heroView(SKIES.find((s) => s.id === settings.sky));
+	refresh();
+});
+window.addEventListener('keydown', (e) => {
+	if (e.target instanceof HTMLInputElement && e.target.type !== 'range') return;
+	if (e.key === 'k' || e.key === 'K') toggleMenu();
+	if (e.key === 'Escape') toggleMenu(false);
+});
+if (window.matchMedia('(max-width: 720px)').matches) menu.classList.add('hidden');
+
+// ---------------------------------------------------------------------------------------------
+// Start
+// ---------------------------------------------------------------------------------------------
+setTab(settings.tab || 'sky');
+refresh();
+const startSky = SKIES.find((s) => s.id === settings.sky) || SKIES[1];
+const h0 = norm(startSky.hero);
+camera.yaw = Math.atan2(h0[0], h0[2]);
+camera.pitch = Math.asin(h0[1]);
+try {
+	skyProgram(startSky.id);
+} catch (e) {
+	return;
+}
+requestAnimationFrame(frame);
+// compile the other skies after the first frames and draw their menu thumbnails
+setTimeout(() => {
+	try {
+		SKIES.forEach((s) => skyProgram(s.id));
+		renderThumbnails();
+	} catch (e) { /* error already shown */ }
+}, 350);
+})();
+</script>
+</body>
+</html>

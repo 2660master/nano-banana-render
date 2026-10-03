@@ -1,0 +1,2129 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkyFX Preview</title>
+<meta name="description" content="Live preview van de SkyFX Fabric mod (Minecraft 1.21.11): 4 geanimeerde luchten, regenboog glint en een kleurbare block aura.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+	--panel: rgba(10, 11, 18, 0.78);
+	--panel-line: rgba(255, 255, 255, 0.10);
+	--text: #f4f4f8;
+	--muted: #a9abc0;
+	--accent: #7cf7c5;
+	--btn-top: #7b7b7b;
+	--btn-bottom: #5b5b5b;
+	--btn-sel-top: #4f9e66;
+	--btn-sel-bottom: #357448;
+	--focus: #ffffff;
+	--danger: #ff8a8a;
+}
+* { box-sizing: border-box; }
+html, body {
+	margin: 0;
+	height: 100%;
+	overflow: hidden;
+	background: #05060a;
+	color: var(--text);
+	font-family: 'Pixelify Sans', ui-rounded, 'Segoe UI', system-ui, sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+#scene {
+	position: fixed;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	display: block;
+	cursor: grab;
+	touch-action: none;
+}
+#scene.dragging { cursor: grabbing; }
+
+/* ---------- HUD ---------- */
+#hud {
+	position: fixed;
+	right: 16px;
+	top: 14px;
+	text-align: right;
+	pointer-events: none;
+	text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+}
+#hud .brand { font-size: 22px; font-weight: 600; letter-spacing: 0.5px; }
+#hud .brand span { display: block; font-size: 13px; font-weight: 400; color: var(--muted); }
+#hud .hint { margin-top: 6px; font-size: 13px; color: var(--muted); }
+#hud .now { margin-top: 10px; font-size: 15px; }
+#hud .now b { color: var(--accent); font-weight: 600; }
+#fps { margin-top: 4px; font-size: 12px; color: var(--muted); }
+kbd {
+	font-family: inherit;
+	padding: 0 5px;
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	border-bottom-width: 2px;
+	border-radius: 3px;
+	background: rgba(0, 0, 0, 0.35);
+}
+#error {
+	position: fixed;
+	left: 50%;
+	top: 40%;
+	transform: translate(-50%, -50%);
+	max-width: min(560px, calc(100% - 32px));
+	padding: 18px 20px;
+	background: var(--panel);
+	border: 2px solid #000;
+	display: none;
+	white-space: pre-wrap;
+	font-size: 14px;
+}
+
+/* ---------- Minecraft style widgets ---------- */
+.mc-btn {
+	font: inherit;
+	font-size: 15px;
+	color: #fff;
+	text-shadow: 2px 2px 0 #3a3a3a;
+	background: linear-gradient(var(--btn-top), var(--btn-bottom));
+	border: 2px solid #000;
+	box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.30), inset -2px -3px 0 rgba(0, 0, 0, 0.35);
+	padding: 7px 12px;
+	cursor: pointer;
+	min-height: 36px;
+	line-height: 1.1;
+}
+.mc-btn:hover, .mc-btn:focus-visible { border-color: var(--focus); outline: none; }
+.mc-btn.selected { background: linear-gradient(var(--btn-sel-top), var(--btn-sel-bottom)); }
+.mc-btn:disabled { color: #9a9a9a; background: #2b2b2b; cursor: not-allowed; text-shadow: none; border-color: #000; }
+
+.mc-slider {
+	position: relative;
+	height: 36px;
+	border: 2px solid #000;
+	background: #2a2a2a;
+	box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.45);
+}
+.mc-slider:hover, .mc-slider:focus-within { border-color: var(--focus); }
+.mc-slider input {
+	-webkit-appearance: none;
+	appearance: none;
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	background: transparent;
+	cursor: pointer;
+}
+.mc-slider input:focus { outline: none; }
+.mc-slider input::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	width: 14px;
+	height: 32px;
+	background: linear-gradient(#c6c6c6, #8d8d8d);
+	border: 2px solid #000;
+	box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.5);
+}
+.mc-slider input::-moz-range-thumb {
+	width: 10px;
+	height: 28px;
+	background: linear-gradient(#c6c6c6, #8d8d8d);
+	border: 2px solid #000;
+	border-radius: 0;
+}
+.mc-slider span {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	pointer-events: none;
+	font-size: 15px;
+	text-shadow: 2px 2px 0 #222;
+}
+
+/* ---------- Menu panel ---------- */
+#menuToggle {
+	position: fixed;
+	left: 16px;
+	top: 14px;
+	z-index: 3;
+	display: none;
+}
+#menu {
+	position: fixed;
+	left: 16px;
+	top: 14px;
+	bottom: 14px;
+	width: 420px;
+	max-width: calc(100% - 32px);
+	display: flex;
+	flex-direction: column;
+	background: var(--panel);
+	-webkit-backdrop-filter: blur(10px);
+	backdrop-filter: blur(10px);
+	border: 2px solid #000;
+	box-shadow: inset 0 0 0 2px var(--panel-line), 0 12px 40px rgba(0, 0, 0, 0.45);
+	z-index: 2;
+}
+#menu.hidden { display: none; }
+.panel-head { padding: 14px 16px 6px; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.panel-head h1 { margin: 0; font-size: 26px; font-weight: 600; text-shadow: 2px 2px 0 #000; }
+.panel-head h1 span { color: var(--accent); }
+.panel-head p { margin: 0; font-size: 13px; color: var(--muted); }
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 6px 16px 10px; }
+.tab-body { flex: 1; overflow-y: auto; padding: 4px 16px 12px; display: none; }
+.tab-body.active { display: block; }
+.tab-body h2 { font-size: 14px; font-weight: 400; color: var(--muted); margin: 14px 0 8px; text-transform: uppercase; letter-spacing: 1px; }
+.stack { display: grid; gap: 8px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.note { font-size: 13px; color: var(--muted); line-height: 1.45; margin: 10px 0 0; }
+.panel-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px 16px 14px; border-top: 1px solid var(--panel-line); }
+
+.sky-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sky-tile {
+	position: relative;
+	padding: 0;
+	border: 2px solid #000;
+	background: #111;
+	cursor: pointer;
+	text-align: left;
+	color: #fff;
+	font: inherit;
+	overflow: hidden;
+	aspect-ratio: 16 / 9;
+}
+.sky-tile canvas, .sky-tile .thumb { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.sky-tile .label {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	padding: 14px 8px 5px;
+	font-size: 15px;
+	text-shadow: 2px 2px 0 #000;
+	background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+}
+.sky-tile:hover, .sky-tile:focus-visible { border-color: var(--focus); outline: none; }
+.sky-tile.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.sky-tile.selected .label::after { content: ' ✔'; color: var(--accent); }
+.sky-tile.wide { grid-column: span 2; aspect-ratio: 32 / 7; }
+
+.glint-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.glint-card { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; padding: 10px; min-height: 74px; }
+.glint-card .chip { width: 100%; height: 10px; border: 2px solid #000; }
+.glint-card small { color: #ddd; font-size: 12px; text-shadow: 1px 1px 0 #222; }
+#glintPreview { width: 100%; aspect-ratio: 2 / 1; display: block; border: 2px solid #000; background: radial-gradient(circle at 50% 40%, #2c2d3d, #12131b); image-rendering: pixelated; }
+
+.color-row { display: grid; grid-template-columns: 52px 1fr; gap: 8px; align-items: stretch; }
+.color-row input[type=color] { width: 52px; height: 36px; padding: 0; border: 2px solid #000; background: none; cursor: pointer; }
+.hex {
+	font: inherit;
+	font-size: 15px;
+	color: #fff;
+	background: #000;
+	border: 2px solid #a0a0a0;
+	padding: 6px 10px;
+	min-height: 36px;
+	width: 100%;
+}
+.hex:focus { border-color: var(--focus); outline: none; }
+.hex.bad { border-color: var(--danger); }
+.swatches { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.swatches button { aspect-ratio: 1; border: 2px solid #000; cursor: pointer; padding: 0; }
+.swatches button:hover, .swatches button:focus-visible { border-color: var(--focus); outline: none; }
+
+@media (max-width: 720px) {
+	#menuToggle { display: block; }
+	#menu { top: 60px; left: 16px; right: 16px; width: auto; }
+	#hud .hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.sky-tile { transition: none; }
+}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="3D preview van de gekozen lucht met een zwevend eiland"></canvas>
+
+<div id="hud">
+	<div class="brand">SkyFX <span>Preview · Minecraft 1.21.11 · Fabric</span></div>
+	<div class="hint">Sleep = rondkijken · Scroll = zoom · <kbd>K</kbd> = menu</div>
+	<div class="now">Lucht: <b id="nowSky">-</b> · Glint: <b id="nowGlint">-</b></div>
+	<div id="fps"></div>
+</div>
+<div id="error"></div>
+
+<button id="menuToggle" class="mc-btn" type="button">☰ SkyFX menu</button>
+
+<div id="menu" role="dialog" aria-label="SkyFX instellingen">
+	<div class="panel-head">
+		<h1>Sky<span>FX</span></h1>
+		<p>Zelfde menu als in-game (<kbd>K</kbd>)</p>
+	</div>
+	<div class="tabs" role="tablist">
+		<button class="mc-btn tab" type="button" data-tab="sky">Luchten</button>
+		<button class="mc-btn tab" type="button" data-tab="glint">Glints</button>
+		<button class="mc-btn tab" type="button" data-tab="aura">Block Aura</button>
+	</div>
+
+	<section class="tab-body" id="tab-sky">
+		<div class="sky-grid" id="skyGrid"></div>
+		<h2>Animatie</h2>
+		<div class="stack">
+			<div class="mc-slider"><input id="speed" type="range" min="0" max="300" step="5"><span></span></div>
+			<div class="mc-slider"><input id="brightness" type="range" min="50" max="150" step="5"><span></span></div>
+			<button class="mc-btn" type="button" id="auroraPalette"></button>
+		</div>
+		<h2>Wereld</h2>
+		<div class="stack">
+			<button class="mc-btn" type="button" id="hideClouds"></button>
+			<button class="mc-btn" type="button" id="matchFog"></button>
+		</div>
+		<p class="note">Alle luchten zijn 100% procedureel en geanimeerd met shaders: precies dezelfde GLSL-code draait in de mod.</p>
+	</section>
+
+	<section class="tab-body" id="tab-glint">
+		<canvas id="glintPreview" width="512" height="256" aria-label="Voorbeeld van de gekozen glint op een diamanten zwaard"></canvas>
+		<h2>Kies een glint</h2>
+		<div class="glint-cards" id="glintCards"></div>
+		<p class="note">In Minecraft wisselt SkyFX automatisch het ingebouwde glint resource pack en herlaadt het de textures. De glint werkt op alle betoverde items, boeken en armor.</p>
+	</section>
+
+	<section class="tab-body" id="tab-aura">
+		<div class="stack">
+			<button class="mc-btn" type="button" id="auraOn"></button>
+		</div>
+		<h2>Kleur</h2>
+		<div class="stack">
+			<div class="color-row">
+				<input type="color" id="auraColor" aria-label="Aura kleur">
+				<input class="hex" id="auraHex" maxlength="7" spellcheck="false" aria-label="Hex kleurcode">
+			</div>
+			<div class="swatches" id="swatches"></div>
+			<button class="mc-btn" type="button" id="auraRainbow"></button>
+		</div>
+		<h2>Effect</h2>
+		<div class="stack">
+			<div class="mc-slider"><input id="auraPulse" type="range" min="0" max="300" step="5"><span></span></div>
+			<div class="mc-slider"><input id="auraGlow" type="range" min="1" max="10" step="1"><span></span></div>
+			<div class="mc-slider"><input id="auraFill" type="range" min="0" max="60" step="2"><span></span></div>
+		</div>
+		<p class="note">Beweeg je muis over een blok: de aura volgt het blok waar je naar kijkt, net als de block-outline in Minecraft. Werkt op elk blok.</p>
+	</section>
+
+	<div class="panel-foot">
+		<button class="mc-btn" type="button" id="reset">Standaard</button>
+		<button class="mc-btn" type="button" id="done">Klaar</button>
+	</div>
+</div>
+
+<!-- Shader code below is inlined from the mod by preview/build-preview.mjs -->
+<script type="x-shader/x-glsl" id="glsl-common">// ---- skyfx_common.glsl (from the mod) ----
+// SkyFX shared shader library.
+//
+// This file is used by the in-game sky shaders AND by the HTML preview (preview/build-preview.mjs inlines it),
+// so it must stay valid GLSL 3.30 as well as GLSL ES 3.00: explicit float literals, no implicit int -> float,
+// and never call smoothstep() with edge0 >= edge1.
+
+const float SKYFX_PI = 3.14159265;
+const float SKYFX_TAU = 6.28318531;
+
+// Hash functions after Dave Hoskins, "Hash without Sine" (MIT).
+float skyfx_hash12(vec2 p) {
+	vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+	p3 += dot(p3, p3.yzx + 33.33);
+	return fract((p3.x + p3.y) * p3.z);
+}
+
+float skyfx_hash13(vec3 p3) {
+	p3 = fract(p3 * 0.1031);
+	p3 += dot(p3, p3.zyx + 31.32);
+	return fract((p3.x + p3.y) * p3.z);
+}
+
+vec3 skyfx_hash33(vec3 p3) {
+	p3 = fract(p3 * vec3(0.1031, 0.1030, 0.0973));
+	p3 += dot(p3, p3.yxz + 33.33);
+	return fract((p3.xxy + p3.yxx) * p3.zyx);
+}
+
+float skyfx_noise2(vec2 p) {
+	vec2 i = floor(p);
+	vec2 f = fract(p);
+	vec2 u = f * f * (3.0 - 2.0 * f);
+	float a = skyfx_hash12(i);
+	float b = skyfx_hash12(i + vec2(1.0, 0.0));
+	float c = skyfx_hash12(i + vec2(0.0, 1.0));
+	float d = skyfx_hash12(i + vec2(1.0, 1.0));
+	return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+float skyfx_noise3(vec3 p) {
+	vec3 i = floor(p);
+	vec3 f = fract(p);
+	vec3 u = f * f * (3.0 - 2.0 * f);
+	float n000 = skyfx_hash13(i);
+	float n100 = skyfx_hash13(i + vec3(1.0, 0.0, 0.0));
+	float n010 = skyfx_hash13(i + vec3(0.0, 1.0, 0.0));
+	float n110 = skyfx_hash13(i + vec3(1.0, 1.0, 0.0));
+	float n001 = skyfx_hash13(i + vec3(0.0, 0.0, 1.0));
+	float n101 = skyfx_hash13(i + vec3(1.0, 0.0, 1.0));
+	float n011 = skyfx_hash13(i + vec3(0.0, 1.0, 1.0));
+	float n111 = skyfx_hash13(i + vec3(1.0, 1.0, 1.0));
+	return mix(
+		mix(mix(n000, n100, u.x), mix(n010, n110, u.x), u.y),
+		mix(mix(n001, n101, u.x), mix(n011, n111, u.x), u.y),
+		u.z
+	);
+}
+
+float skyfx_fbm2(vec2 p, int octaves) {
+	float value = 0.0;
+	float amplitude = 0.5;
+	mat2 rot = mat2(0.8, -0.6, 0.6, 0.8);
+	for (int i = 0; i < 8; i++) {
+		if (i >= octaves) break;
+		value += amplitude * skyfx_noise2(p);
+		p = rot * p * 2.03 + vec2(17.1, 9.7);
+		amplitude *= 0.5;
+	}
+	return value;
+}
+
+float skyfx_fbm3(vec3 p, int octaves) {
+	float value = 0.0;
+	float amplitude = 0.5;
+	for (int i = 0; i < 8; i++) {
+		if (i >= octaves) break;
+		value += amplitude * skyfx_noise3(p);
+		p = vec3(p.y * 1.6 + p.z * 1.2, p.z * 1.6 - p.x * 1.2, p.x * 1.6 + p.y * 1.2) * 1.03 + vec3(5.2, 1.3, 7.7);
+		amplitude *= 0.5;
+	}
+	return value;
+}
+
+mat2 skyfx_rot(float a) {
+	float c = cos(a);
+	float s = sin(a);
+	return mat2(c, s, -s, c);
+}
+
+vec3 skyfx_rotY(vec3 v, float a) {
+	float c = cos(a);
+	float s = sin(a);
+	return vec3(c * v.x + s * v.z, v.y, -s * v.x + c * v.z);
+}
+
+vec3 skyfx_rotX(vec3 v, float a) {
+	float c = cos(a);
+	float s = sin(a);
+	return vec3(v.x, c * v.y - s * v.z, s * v.y + c * v.z);
+}
+
+// Rodrigues rotation of v around a unit axis.
+vec3 skyfx_rotAxis(vec3 v, vec3 axis, float a) {
+	float c = cos(a);
+	float s = sin(a);
+	return v * c + cross(axis, v) * s + axis * dot(axis, v) * (1.0 - c);
+}
+
+vec3 skyfx_hsv2rgb(vec3 c) {
+	vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0);
+	return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y);
+}
+
+// Soft shoulder: identity below 0.8, smooth roll-off above so bright cores never clip harshly.
+vec3 skyfx_tonemap(vec3 c) {
+	c = max(c, vec3(0.0));
+	vec3 over = max(c - 0.8, vec3(0.0));
+	return min(c, vec3(0.8)) + 0.2 * (1.0 - exp(-over / 0.2));
+}
+
+// One layer of twinkling stars on the unit sphere. Stars never shrink below ~1 pixel so they do not shimmer.
+vec3 skyfx_starLayer(vec3 dir, float scale, float density, float t, float brightness) {
+	vec3 p = dir * scale;
+	vec3 cell = floor(p);
+	vec3 f = fract(p) - 0.5;
+	vec3 h = skyfx_hash33(cell);
+	if (skyfx_hash13(cell * 1.37 + 11.0) > density) {
+		return vec3(0.0);
+	}
+	vec3 offset = (h - 0.5) * 0.7;
+	float d = length(f - offset);
+	float pixel = max(length(fwidth(p)), 1e-4);
+	float size = 0.03 + 0.09 * h.z * h.z * h.z;
+	float drawSize = max(size, pixel * 0.9);
+	float energy = (size * size) / (drawSize * drawSize);
+	float core = 1.0 - smoothstep(0.0, drawSize, d);
+	float glow = exp(-d * d / (drawSize * drawSize * 6.0)) * 0.25;
+	float twinkle = 0.6 + 0.4 * sin(t * (1.3 + 3.7 * h.x) + h.y * SKYFX_TAU);
+	vec3 tint = mix(vec3(0.62, 0.74, 1.0), vec3(1.0, 0.82, 0.62), h.y);
+	tint = mix(tint, vec3(1.0), 0.35);
+	return tint * (core + glow) * energy * twinkle * brightness * (0.6 + 1.6 * h.z);
+}
+
+vec3 skyfx_stars(vec3 dir, float t, float brightness) {
+	vec3 s = skyfx_starLayer(dir, 110.0, 0.22, t, 1.0);
+	s += skyfx_starLayer(skyfx_rotY(dir, 1.7), 260.0, 0.30, t * 1.3, 0.7);
+	s += skyfx_starLayer(skyfx_rotX(dir, 0.9), 520.0, 0.35, t * 0.8, 0.45);
+	return s * brightness;
+}
+
+// A few shooting stars that streak across the upper sky every couple of seconds.
+vec3 skyfx_meteors(vec3 dir, float t, float chance, vec3 color) {
+	vec3 acc = vec3(0.0);
+	for (int k = 0; k < 3; k++) {
+		float fk = float(k);
+		float period = 6.0 + fk * 2.7;
+		float tt = t / period + fk * 0.37;
+		float id = floor(tt);
+		float phase = fract(tt);
+		vec3 h = skyfx_hash33(vec3(id, fk * 7.1, 3.7));
+		float life = 0.16;
+		if (h.z > chance || phase > life) continue;
+		float prog = phase / life;
+		float az = h.x * SKYFX_TAU;
+		float el = 0.45 + h.y * 0.75;
+		vec3 start = vec3(cos(az) * cos(el), sin(el), sin(az) * cos(el));
+		vec3 side = normalize(cross(start, vec3(0.0, 1.0, 0.0)));
+		vec3 tangent = normalize(side * (h.x > 0.5 ? 1.0 : -1.0) - vec3(0.0, 0.45, 0.0));
+		tangent = normalize(tangent - start * dot(tangent, start));
+		float travel = 0.55;
+		vec3 head = normalize(start + tangent * (prog * travel));
+		vec3 tail = normalize(start + tangent * max(prog * travel - 0.16, 0.0));
+		vec3 pa = dir - tail;
+		vec3 ba = head - tail;
+		float along = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-6), 0.0, 1.0);
+		float d = length(pa - ba * along);
+		float fade = sin(prog * SKYFX_PI);
+		float w = 0.0016;
+		acc += color * fade * (exp(-d * d / (w * w)) * along * along * 2.2 + exp(-d * d / (w * w * 24.0)) * along * 0.18);
+	}
+	return acc;
+}
+
+// Ray (from the origin) / sphere intersection. Returns the hit distance or -1; n receives the surface normal.
+float skyfx_sphere(vec3 rd, vec3 center, float radius, out vec3 n) {
+	float b = dot(rd, center);
+	float c = dot(center, center) - radius * radius;
+	float h = b * b - c;
+	n = vec3(0.0, 1.0, 0.0);
+	if (h < 0.0) return -1.0;
+	float hit = b - sqrt(h);
+	if (hit < 0.0) return -1.0;
+	n = normalize(rd * hit - center);
+	return hit;
+}
+
+// Distance from the ray (from the origin) to a point, used for atmosphere / glow halos.
+float skyfx_rayPointDistance(vec3 rd, vec3 p) {
+	return length(p - rd * max(dot(rd, p), 0.0));
+}
+</script>
+<script type="x-shader/x-glsl" id="glsl-aurora">// ---- sky_aurora.glsl (from the mod) ----
+// SkyFX "Noorderlicht" - a polar night with swirling aurora curtains (needs skyfx_common.glsl).
+// palette: 0 = green, 1 = pink, 2 = blue, 3 = rainbow
+
+vec3 skyfx_auroraPalette(float h, float palette, float hueShift) {
+	if (palette < 0.5) {
+		vec3 c = mix(vec3(0.10, 1.00, 0.42), vec3(0.05, 0.85, 0.65), smoothstep(0.0, 0.45, h));
+		return mix(c, vec3(0.62, 0.22, 0.95), smoothstep(0.45, 1.0, h));
+	} else if (palette < 1.5) {
+		vec3 c = mix(vec3(1.00, 0.28, 0.62), vec3(0.85, 0.30, 0.95), smoothstep(0.0, 0.5, h));
+		return mix(c, vec3(0.35, 0.35, 1.00), smoothstep(0.5, 1.0, h));
+	} else if (palette < 2.5) {
+		vec3 c = mix(vec3(0.15, 0.75, 1.00), vec3(0.20, 0.55, 1.00), smoothstep(0.0, 0.5, h));
+		return mix(c, vec3(0.70, 0.30, 1.00), smoothstep(0.5, 1.0, h));
+	}
+	return skyfx_hsv2rgb(vec3(fract(hueShift + h * 0.35), 0.75, 1.0));
+}
+
+vec4 skyfx_auroraCurtains(vec3 dir, float t, float palette) {
+	vec4 acc = vec4(0.0);
+	if (dir.y <= 0.0) return acc;
+	const int STEPS = 36;
+	float jitter = skyfx_hash12(floor(dir.xz * 2048.0)) * 0.45;
+	float drift = t * 0.012;
+	for (int i = 0; i < STEPS; i++) {
+		float fi = (float(i) + jitter) / float(STEPS);
+		float height = 1.0 + fi * 1.7;
+		vec2 p = dir.xz * (height / (dir.y + 0.035));
+		vec2 q = skyfx_rot(drift) * p * 0.25;
+		float n1 = skyfx_noise2(q * 1.25 + vec2(t * 0.045, -t * 0.03));
+		float n2 = skyfx_noise2(q * 2.9 - vec2(t * 0.10, t * 0.065));
+		// two meandering curtains that fold and curl over time
+		float curveA = sin(q.x * 1.15 + t * 0.19 + n1 * 4.2) * 0.65 + (n2 - 0.5) * 1.1;
+		float dA = q.y - 1.25 - curveA;
+		float curveB = sin(q.x * 0.75 - t * 0.15 + n2 * 3.4 + 2.0) * 0.85 + (n1 - 0.5) * 1.2;
+		float dB = q.y + 0.85 - curveB;
+		float band = exp(-dA * dA * 20.0) + 0.75 * exp(-dB * dB * 14.0);
+		// fine vertical rays rippling along the curtains
+		float rays = 0.30 + 0.70 * skyfx_noise2(vec2(q.x * 9.5 + n1 * 5.0, t * 0.9 + fi * 0.4));
+		rays *= rays;
+		float vertical = exp(-fi * 2.3) * (1.0 + 1.5 * exp(-fi * 14.0));
+		float intensity = band * rays * vertical;
+		vec3 col = skyfx_auroraPalette(fi, palette, t * 0.03 + q.x * 0.08);
+		acc.rgb += col * intensity;
+		acc.a += intensity;
+	}
+	float horizonFade = smoothstep(0.0, 0.10, dir.y);
+	float breathe = 0.82 + 0.18 * sin(t * 0.63) * sin(t * 0.29 + 1.3);
+	acc.rgb *= 5.0 / float(STEPS) * horizonFade * breathe;
+	acc.a *= 5.0 / float(STEPS) * horizonFade;
+	return acc;
+}
+
+vec3 skyfx_aurora(vec3 dir, float t, float palette) {
+	float y = dir.y;
+	vec3 zenith = vec3(0.004, 0.012, 0.040);
+	vec3 horizon = vec3(0.030, 0.085, 0.140);
+	vec3 col = mix(horizon, zenith, pow(clamp(y, 0.0, 1.0), 0.55));
+	if (y < 0.0) {
+		col = mix(horizon, vec3(0.008, 0.018, 0.032), clamp(-y * 3.0, 0.0, 1.0));
+	}
+	// faint milky band behind everything
+	float milky = exp(-pow(dot(dir, normalize(vec3(0.35, 0.55, -0.76))) * 4.0, 2.0));
+	milky *= 0.5 + 0.5 * skyfx_fbm3(dir * 4.0, 4);
+	col += vec3(0.05, 0.07, 0.11) * milky * smoothstep(0.0, 0.25, y);
+
+	col += skyfx_stars(dir, t, 1.0) * smoothstep(-0.02, 0.18, y);
+
+	vec4 aurora = skyfx_auroraCurtains(dir, t, palette);
+	col = col * (1.0 - clamp(aurora.a * 0.2, 0.0, 0.6)) + aurora.rgb;
+
+	// green airglow hugging the horizon, reflecting the aurora
+	vec3 glowColor = skyfx_auroraPalette(0.05, palette, t * 0.03);
+	col += glowColor * 0.05 * exp(-abs(y) * 9.0);
+
+	col += skyfx_meteors(dir, t, 0.55, vec3(0.80, 0.95, 1.00));
+	return col;
+}
+</script>
+<script type="x-shader/x-glsl" id="glsl-galaxy">// ---- sky_galaxy.glsl (from the mod) ----
+// SkyFX "Galaxy" - deep space with violet nebulae, a rotating spiral galaxy, orbiting planets and
+// tumbling asteroids (needs skyfx_common.glsl).
+
+// 3D cellular crater field: bowls below 0, raised rims above 0.
+float skyfx_craters(vec3 p) {
+	vec3 i = floor(p);
+	vec3 f = fract(p);
+	float h = 0.0;
+	for (int z = -1; z <= 1; z++) {
+		for (int y = -1; y <= 1; y++) {
+			for (int x = -1; x <= 1; x++) {
+				vec3 g = vec3(float(x), float(y), float(z));
+				vec3 r = skyfx_hash33(i + g);
+				if (r.y < 0.4) continue;
+				float radius = 0.22 + 0.3 * r.x;
+				float k = length(g + r - f) / radius;
+				if (k < 1.0) h += (k * k - 1.0) * 0.7;
+				h += exp(-(k - 1.0) * (k - 1.0) * 18.0) * 0.45;
+			}
+		}
+	}
+	return h;
+}
+
+vec3 skyfx_planetRock(vec3 n, vec3 l, vec3 axis, float spin, float t) {
+	vec3 q = skyfx_rotAxis(n, axis, spin);
+	vec3 lq = skyfx_rotAxis(l, axis, spin);
+	float base = skyfx_fbm3(q * 2.2, 5);
+	float h = skyfx_craters(q * 3.5);
+	float hl = skyfx_craters(q * 3.5 + lq * 0.05);
+	float bump = clamp((h - hl) * 2.5, -1.0, 1.0);
+	vec3 albedo = mix(vec3(0.30, 0.29, 0.36), vec3(0.68, 0.66, 0.76), base);
+	albedo *= 0.85 + 0.25 * clamp(h, -1.0, 1.0);
+	float ndl = dot(n, l);
+	float diffuse = clamp(ndl + bump * 0.35, 0.0, 1.0) * smoothstep(-0.15, 0.25, ndl);
+	vec3 col = albedo * (0.035 + 1.15 * diffuse);
+	// glowing violet fissures that pulse, strongest on the night side
+	float v = abs(skyfx_fbm3(q * 3.0 + 11.0, 4) - 0.5);
+	float vein = 1.0 - smoothstep(0.0, 0.03, v);
+	float pulse = 0.55 + 0.45 * sin(t * 1.7 + base * 12.0);
+	col += vec3(0.78, 0.48, 1.0) * vein * pulse * (0.35 + 0.9 * (1.0 - diffuse));
+	return col;
+}
+
+vec3 skyfx_planetIce(vec3 n, vec3 l, vec3 axis, float spin) {
+	vec3 q = skyfx_rotAxis(n, axis, spin);
+	float base = skyfx_fbm3(q * 4.0 + 3.0, 4);
+	float h = skyfx_craters(q * 5.0 + 2.0);
+	vec3 albedo = mix(vec3(0.55, 0.70, 0.88), vec3(0.92, 0.96, 1.0), base) * (0.9 + 0.15 * clamp(h, -1.0, 1.0));
+	float diffuse = clamp(dot(n, l), 0.0, 1.0);
+	return albedo * (0.03 + 1.1 * diffuse);
+}
+
+vec3 skyfx_planetLava(vec3 n, vec3 l, vec3 axis, float spin, float t) {
+	vec3 q = skyfx_rotAxis(n, axis, spin);
+	float base = skyfx_fbm3(q * 3.0 + 7.0, 5);
+	vec3 albedo = mix(vec3(0.35, 0.10, 0.08), vec3(0.75, 0.35, 0.20), base);
+	float diffuse = clamp(dot(n, l), 0.0, 1.0);
+	vec3 col = albedo * (0.04 + 1.0 * diffuse);
+	float crack = 1.0 - smoothstep(0.0, 0.04, abs(skyfx_fbm3(q * 4.0 + 1.0, 4) - 0.5));
+	col += vec3(1.0, 0.45, 0.12) * crack * (0.6 + 0.4 * sin(t * 2.3 + base * 9.0));
+	return col;
+}
+
+vec3 skyfx_planetGas(vec3 n, vec3 l, vec3 axis, float spin, float t) {
+	float lat = dot(n, axis);
+	vec3 q = skyfx_rotAxis(n, axis, spin);
+	float swirl = skyfx_fbm3(q * 3.0 + vec3(0.0, t * 0.02, 0.0), 4);
+	float bands = 0.5 + 0.5 * sin(lat * 22.0 + swirl * 4.0);
+	vec3 c = mix(vec3(0.86, 0.62, 0.55), vec3(0.55, 0.45, 0.82), bands);
+	c = mix(c, vec3(0.96, 0.88, 0.86), smoothstep(0.68, 0.92, swirl));
+	float diffuse = clamp(dot(n, l), 0.0, 1.0);
+	return c * (0.03 + 1.1 * diffuse);
+}
+
+// Planetary ring through 'center' with normal 'axis'. Returns rgba and writes the hit distance (or -1).
+vec4 skyfx_ring(vec3 rd, vec3 center, vec3 axis, float rIn, float rOut, vec3 l, out float hit) {
+	hit = -1.0;
+	float denom = dot(rd, axis);
+	if (abs(denom) < 1e-5) return vec4(0.0);
+	float tt = dot(center, axis) / denom;
+	if (tt <= 0.0) return vec4(0.0);
+	float r = length(rd * tt - center);
+	if (r < rIn || r > rOut) return vec4(0.0);
+	float x = (r - rIn) / (rOut - rIn);
+	float bands = 0.55 + 0.45 * sin(x * 60.0) * sin(x * 13.0 + 1.0);
+	float gap = smoothstep(0.52, 0.55, x) * (1.0 - smoothstep(0.58, 0.61, x));
+	float alpha = bands * (1.0 - gap * 0.9) * smoothstep(0.0, 0.05, x) * (1.0 - smoothstep(0.92, 1.0, x));
+	vec3 col = mix(vec3(0.70, 0.62, 0.86), vec3(0.96, 0.86, 0.80), bands) * (0.45 + 0.55 * abs(dot(l, axis)));
+	hit = tt;
+	return vec4(col, alpha * 0.85);
+}
+
+// An irregular tumbling rock. Returns the hit distance (or -1) and writes its colour.
+float skyfx_asteroid(vec3 rd, vec3 pos, float radius, float seed, float t, vec3 l, out vec3 col) {
+	col = vec3(0.0);
+	float b = dot(rd, pos);
+	if (b <= 0.0) return -1.0;
+	vec3 perp = rd * b - pos;
+	float dist = length(perp);
+	if (dist > radius * 1.45) return -1.0;
+	vec3 fwd = normalize(pos);
+	vec3 e1 = normalize(cross(fwd, vec3(0.0, 1.0, 0.0)));
+	vec3 e2 = cross(e1, fwd);
+	vec2 lp = vec2(dot(perp, e1), dot(perp, e2));
+	float ang = atan(lp.y, lp.x) + t * (0.3 + seed * 0.5);
+	vec2 rim = vec2(cos(ang), sin(ang));
+	float shape = radius * (0.74 + 0.48 * skyfx_noise2(rim * 1.7 + seed * 13.0));
+	if (dist > shape) return -1.0;
+	float k = dist / shape;
+	vec3 n = normalize(perp / shape - fwd * sqrt(max(1.0 - k * k, 0.0)));
+	float bumps = skyfx_noise3(vec3(rim * k * 4.0, seed * 7.0)) * 0.6 + skyfx_noise3(vec3(rim * k * 11.0, seed * 3.0)) * 0.4;
+	float diffuse = clamp(dot(n, l) + (bumps - 0.5) * 0.5, 0.0, 1.0);
+	col = mix(vec3(0.33, 0.31, 0.38), vec3(0.66, 0.64, 0.74), bumps) * (0.05 + 1.05 * diffuse);
+	return b - sqrt(max(shape * shape - dist * dist, 0.0));
+}
+
+vec3 skyfx_nebula(vec3 dir, float t) {
+	vec3 p = skyfx_rotY(dir, t * 0.003) * 2.2;
+	vec3 warp = vec3(
+		skyfx_fbm3(p + vec3(0.0, t * 0.010, 0.0), 3),
+		skyfx_fbm3(p + vec3(5.2, 1.3, t * 0.012), 3),
+		skyfx_fbm3(p + vec3(2.1, t * 0.008, 7.7), 3)
+	);
+	float n = skyfx_fbm3(p * 1.4 + warp * 1.8, 5);
+	float region = smoothstep(0.32, 0.72, skyfx_fbm3(dir * 0.9 + 3.0, 3));
+	float density = smoothstep(0.40, 0.85, n) * region;
+	vec3 col = mix(vec3(0.20, 0.10, 0.42), vec3(0.64, 0.44, 0.96), smoothstep(0.5, 0.9, n));
+	col = mix(col, vec3(0.88, 0.42, 0.78), smoothstep(0.55, 0.80, warp.x) * 0.5);
+	return col * density * 0.6;
+}
+
+vec3 skyfx_milkyBand(vec3 dir, float t) {
+	vec3 axis = normalize(vec3(0.25, 0.85, 0.45));
+	vec3 d = skyfx_rotAxis(dir, axis, t * 0.004);
+	float h = dot(dir, axis);
+	float band = exp(-h * h * 22.0);
+	float detail = skyfx_fbm3(d * 6.0, 5);
+	float dust = smoothstep(0.45, 0.65, skyfx_fbm3(d * 9.0 + 4.0, 4));
+	vec3 col = mix(vec3(0.35, 0.28, 0.55), vec3(0.85, 0.78, 1.0), detail) * band * (0.35 + 0.65 * detail);
+	col *= 1.0 - dust * 0.75 * band;
+	col += skyfx_starLayer(d, 700.0, 0.6 * band, t, 0.9 * band);
+	return col * 0.5;
+}
+
+vec3 skyfx_spiralGalaxy(vec3 dir, vec3 center, vec3 axis, float size, float t) {
+	if (dot(dir, center) <= 0.0) return vec3(0.0);
+	float denom = dot(dir, axis);
+	if (abs(denom) < 1e-4) return vec3(0.0);
+	float hit = dot(center, axis) / denom;
+	if (hit <= 0.0) return vec3(0.0);
+	vec3 local = dir * hit - center;
+	vec3 u = normalize(cross(axis, vec3(0.0, 1.0, 0.0)));
+	vec3 v = cross(axis, u);
+	vec2 p = vec2(dot(local, u), dot(local, v)) / size;
+	float r = length(p);
+	if (r > 1.6) return vec3(0.0);
+	float spin = t * 0.035;
+	float a = atan(p.y, p.x);
+	float arms = 0.5 + 0.5 * cos(2.0 * (a - spin) + log(r + 0.02) * 4.5);
+	arms = arms * arms * arms;
+	float dust = skyfx_fbm2(skyfx_rot(spin) * p * 6.0, 4);
+	float fall = exp(-r * 2.6);
+	float core = exp(-r * r * 60.0);
+	vec3 armColor = mix(vec3(0.45, 0.35, 0.95), vec3(0.95, 0.75, 1.0), arms);
+	vec3 col = armColor * arms * fall * (0.55 + 0.6 * dust) * 1.4;
+	col += vec3(1.0, 0.92, 0.85) * (core * 2.5 + exp(-r * 8.0) * 0.35);
+	return col * (1.0 - smoothstep(0.9, 1.6, r));
+}
+
+vec3 skyfx_galaxy(vec3 dir, float t) {
+	vec3 sun = normalize(vec3(-0.30, 0.60, 0.50));
+
+	// background: black void with violet glows, the galactic band, nebulae and stars
+	vec3 col = vec3(0.004, 0.003, 0.012);
+	col += vec3(0.14, 0.08, 0.30) * pow(max(dot(dir, normalize(vec3(0.6, 0.5, -0.6))), 0.0), 3.0) * 0.6;
+	col += vec3(0.10, 0.06, 0.24) * pow(max(dot(dir, normalize(vec3(-0.8, -0.1, -0.3))), 0.0), 4.0) * 0.5;
+	col += skyfx_milkyBand(dir, t);
+	col += skyfx_nebula(dir, t);
+	col += skyfx_stars(dir, t, 1.15);
+	col += skyfx_spiralGalaxy(dir, normalize(vec3(-0.55, 0.62, -0.56)), normalize(vec3(0.35, 0.55, 0.76)), 0.16, t);
+	float sd = max(dot(dir, sun), 0.0);
+	col += vec3(1.0, 0.92, 1.0) * (pow(sd, 3000.0) * 8.0 + pow(sd, 220.0) * 0.6 + pow(sd, 12.0) * 0.05);
+
+	float best = 1e9;
+	vec3 n;
+	vec3 objCol;
+	float hit;
+
+	// big cratered planet with glowing fissures, slowly orbiting across the sky
+	vec3 c0 = skyfx_rotY(normalize(vec3(0.62, 0.40, -0.67)), t * 0.0035);
+	float r0 = 0.20;
+	vec3 axis0 = normalize(vec3(0.2, 1.0, 0.1));
+	hit = skyfx_sphere(dir, c0, r0, n);
+	if (hit > 0.0) {
+		best = hit;
+		col = skyfx_planetRock(n, sun, axis0, t * 0.02, t);
+		col += vec3(0.55, 0.35, 0.95) * pow(1.0 - max(dot(n, -dir), 0.0), 3.0) * 0.35;
+	}
+
+	// icy moon orbiting the big planet, passing in front of and behind it
+	vec3 bu = normalize(cross(axis0, c0));
+	vec3 moonPos = c0 + 0.34 * (cos(t * 0.09) * bu + sin(t * 0.09) * normalize(-c0 + axis0 * 0.25));
+	hit = skyfx_sphere(dir, moonPos, 0.035, n);
+	if (hit > 0.0 && hit < best) {
+		best = hit;
+		col = skyfx_planetIce(n, sun, axis0, t * 0.05);
+	}
+
+	// ringed gas giant on a wide orbit
+	vec3 gasAxis = normalize(vec3(0.25, 1.0, -0.2));
+	vec3 c1 = skyfx_rotAxis(normalize(vec3(-0.70, 0.32, -0.45)), normalize(vec3(0.2, 1.0, -0.1)), t * 0.012) * 1.6;
+	hit = skyfx_sphere(dir, c1, 0.12, n);
+	if (hit > 0.0 && hit < best) {
+		best = hit;
+		col = skyfx_planetGas(n, sun, gasAxis, t * 0.03, t);
+	}
+
+	// small lava world drifting the other way
+	vec3 c2 = skyfx_rotAxis(normalize(vec3(0.30, 0.18, 0.95)), normalize(vec3(-0.1, 1.0, 0.2)), -t * 0.02) * 1.3;
+	hit = skyfx_sphere(dir, c2, 0.05, n);
+	if (hit > 0.0 && hit < best) {
+		best = hit;
+		col = skyfx_planetLava(n, sun, normalize(vec3(0.0, 1.0, 0.3)), t * 0.04, t);
+	}
+
+	// asteroid belt around the big planet
+	vec3 beltAxis = normalize(vec3(0.25, 1.0, 0.15));
+	vec3 beltU = normalize(cross(beltAxis, vec3(0.0, 0.0, 1.0)));
+	vec3 beltW = cross(beltAxis, beltU);
+	for (int k = 0; k < 14; k++) {
+		float fk = float(k);
+		vec3 h = skyfx_hash33(vec3(fk, 4.2, 9.7));
+		float phi = h.x * SKYFX_TAU + t * (0.025 + 0.025 * h.y);
+		float radius = 0.40 + 0.22 * h.z;
+		vec3 pos = c0 + radius * (cos(phi) * beltU + sin(phi) * beltW) + beltAxis * (h.y - 0.5) * 0.06;
+		hit = skyfx_asteroid(dir, pos, 0.008 + 0.014 * h.z, h.x, t, sun, objCol);
+		if (hit > 0.0 && hit < best) {
+			best = hit;
+			col = objCol;
+		}
+	}
+
+	// loose rocks drifting through the foreground
+	for (int k = 0; k < 9; k++) {
+		float fk = float(k);
+		vec3 h = skyfx_hash33(vec3(fk, 1.7, 3.3));
+		vec3 base = normalize(vec3(h.x - 0.5, h.y * 0.9 - 0.15, h.z - 0.5));
+		vec3 driftAxis = normalize(vec3(h.z - 0.5, 1.0, h.x - 0.5));
+		vec3 pos = skyfx_rotAxis(base, driftAxis, t * (0.006 + 0.01 * h.y)) * 0.7;
+		hit = skyfx_asteroid(dir, pos, 0.010 + 0.018 * h.y, h.z + 2.0, t, sun, objCol);
+		if (hit > 0.0 && hit < best) {
+			best = hit;
+			col = objCol;
+		}
+	}
+
+	// translucent rings, drawn over whatever is behind them
+	float ringHit;
+	vec4 ring = skyfx_ring(dir, c1, gasAxis, 0.12 * 1.35, 0.12 * 2.3, sun, ringHit);
+	if (ringHit > 0.0 && ringHit < best) {
+		col = mix(col, ring.rgb, ring.a);
+	}
+
+	// violet atmosphere halo around the big planet
+	float d0 = skyfx_rayPointDistance(dir, c0);
+	if (d0 > r0 && dot(dir, c0) > 0.0) {
+		vec3 toRay = normalize(dir * dot(dir, c0) - c0);
+		float lit = 0.35 + 0.65 * smoothstep(-0.4, 0.8, dot(toRay, sun));
+		col += vec3(0.55, 0.36, 0.98) * exp(-(d0 - r0) / (r0 * 0.12)) * lit * 0.55;
+	}
+
+	col += skyfx_meteors(dir, t, 0.7, vec3(0.90, 0.80, 1.00));
+	return col;
+}
+</script>
+<script type="x-shader/x-glsl" id="glsl-anime">// ---- sky_anime.glsl (from the mod) ----
+// SkyFX "Anime Wolken" - a bright cel-shaded summer sky with drifting, boiling cumulus clouds,
+// streaky cirrus and a flock of birds (needs skyfx_common.glsl).
+
+vec3 skyfx_animeCel(float light, float bottom) {
+	vec3 shadow = vec3(0.56, 0.63, 0.88);
+	vec3 mid = vec3(0.95, 0.96, 1.00);
+	vec3 warm = vec3(1.00, 0.86, 0.80);
+	vec3 c = mix(shadow, mid, smoothstep(0.32, 0.40, light));
+	c = mix(c, warm, smoothstep(0.70, 0.78, light));
+	return mix(c, vec3(0.50, 0.58, 0.82), clamp(bottom, 0.0, 1.0) * 0.6);
+}
+
+// Towering cumulus banks standing on the horizon.
+vec4 skyfx_animeBank(vec3 dir, float t, vec3 sunDir, vec3 horizonColor) {
+	float el = asin(clamp(dir.y, -1.0, 1.0));
+	if (el > 0.6 || el < -0.08) return vec4(0.0);
+	float azRaw = atan(dir.z, dir.x);
+	float az = azRaw + t * 0.0035;
+	vec2 ring = vec2(cos(az), sin(az));
+	float profile = 0.08 + 0.32 * pow(skyfx_fbm3(vec3(ring * 1.4, 2.7), 4), 1.5);
+	float boil = t * 0.012;
+	float puff = skyfx_fbm3(vec3(ring * 3.2, el * 7.0 - boil), 5) + (skyfx_fbm3(vec3(ring * 11.0, el * 26.0 - boil * 2.0), 3) - 0.5) * 0.35;
+	float density = (profile - el) * 5.0 + (puff - 0.5) * 1.6;
+	float mask = smoothstep(0.0, 0.05, density);
+	if (mask <= 0.0) return vec4(0.0);
+	float puffUp = skyfx_fbm3(vec3(ring * 3.2, (el + 0.03) * 7.0 - boil), 5) + (skyfx_fbm3(vec3(ring * 11.0, (el + 0.03) * 26.0 - boil * 2.0), 3) - 0.5) * 0.35;
+	float densityUp = (profile - el - 0.03) * 5.0 + (puffUp - 0.5) * 1.6;
+	float sunAz = atan(sunDir.z, sunDir.x);
+	float light = clamp(1.0 - densityUp * 1.2, 0.0, 1.0) * (0.72 + 0.28 * cos(azRaw - sunAz));
+	float bottom = 1.0 - smoothstep(0.0, 0.07, el + (puff - 0.5) * 0.06);
+	vec3 c = skyfx_animeCel(light, bottom);
+	c = mix(c, horizonColor, 0.30 * (1.0 - smoothstep(0.0, 0.10, el)));
+	return vec4(c, mask);
+}
+
+// Puffy cumulus drifting overhead.
+vec4 skyfx_animeCumulus(vec3 dir, float t, vec3 sunDir) {
+	if (dir.y < 0.03) return vec4(0.0);
+	vec2 uv = dir.xz / (dir.y + 0.12) * 0.9;
+	vec2 wind = vec2(1.0, 0.35) * t * 0.018;
+	float evolve = t * 0.008;
+	float d = skyfx_fbm3(vec3(uv + wind, evolve) * 1.1, 5);
+	float cover = 0.56;
+	float mask = smoothstep(0.0, 0.25, (d - cover) * 9.0) * smoothstep(0.03, 0.20, dir.y);
+	if (mask <= 0.0) return vec4(0.0);
+	vec2 toSun = normalize(sunDir.xz + vec2(1e-4)) * 0.09;
+	float dl = skyfx_fbm3(vec3(uv + wind + toSun, evolve) * 1.1, 5);
+	float light = clamp(0.62 + (d - dl) * 7.0 - (d - cover) * 1.3, 0.0, 1.0);
+	vec3 c = skyfx_animeCel(light, clamp((d - cover) * 3.0, 0.0, 1.0) * 0.5);
+	return vec4(c, mask);
+}
+
+float skyfx_animeCirrus(vec3 dir, float t) {
+	if (dir.y < 0.02) return 0.0;
+	vec2 uv = dir.xz / (dir.y + 0.2) * 0.6;
+	vec2 q = skyfx_rot(0.5) * uv;
+	q = vec2(q.x * 0.35, q.y * 3.0) + vec2(t * 0.012, 0.0);
+	float c = skyfx_fbm2(q + vec2(skyfx_fbm2(q * 0.5, 3) * 1.5, 0.0), 5);
+	return smoothstep(0.55, 0.78, c) * smoothstep(0.02, 0.25, dir.y) * 0.45;
+}
+
+float skyfx_segment(vec2 p, vec2 a, vec2 b) {
+	vec2 pa = p - a;
+	vec2 ba = b - a;
+	float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+	return length(pa - ba * h);
+}
+
+// A small flock gliding around the sky, flapping their wings.
+float skyfx_birds(vec3 dir, float t) {
+	float acc = 0.0;
+	for (int k = 0; k < 6; k++) {
+		float fk = float(k);
+		float az = mod(t * 0.018 + fk * 0.045 + sin(fk * 3.1) * 0.02, SKYFX_TAU);
+		float el = 0.30 + 0.025 * sin(fk * 1.7) + 0.012 * sin(t * 0.5 + fk) + fk * 0.006;
+		vec3 c = vec3(cos(az) * cos(el), sin(el), sin(az) * cos(el));
+		if (dot(dir, c) < 0.995) continue;
+		vec3 e1 = normalize(cross(c, vec3(0.0, 1.0, 0.0)));
+		vec3 e2 = cross(e1, c);
+		vec2 p = vec2(dot(dir, e1), dot(dir, e2)) / (0.0075 - fk * 0.0004);
+		float flap = sin(t * 9.0 + fk * 2.1);
+		float wingY = 0.32 * flap + 0.12;
+		float d = min(skyfx_segment(p, vec2(0.0), vec2(1.0, wingY)), skyfx_segment(p, vec2(0.0), vec2(-1.0, wingY)));
+		acc = max(acc, 1.0 - smoothstep(0.07, 0.17, d));
+	}
+	return acc;
+}
+
+vec3 skyfx_anime(vec3 dir, float t) {
+	float y = dir.y;
+	vec3 sunDir = normalize(vec3(-0.55, 0.32, 0.62));
+	vec3 zenith = vec3(0.10, 0.34, 0.82);
+	vec3 middle = vec3(0.30, 0.60, 0.96);
+	vec3 horizon = vec3(0.72, 0.89, 1.00);
+	vec3 col = mix(horizon, middle, smoothstep(0.0, 0.22, y));
+	col = mix(col, zenith, smoothstep(0.22, 0.85, y));
+	if (y < 0.0) {
+		col = mix(vec3(0.48, 0.74, 0.94), vec3(0.18, 0.44, 0.76), smoothstep(0.0, 0.4, -y));
+		col = mix(col, horizon, exp(y * 40.0) * 0.6);
+	}
+
+	// soft anime sun with slowly turning light rays
+	float sd = max(dot(dir, sunDir), 0.0);
+	vec3 se1 = normalize(cross(sunDir, vec3(0.0, 1.0, 0.0)));
+	vec3 se2 = cross(se1, sunDir);
+	float rayAngle = atan(dot(dir, se2), dot(dir, se1));
+	float rays = pow(0.5 + 0.5 * sin(rayAngle * 18.0 + t * 0.15) * sin(rayAngle * 7.0 - t * 0.1), 3.0);
+	col += vec3(1.0, 0.95, 0.82) * (smoothstep(0.9993, 0.9997, sd) * 1.5 + pow(sd, 64.0) * 0.35 + pow(sd, 6.0) * 0.12 + rays * pow(sd, 16.0) * 0.10);
+
+	col = mix(col, vec3(1.0, 0.96, 0.98), skyfx_animeCirrus(dir, t));
+	vec4 cumulus = skyfx_animeCumulus(dir, t, sunDir);
+	col = mix(col, cumulus.rgb, cumulus.a);
+	vec4 bank = skyfx_animeBank(dir, t, sunDir, horizon);
+	col = mix(col, bank.rgb, bank.a);
+	col = mix(col, vec3(0.16, 0.20, 0.32), skyfx_birds(dir, t) * 0.85);
+	return col;
+}
+</script>
+<script type="x-shader/x-glsl" id="glsl-storm">// ---- sky_storm.glsl (from the mod) ----
+// SkyFX "Stormzee" - a dark sea of churning storm clouds with lightning, a swirling vortex overhead,
+// a cold moon and a huge crescent planet (needs skyfx_common.glsl).
+
+vec3 skyfx_storm(vec3 dir, float t) {
+	float y = dir.y;
+	float el = asin(clamp(y, -1.0, 1.0));
+	float azRaw = atan(dir.z, dir.x);
+	vec3 moon = normalize(vec3(-0.30, 0.36, -0.88));
+	float moonAz = atan(moon.z, moon.x);
+
+	vec3 zenith = vec3(0.010, 0.020, 0.048);
+	vec3 horizon = vec3(0.09, 0.16, 0.26);
+	vec3 col = mix(horizon, zenith, pow(clamp(y, 0.0, 1.0), 0.6));
+	col += skyfx_stars(dir, t, 0.55) * smoothstep(0.12, 0.45, y);
+
+	// a huge crescent planet, lit from behind, slowly sliding across the sky
+	vec3 pc = skyfx_rotY(normalize(vec3(0.55, 0.62, -0.56)), t * 0.0025) * 3.0;
+	float pr = 1.15;
+	vec3 pcn = normalize(pc);
+	vec3 pside = normalize(cross(pcn, vec3(0.0, 1.0, 0.0)));
+	vec3 lp = normalize(pcn * 0.45 - pside * 0.85 - vec3(0.0, 0.25, 0.0));
+	vec3 pn;
+	float ph = skyfx_sphere(dir, pc, pr, pn);
+	if (ph > 0.0) {
+		float crescent = smoothstep(-0.02, 0.35, dot(pn, lp));
+		float rim = pow(1.0 - max(dot(pn, -dir), 0.0), 2.5);
+		float bands = 0.65 + 0.35 * sin(dot(pn, vec3(0.0, 1.0, 0.0)) * 18.0 + skyfx_fbm3(pn * 3.0 + t * 0.01, 3) * 5.0);
+		vec3 surface = vec3(0.02, 0.03, 0.055) + vec3(0.50, 0.66, 0.88) * crescent * bands;
+		col = surface + vec3(0.40, 0.62, 0.95) * rim * (0.15 + crescent) * 0.8;
+	} else if (dot(dir, pc) > 0.0) {
+		float dist = skyfx_rayPointDistance(dir, pc);
+		vec3 toRay = normalize(dir * dot(dir, pc) - pc);
+		float side = smoothstep(-0.3, 0.6, dot(toRay, lp));
+		col += vec3(0.40, 0.60, 0.95) * exp(-(dist - pr) / 0.07) * (0.15 + side) * 0.75;
+	}
+
+	// cold moon with a wide halo and an anamorphic streak
+	float md = max(dot(dir, moon), 0.0);
+	col += vec3(0.80, 0.88, 1.00) * (pow(md, 3000.0) * 8.0 + pow(md, 120.0) * 0.5 + pow(md, 10.0) * 0.07);
+	vec3 mr = normalize(cross(moon, vec3(0.0, 1.0, 0.0)));
+	vec3 mu = cross(mr, moon);
+	col += vec3(0.60, 0.75, 1.00) * exp(-abs(dot(dir, mu)) * 300.0) * exp(-abs(dot(dir, mr)) * 5.0) * step(0.0, dot(dir, moon)) * 0.35;
+
+	// rotating storm vortex straight overhead
+	if (y > 0.42) {
+		vec2 p = dir.xz / y;
+		float r = length(p);
+		float a = atan(p.y, p.x);
+		float spiral = a + t * 0.05 + log(r + 0.05) * 2.2;
+		float n = skyfx_fbm3(vec3(vec2(cos(spiral), sin(spiral)) * 1.6, r * 2.0 - t * 0.03), 5);
+		float arms = 0.5 + 0.5 * sin(spiral * 3.0 + n * 3.0);
+		float density = smoothstep(0.35, 0.75, n * 0.7 + arms * 0.45) * smoothstep(0.42, 0.75, y);
+		vec3 vortex = mix(vec3(0.07, 0.11, 0.19), vec3(0.55, 0.65, 0.80), smoothstep(0.5, 0.95, n + arms * 0.2));
+		col = mix(col, vortex, density * 0.9);
+		col += vec3(0.20, 0.30, 0.50) * exp(-r * 6.0) * 0.3 * smoothstep(0.42, 0.75, y);
+	}
+
+	// sea of clouds below the horizon, flowing towards the viewer
+	if (y < 0.03) {
+		vec2 fp = dir.xz / (max(-y, 0.0) + 0.04) * 0.5;
+		vec2 flow = vec2(t * 0.02, t * 0.008);
+		float f = skyfx_fbm3(vec3(fp + flow, t * 0.01), 5);
+		float fl = skyfx_fbm3(vec3(fp + flow + normalize(moon.xz) * 0.06, t * 0.01), 5);
+		float lit = clamp(0.5 + (f - fl) * 6.0, 0.0, 1.0);
+		vec3 sea = mix(vec3(0.03, 0.05, 0.09), vec3(0.25, 0.33, 0.46), smoothstep(0.35, 0.75, f));
+		sea += vec3(0.25, 0.32, 0.42) * lit * smoothstep(0.5, 0.8, f) * 0.6;
+		sea = mix(sea, horizon * 0.9, exp(-max(-y, 0.0) * 18.0) * 0.8);
+		col = mix(col, sea, 1.0 - smoothstep(0.0, 0.03, y));
+	}
+
+	// lightning: strobing flashes somewhere in the storm, sometimes with a visible bolt
+	float flash = 0.0;
+	float bolt = 0.0;
+	for (int k = 0; k < 2; k++) {
+		float fk = float(k);
+		float period = 3.1 + fk * 1.9;
+		float tt = t / period + fk * 0.5;
+		float id = floor(tt);
+		float since = fract(tt) * period;
+		vec3 h = skyfx_hash33(vec3(id, fk, 9.1));
+		if (h.z > 0.65) continue;
+		float flicker = exp(-since * 6.0) + 0.7 * exp(-abs(since - 0.18) * 30.0) + 0.5 * exp(-abs(since - 0.33) * 25.0);
+		if (flicker < 0.01) continue;
+		float faz = h.x * SKYFX_TAU;
+		float fel = 0.04 + h.y * 0.18;
+		vec3 fdir = vec3(cos(faz) * cos(fel), sin(fel), sin(faz) * cos(fel));
+		float ang = acos(clamp(dot(dir, fdir), -1.0, 1.0));
+		flash += flicker * exp(-ang * ang / 0.02);
+		float below = fel - el;
+		if (h.y > 0.3 && below > 0.0 && below < 0.22) {
+			float daz = azRaw - faz;
+			daz = atan(sin(daz), cos(daz));
+			float jag = (skyfx_fbm2(vec2(el * 40.0, id * 3.1 + fk), 4) - 0.5) * 0.06 + (skyfx_noise2(vec2(el * 150.0, id)) - 0.5) * 0.01;
+			float dx = abs(daz * cos(el) - jag);
+			bolt += flicker * exp(-dx / 0.0012) * (1.0 - below / 0.22);
+		}
+	}
+
+	// towering cumulonimbus around the horizon, moonlit on top and lit from inside by the flashes
+	if (el > -0.1 && el < 0.65) {
+		float az = azRaw + t * 0.006;
+		vec2 ring = vec2(cos(az), sin(az));
+		float profile = 0.10 + 0.32 * pow(skyfx_fbm3(vec3(ring * 1.2, 5.3), 4), 1.4);
+		float churn = t * 0.02;
+		float puff = skyfx_fbm3(vec3(ring * 3.0, el * 6.5 - churn), 5) + (skyfx_fbm3(vec3(ring * 10.0, el * 24.0 - churn * 2.0), 3) - 0.5) * 0.45;
+		float density = (profile - el) * 5.5 + (puff - 0.5) * 1.8;
+		float mask = smoothstep(0.0, 0.08, density);
+		if (mask > 0.0) {
+			float puffUp = skyfx_fbm3(vec3(ring * 3.0, (el + 0.035) * 6.5 - churn), 5) + (skyfx_fbm3(vec3(ring * 10.0, (el + 0.035) * 24.0 - churn * 2.0), 3) - 0.5) * 0.45;
+			float densityUp = (profile - el - 0.035) * 5.5 + (puffUp - 0.5) * 1.8;
+			float topLight = clamp(1.0 - densityUp * 1.1, 0.0, 1.0);
+			float moonSide = 0.55 + 0.45 * max(cos(azRaw - moonAz), 0.0);
+			vec3 cloud = mix(vec3(0.035, 0.055, 0.10), vec3(0.20, 0.28, 0.40), smoothstep(0.1, 0.6, topLight));
+			cloud = mix(cloud, vec3(0.62, 0.74, 0.90), smoothstep(0.75, 0.98, topLight) * moonSide);
+			cloud += vec3(0.70, 0.80, 1.00) * flash * 1.2 * clamp(density * 0.5 + 0.5, 0.0, 1.0);
+			col = mix(col, cloud, mask);
+		}
+	}
+
+	// thin streaky layers sliding past each other at different speeds
+	if (el > -0.03 && el < 0.32) {
+		float streaks = 0.0;
+		for (int k = 0; k < 4; k++) {
+			float fk = float(k);
+			float e0 = 0.02 + fk * 0.055;
+			float direction = mod(fk, 2.0) < 0.5 ? 1.0 : -1.0;
+			float a2 = azRaw + t * (0.01 + fk * 0.006) * direction;
+			vec2 r2 = vec2(cos(a2), sin(a2));
+			float wave = (skyfx_noise2(r2 * 2.0 + fk * 4.0) - 0.5) * 0.05;
+			float dd = (el - e0 - wave) / (0.004 + 0.004 * fk);
+			float pieces = smoothstep(0.35, 0.70, skyfx_fbm2(r2 * 6.0 + vec2(fk * 3.0, 0.0), 4));
+			streaks += exp(-dd * dd) * pieces * (0.8 - fk * 0.12);
+		}
+		col = mix(col, vec3(0.55, 0.68, 0.85), clamp(streaks, 0.0, 1.0) * 0.6);
+	}
+
+	col += vec3(0.70, 0.80, 1.00) * (flash * 0.12 + bolt * 2.5);
+	return col;
+}
+</script>
+<script type="x-shader/x-glsl" id="glsl-glint">// ---- skyfx_glint.glsl (from the mod) ----
+// SkyFX glint colours (needs skyfx_common.glsl). Shared by the glint core-shader overrides and the HTML preview.
+// texColor: sample of the vanilla glint texture, uv: the scrolling glint texture coordinate,
+// gameTime: the Globals GameTime uniform (0..1 every 24000 ticks).
+
+vec3 skyfx_rainbowGlint(vec3 texColor, vec2 uv, float gameTime) {
+	float strength = max(texColor.r, max(texColor.g, texColor.b));
+	// 160 colour cycles per in-game day keeps the hue continuous when GameTime wraps around
+	float hue = fract(uv.x * 0.35 + uv.y * 0.20 + gameTime * 160.0);
+	vec3 rainbow = skyfx_hsv2rgb(vec3(hue, 0.85, 1.0));
+	return rainbow * strength * 1.35;
+}
+</script>
+<script type="x-shader/x-glsl" id="glsl-vanilla">
+// Preview-only stand-in for the untouched vanilla sky (the mod simply leaves Minecraft's own sky alone).
+vec3 skyfx_vanilla(vec3 dir, float t) {
+	vec3 top = vec3(0.47, 0.65, 1.00);
+	vec3 fog = vec3(0.75, 0.85, 1.00);
+	vec3 col = mix(fog, top, smoothstep(-0.02, 0.45, dir.y));
+	vec3 sun = normalize(vec3(-0.45, 0.70, 0.35));
+	vec3 e1 = normalize(cross(sun, vec3(0.0, 0.0, 1.0)));
+	vec3 e2 = cross(e1, sun);
+	vec2 local = vec2(dot(dir, e1), dot(dir, e2));
+	if (dot(dir, sun) > 0.0) {
+		float square = max(abs(local.x), abs(local.y));
+		col = mix(col, vec3(1.0, 1.0, 0.85), 1.0 - smoothstep(0.050, 0.054, square));
+		col += vec3(1.0, 0.95, 0.7) * exp(-square * 10.0) * 0.2;
+	}
+	if (dir.y > 0.01) {
+		vec2 uv = dir.xz / dir.y * 0.9 + vec2(t * 0.02, 0.0);
+		vec2 cell = floor(uv * 3.0);
+		float cloud = step(0.78, skyfx_hash12(cell)) * smoothstep(0.02, 0.2, dir.y);
+		col = mix(col, vec3(1.0), cloud * 0.85);
+	}
+	return col;
+}
+</script>
+
+<script>
+'use strict';
+(() => {
+const $ = (selector) => document.querySelector(selector);
+const glsl = (id) => document.getElementById(id).textContent;
+
+// ---------------------------------------------------------------------------------------------
+// Settings - mirrors config/skyfx.json of the mod
+// ---------------------------------------------------------------------------------------------
+const DEFAULTS = {
+	sky: 'aurora',
+	speed: 100,
+	brightness: 100,
+	auroraPalette: 0,
+	hideClouds: true,
+	matchFog: true,
+	glint: 'rainbow',
+	auraOn: true,
+	auraColor: '#7cf7c5',
+	auraRainbow: false,
+	auraPulse: 100,
+	auraGlow: 5,
+	auraFill: 18,
+	tab: 'sky',
+};
+const STORE_KEY = 'skyfx-preview-v1';
+let settings = { ...DEFAULTS };
+try {
+	settings = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(STORE_KEY) || '{}') };
+} catch (e) { /* storage unavailable */ }
+function saveSettings() {
+	try { localStorage.setItem(STORE_KEY, JSON.stringify(settings)); } catch (e) { /* ignore */ }
+}
+
+const SKIES = [
+	{ id: 'vanilla', name: 'Vanilla', call: 'skyfx_vanilla(dir, uParams.x)', fog: [0.75, 0.85, 1.0], light: [1.0, 1.0, 0.98], amb: [0.45, 0.50, 0.60], hero: [0.3, 0.35, 0.9] },
+	{ id: 'aurora', name: 'Noorderlicht', call: 'skyfx_aurora(dir, uParams.x, uParams.z)', fog: [0.030, 0.085, 0.140], light: [0.30, 0.44, 0.48], amb: [0.07, 0.17, 0.13], hero: [0.15, 0.32, 0.94] },
+	{ id: 'galaxy', name: 'Galaxy', call: 'skyfx_galaxy(dir, uParams.x)', fog: [0.03, 0.02, 0.07], light: [0.55, 0.48, 0.72], amb: [0.09, 0.06, 0.16], hero: [0.55, 0.30, -0.78] },
+	{ id: 'anime', name: 'Anime Wolken', call: 'skyfx_anime(dir, uParams.x)', fog: [0.72, 0.89, 1.0], light: [1.05, 1.0, 0.95], amb: [0.42, 0.52, 0.72], hero: [-0.62, 0.18, 0.76] },
+	{ id: 'storm', name: 'Stormzee', call: 'skyfx_storm(dir, uParams.x)', fog: [0.09, 0.16, 0.26], light: [0.36, 0.44, 0.58], amb: [0.07, 0.10, 0.17], hero: [-0.25, 0.20, -0.95] },
+];
+const PALETTES = ['Groen', 'Roze', 'Blauw', 'Regenboog'];
+const GLINTS = [
+	{ id: 'vanilla', name: 'Vanilla', desc: 'Klassiek paars', chip: 'linear-gradient(90deg,#5b2a8f,#b07cff,#5b2a8f)' },
+	{ id: 'rainbow', name: 'Regenboog', desc: 'Bewegende regenboog', chip: 'linear-gradient(90deg,#ff4d4d,#ffb84d,#fff04d,#4dff88,#4dc3ff,#9b6bff,#ff4dd2)' },
+	{ id: 'soon1', name: 'Binnenkort…', desc: 'Meer glints komen eraan', chip: '#2a2a2a', locked: true },
+	{ id: 'soon2', name: 'Binnenkort…', desc: 'Meer glints komen eraan', chip: '#2a2a2a', locked: true },
+];
+const SWATCHES = ['#7cf7c5', '#ff4d6d', '#ffb02e', '#fff36b', '#4dff88', '#4dc3ff', '#9b6bff', '#ffffff'];
+
+// ---------------------------------------------------------------------------------------------
+// Small math helpers (column-major 4x4 matrices)
+// ---------------------------------------------------------------------------------------------
+const M4 = {
+	perspective(fovy, aspect, near, far) {
+		const f = 1 / Math.tan(fovy / 2), nf = 1 / (near - far);
+		return [f / aspect, 0, 0, 0, 0, f, 0, 0, 0, 0, (far + near) * nf, -1, 0, 0, 2 * far * near * nf, 0];
+	},
+	lookDir(eye, fwd, up) {
+		const z = norm([-fwd[0], -fwd[1], -fwd[2]]);
+		const x = norm(cross(up, z));
+		const y = cross(z, x);
+		return [x[0], y[0], z[0], 0, x[1], y[1], z[1], 0, x[2], y[2], z[2], 0,
+			-dot(x, eye), -dot(y, eye), -dot(z, eye), 1];
+	},
+	mul(a, b) {
+		const o = new Array(16);
+		for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) {
+			let s = 0;
+			for (let k = 0; k < 4; k++) s += a[k * 4 + r] * b[c * 4 + k];
+			o[c * 4 + r] = s;
+		}
+		return o;
+	},
+	invert(m) {
+		const inv = new Array(16);
+		inv[0] = m[5] * m[10] * m[15] - m[5] * m[11] * m[14] - m[9] * m[6] * m[15] + m[9] * m[7] * m[14] + m[13] * m[6] * m[11] - m[13] * m[7] * m[10];
+		inv[4] = -m[4] * m[10] * m[15] + m[4] * m[11] * m[14] + m[8] * m[6] * m[15] - m[8] * m[7] * m[14] - m[12] * m[6] * m[11] + m[12] * m[7] * m[10];
+		inv[8] = m[4] * m[9] * m[15] - m[4] * m[11] * m[13] - m[8] * m[5] * m[15] + m[8] * m[7] * m[13] + m[12] * m[5] * m[11] - m[12] * m[7] * m[9];
+		inv[12] = -m[4] * m[9] * m[14] + m[4] * m[10] * m[13] + m[8] * m[5] * m[14] - m[8] * m[6] * m[13] - m[12] * m[5] * m[10] + m[12] * m[6] * m[9];
+		inv[1] = -m[1] * m[10] * m[15] + m[1] * m[11] * m[14] + m[9] * m[2] * m[15] - m[9] * m[3] * m[14] - m[13] * m[2] * m[11] + m[13] * m[3] * m[10];
+		inv[5] = m[0] * m[10] * m[15] - m[0] * m[11] * m[14] - m[8] * m[2] * m[15] + m[8] * m[3] * m[14] + m[12] * m[2] * m[11] - m[12] * m[3] * m[10];
+		inv[9] = -m[0] * m[9] * m[15] + m[0] * m[11] * m[13] + m[8] * m[1] * m[15] - m[8] * m[3] * m[13] - m[12] * m[1] * m[11] + m[12] * m[3] * m[9];
+		inv[13] = m[0] * m[9] * m[14] - m[0] * m[10] * m[13] - m[8] * m[1] * m[14] + m[8] * m[2] * m[13] + m[12] * m[1] * m[10] - m[12] * m[2] * m[9];
+		inv[2] = m[1] * m[6] * m[15] - m[1] * m[7] * m[14] - m[5] * m[2] * m[15] + m[5] * m[3] * m[14] + m[13] * m[2] * m[7] - m[13] * m[3] * m[6];
+		inv[6] = -m[0] * m[6] * m[15] + m[0] * m[7] * m[14] + m[4] * m[2] * m[15] - m[4] * m[3] * m[14] - m[12] * m[2] * m[7] + m[12] * m[3] * m[6];
+		inv[10] = m[0] * m[5] * m[15] - m[0] * m[7] * m[13] - m[4] * m[1] * m[15] + m[4] * m[3] * m[13] + m[12] * m[1] * m[7] - m[12] * m[3] * m[5];
+		inv[14] = -m[0] * m[5] * m[14] + m[0] * m[6] * m[13] + m[4] * m[1] * m[14] - m[4] * m[2] * m[13] - m[12] * m[1] * m[6] + m[12] * m[2] * m[5];
+		inv[3] = -m[1] * m[6] * m[11] + m[1] * m[7] * m[10] + m[5] * m[2] * m[11] - m[5] * m[3] * m[10] - m[9] * m[2] * m[7] + m[9] * m[3] * m[6];
+		inv[7] = m[0] * m[6] * m[11] - m[0] * m[7] * m[10] - m[4] * m[2] * m[11] + m[4] * m[3] * m[10] + m[8] * m[2] * m[7] - m[8] * m[3] * m[6];
+		inv[11] = -m[0] * m[5] * m[11] + m[0] * m[7] * m[9] + m[4] * m[1] * m[11] - m[4] * m[3] * m[9] - m[8] * m[1] * m[7] + m[8] * m[3] * m[5];
+		inv[15] = m[0] * m[5] * m[10] - m[0] * m[6] * m[9] - m[4] * m[1] * m[10] + m[4] * m[2] * m[9] + m[8] * m[1] * m[6] - m[8] * m[2] * m[5];
+		const det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
+		return inv.map((v) => v / det);
+	},
+};
+function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+function norm(a) { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; }
+function hexToRgb(hex) {
+	const n = parseInt(hex.slice(1), 16);
+	return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+}
+function hsv(h, s, v) {
+	const f = (n) => { const k = (n + h * 6) % 6; return v - v * s * Math.max(0, Math.min(k, 4 - k, 1)); };
+	return [f(5), f(3), f(1)];
+}
+function mulberry32(seed) {
+	return () => {
+		seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+		let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+		t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+	};
+}
+
+// ---------------------------------------------------------------------------------------------
+// WebGL helpers
+// ---------------------------------------------------------------------------------------------
+function fail(message) {
+	const box = $('#error');
+	box.textContent = message;
+	box.style.display = 'block';
+}
+function makeProgram(gl, vsSource, fsSource) {
+	const compile = (type, source) => {
+		const shader = gl.createShader(type);
+		gl.shaderSource(shader, source);
+		gl.compileShader(shader);
+		if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+			throw new Error(gl.getShaderInfoLog(shader) || 'shader compile error');
+		}
+		return shader;
+	};
+	const program = gl.createProgram();
+	gl.attachShader(program, compile(gl.VERTEX_SHADER, vsSource));
+	gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fsSource));
+	gl.linkProgram(program);
+	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program) || 'link error');
+	const uniforms = {};
+	const count = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+	for (let i = 0; i < count; i++) {
+		const info = gl.getActiveUniform(program, i);
+		uniforms[info.name] = gl.getUniformLocation(program, info.name);
+	}
+	return { program, uniforms };
+}
+function makeTexture(gl, canvasOrImage, { repeat = false, linear = false } = {}) {
+	const tex = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, tex);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvasOrImage);
+	const filter = linear ? gl.LINEAR : gl.NEAREST;
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+	const wrap = repeat ? gl.REPEAT : gl.CLAMP_TO_EDGE;
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrap);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap);
+	return tex;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Procedural pixel-art textures
+// ---------------------------------------------------------------------------------------------
+const TILE = 16, ATLAS_TILES = 4;
+const T = { GRASS_TOP: 0, GRASS_SIDE: 1, DIRT: 2, STONE: 3, LOG_SIDE: 4, LOG_TOP: 5, LEAVES: 6, DIAMOND: 7, AMETHYST: 8, GLOW: 9 };
+function buildAtlas() {
+	const size = TILE * ATLAS_TILES;
+	const c = document.createElement('canvas');
+	c.width = c.height = size;
+	const ctx = c.getContext('2d');
+	const img = ctx.createImageData(size, size);
+	const rnd = mulberry32(1337);
+	const put = (tile, x, y, rgb, a = 255) => {
+		const px = (tile % ATLAS_TILES) * TILE + x, py = Math.floor(tile / ATLAS_TILES) * TILE + y;
+		const o = (py * size + px) * 4;
+		img.data[o] = rgb[0]; img.data[o + 1] = rgb[1]; img.data[o + 2] = rgb[2]; img.data[o + 3] = a;
+	};
+	const vary = (rgb, amount) => { const v = (rnd() - 0.5) * amount; return rgb.map((c) => Math.max(0, Math.min(255, Math.round(c + v)))); };
+	for (let y = 0; y < TILE; y++) for (let x = 0; x < TILE; x++) {
+		put(T.GRASS_TOP, x, y, vary([95, 159, 53], 46));
+		put(T.DIRT, x, y, vary([134, 96, 67], 40));
+		const grassDepth = 3 + ((x * 7) % 3 === 0 ? 1 : 0);
+		put(T.GRASS_SIDE, x, y, y < grassDepth ? vary([95, 159, 53], 40) : vary([134, 96, 67], 40));
+		put(T.STONE, x, y, vary(rnd() < 0.12 ? [100, 100, 100] : [128, 128, 128], 30));
+		const stripe = (x % 4 === 0) ? -26 : 0;
+		put(T.LOG_SIDE, x, y, vary([104 + stripe, 82 + stripe, 50 + stripe], 22));
+		const ring = Math.max(Math.abs(x - 7.5), Math.abs(y - 7.5));
+		put(T.LOG_TOP, x, y, ring > 6.5 ? vary([104, 82, 50], 20) : vary(Math.floor(ring) % 2 ? [176, 143, 88] : [150, 118, 70], 18));
+		put(T.LEAVES, x, y, rnd() < 0.18 ? [28, 64, 22] : vary([58, 122, 40], 50));
+		const ore = rnd() < 0.16 && x > 1 && x < 14 && y > 1 && y < 14;
+		put(T.DIAMOND, x, y, ore ? vary([90, 230, 220], 40) : vary([128, 128, 128], 30));
+		const facet = ((x + y) % 5 === 0) || ((x - y + 16) % 6 === 0);
+		put(T.AMETHYST, x, y, facet ? vary([206, 160, 255], 30) : vary([140, 90, 200], 36));
+		put(T.GLOW, x, y, rnd() < 0.35 ? vary([255, 230, 140], 30) : vary([190, 140, 70], 40));
+	}
+	ctx.putImageData(img, 0, 0);
+	return c;
+}
+
+function buildSword() {
+	const c = document.createElement('canvas');
+	c.width = c.height = 16;
+	const ctx = c.getContext('2d');
+	const cells = new Map();
+	const set = (x, y, color) => cells.set(x + ',' + y, color);
+	for (let y = 1; y <= 9; y++) set(15 - y, y, '#d3fff7');
+	for (let y = 2; y <= 9; y++) set(16 - y, y, '#3fd6c6');
+	for (let x = 3; x <= 7; x++) set(x, x + 5, '#1d8f86');
+	for (let y = 11; y <= 13; y++) set(15 - y, y, '#6b4a2b');
+	set(1, 14, '#3fd6c6');
+	set(14, 1, '#d3fff7');
+	const filled = new Set(cells.keys());
+	for (const k of filled) {
+		const [x, y] = k.split(',').map(Number);
+		for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+			const nk = (x + dx) + ',' + (y + dy);
+			if (!filled.has(nk) && x + dx >= 0 && x + dx < 16 && y + dy >= 0 && y + dy < 16) cells.set(nk, cells.get(nk) || '#0c2f2c');
+		}
+	}
+	for (const [k, color] of cells) {
+		const [x, y] = k.split(',').map(Number);
+		ctx.fillStyle = color;
+		ctx.fillRect(x, y, 1, 1);
+	}
+	return c;
+}
+
+// Tileable purple streak texture, standing in for Mojang's enchanted_glint_item.png.
+function buildGlintTexture() {
+	const size = 64;
+	const c = document.createElement('canvas');
+	c.width = c.height = size;
+	const ctx = c.getContext('2d');
+	const img = ctx.createImageData(size, size);
+	const rnd = mulberry32(42);
+	const lattice = 8;
+	const grid = Array.from({ length: lattice * lattice }, () => rnd());
+	const value = (x, y) => {
+		const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+		const g = (i, j) => grid[((j % lattice + lattice) % lattice) * lattice + ((i % lattice + lattice) % lattice)];
+		const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+		return (g(xi, yi) * (1 - u) + g(xi + 1, yi) * u) * (1 - v) + (g(xi, yi + 1) * (1 - u) + g(xi + 1, yi + 1) * u) * v;
+	};
+	for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+		const n = value(x / size * lattice, y / size * 2) * 0.7 + value(x / size * lattice * 2 + 3, y / size * 4) * 0.3;
+		const s = Math.pow(Math.max(0, n - 0.25) / 0.75, 1.6);
+		const o = (y * size + x) * 4;
+		img.data[o] = Math.round(140 * s); img.data[o + 1] = Math.round(70 * s); img.data[o + 2] = Math.round(230 * s); img.data[o + 3] = 255;
+	}
+	ctx.putImageData(img, 0, 0);
+	return c;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Item + glint renderer (used in the scene and in the glint tab)
+// ---------------------------------------------------------------------------------------------
+const ITEM_VS = `#version 300 es
+in vec2 aPos;
+uniform vec4 uRect;
+uniform float uAngle;
+out vec2 vUv;
+void main() {
+	vUv = vec2(aPos.x, 1.0 - aPos.y);
+	vec2 p = (aPos - 0.5) * uRect.zw;
+	float c = cos(uAngle), s = sin(uAngle);
+	p = vec2(c * p.x - s * p.y, s * p.x + c * p.y);
+	gl_Position = vec4(uRect.xy + p, 0.0, 1.0);
+}`;
+const ITEM_FS = `#version 300 es
+precision highp float;
+uniform sampler2D uItem;
+uniform sampler2D uGlintTex;
+uniform mat3 uGlintMat;
+uniform float uMode;
+uniform float uGameTime;
+in vec2 vUv;
+out vec4 fragColor;
+${glsl('glsl-common')}
+${glsl('glsl-glint')}
+void main() {
+	vec4 item = texture(uItem, vUv);
+	if (item.a < 0.1) discard;
+	vec2 guv = (uGlintMat * vec3(vUv, 1.0)).xy;
+	vec3 tex = texture(uGlintTex, guv).rgb;
+	vec3 glint = uMode < 0.5 ? vec3(0.0) : (uMode < 1.5 ? tex : skyfx_rainbowGlint(tex, guv, uGameTime));
+	// Minecraft blends the glint with (SRC_COLOR, ONE): the added light is glint * glint
+	fragColor = vec4(item.rgb + glint * glint, 1.0);
+}`;
+function createItemRenderer(gl) {
+	const prog = makeProgram(gl, ITEM_VS, ITEM_FS);
+	const quad = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), gl.STATIC_DRAW);
+	const vao = gl.createVertexArray();
+	gl.bindVertexArray(vao);
+	const loc = gl.getAttribLocation(prog.program, 'aPos');
+	gl.enableVertexAttribArray(loc);
+	gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+	gl.bindVertexArray(null);
+	const swordTex = makeTexture(gl, buildSword());
+	const glintTex = makeTexture(gl, buildGlintTexture(), { repeat: true, linear: true });
+	return {
+		draw(rect, angle, timeMs, mode, scale = 8) {
+			// Same transform as vanilla's TextureTransform.setupGlintTexturing
+			const l = timeMs * 8.0;
+			const f = (l % 110000) / 110000, g = (l % 30000) / 30000;
+			const c = Math.cos(Math.PI / 18) * scale, s = Math.sin(Math.PI / 18) * scale;
+			const gameTime = ((timeMs / 50) % 24000) / 24000;
+			gl.useProgram(prog.program);
+			gl.uniform4fv(prog.uniforms.uRect, rect);
+			gl.uniform1f(prog.uniforms.uAngle, angle);
+			gl.uniformMatrix3fv(prog.uniforms.uGlintMat, false, [c, s, 0, -s, c, 0, -f, g, 1]);
+			gl.uniform1f(prog.uniforms.uMode, mode);
+			gl.uniform1f(prog.uniforms.uGameTime, gameTime);
+			gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, swordTex);
+			gl.uniform1i(prog.uniforms.uItem, 0);
+			gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, glintTex);
+			gl.uniform1i(prog.uniforms.uGlintTex, 1);
+			gl.bindVertexArray(vao);
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+			gl.bindVertexArray(null);
+		},
+	};
+}
+const glintModeIndex = () => (settings.glint === 'rainbow' ? 2 : 1);
+
+// ---------------------------------------------------------------------------------------------
+// Main scene
+// ---------------------------------------------------------------------------------------------
+const canvas = $('#scene');
+const gl = canvas.getContext('webgl2', { antialias: true, alpha: false });
+if (!gl) {
+	fail('WebGL2 wordt niet ondersteund in deze browser. Probeer een recente Chrome, Edge of Firefox.');
+	return;
+}
+
+// Sky ---------------------------------------------------------------------------------------
+const SKY_VS = `#version 300 es
+in vec2 aPos;
+out vec2 vNdc;
+void main() { vNdc = aPos; gl_Position = vec4(aPos, 0.0, 1.0); }`;
+function skyFragment(sky) {
+	const body = sky.id === 'vanilla' ? glsl('glsl-vanilla') : glsl('glsl-' + sky.id);
+	return `#version 300 es
+precision highp float;
+uniform mat4 uInvViewProj;
+uniform vec4 uParams;
+in vec2 vNdc;
+out vec4 fragColor;
+${glsl('glsl-common')}
+${body}
+void main() {
+	vec4 p = uInvViewProj * vec4(vNdc, 1.0, 1.0);
+	vec3 dir = normalize(p.xyz / p.w);
+	vec3 col = ${sky.call} * uParams.y;
+	fragColor = vec4(skyfx_tonemap(col), 1.0);
+}`;
+}
+const skyPrograms = {};
+function skyProgram(id) {
+	if (!skyPrograms[id]) {
+		const sky = SKIES.find((s) => s.id === id);
+		try {
+			skyPrograms[id] = makeProgram(gl, SKY_VS, skyFragment(sky));
+		} catch (e) {
+			fail('Shader fout in lucht "' + sky.name + '":\n' + e.message);
+			throw e;
+		}
+	}
+	return skyPrograms[id];
+}
+const triBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, triBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+const triVao = gl.createVertexArray();
+gl.bindVertexArray(triVao);
+gl.enableVertexAttribArray(0);
+gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+gl.bindVertexArray(null);
+function drawSky(id, invViewProj, time) {
+	const prog = skyProgram(id);
+	gl.useProgram(prog.program);
+	gl.uniformMatrix4fv(prog.uniforms.uInvViewProj, false, invViewProj);
+	gl.uniform4f(prog.uniforms.uParams, time, settings.brightness / 100, settings.auroraPalette, 0);
+	gl.bindVertexArray(triVao);
+	gl.drawArrays(gl.TRIANGLES, 0, 3);
+	gl.bindVertexArray(null);
+}
+
+// Voxel island --------------------------------------------------------------------------------
+const blocks = new Map();
+const bkey = (x, y, z) => x + ',' + y + ',' + z;
+(function buildIsland() {
+	const rnd = mulberry32(7);
+	const R = 6;
+	for (let x = -R; x <= R; x++) for (let z = -R; z <= R; z++) {
+		const d = Math.hypot(x, z) + (rnd() - 0.5) * 0.9;
+		if (d > R + 0.2) continue;
+		const top = (d < 2.6 ? 1 : 0) + (x > 1 && z < -1 && d < 4.5 ? 1 : 0);
+		const depth = Math.max(1, Math.floor((R - d) * 0.95 + rnd() * 1.5));
+		for (let y = top - depth; y <= top; y++) {
+			let type = y === top ? 'grass' : (y >= top - 2 ? 'dirt' : 'stone');
+			if (type === 'stone' && rnd() < 0.10) type = 'diamond';
+			blocks.set(bkey(x, y, z), type);
+		}
+	}
+	const tx = -2, tz = 1, base = 2;
+	for (let y = base; y < base + 4; y++) blocks.set(bkey(tx, y, tz), 'log');
+	for (let x = -2; x <= 2; x++) for (let y = 0; y <= 2; y++) for (let z = -2; z <= 2; z++) {
+		if (Math.abs(x) + Math.abs(z) + y > 4 || (x === 0 && z === 0 && y < 2)) continue;
+		const k = bkey(tx + x, base + 2 + y, tz + z);
+		if (!blocks.has(k)) blocks.set(k, 'leaves');
+	}
+	blocks.set(bkey(3, 2, -3), 'amethyst');
+	blocks.set(bkey(2, 2, 3), 'glow');
+})();
+const FACES = [
+	{ n: [0, 1, 0], shade: 1.0, v: [[0, 1, 0], [0, 1, 1], [1, 1, 1], [1, 1, 0]] },
+	{ n: [0, -1, 0], shade: 0.5, v: [[0, 0, 0], [1, 0, 0], [1, 0, 1], [0, 0, 1]] },
+	{ n: [1, 0, 0], shade: 0.75, v: [[1, 1, 1], [1, 0, 1], [1, 0, 0], [1, 1, 0]] },
+	{ n: [-1, 0, 0], shade: 0.75, v: [[0, 1, 0], [0, 0, 0], [0, 0, 1], [0, 1, 1]] },
+	{ n: [0, 0, 1], shade: 0.86, v: [[0, 1, 1], [0, 0, 1], [1, 0, 1], [1, 1, 1]] },
+	{ n: [0, 0, -1], shade: 0.62, v: [[1, 1, 0], [1, 0, 0], [0, 0, 0], [0, 1, 0]] },
+];
+function tileFor(type, face) {
+	switch (type) {
+		case 'grass': return face === 0 ? T.GRASS_TOP : (face === 1 ? T.DIRT : T.GRASS_SIDE);
+		case 'dirt': return T.DIRT;
+		case 'log': return face < 2 ? T.LOG_TOP : T.LOG_SIDE;
+		case 'leaves': return T.LEAVES;
+		case 'diamond': return T.DIAMOND;
+		case 'amethyst': return T.AMETHYST;
+		case 'glow': return T.GLOW;
+		default: return T.STONE;
+	}
+}
+const blockMesh = (() => {
+	const verts = [], idx = [];
+	for (const [k, type] of blocks) {
+		const [x, y, z] = k.split(',').map(Number);
+		FACES.forEach((face, fi) => {
+			const nb = blocks.get(bkey(x + face.n[0], y + face.n[1], z + face.n[2]));
+			if (nb && nb !== 'leaves') return;
+			const tile = tileFor(type, fi);
+			const u0 = (tile % ATLAS_TILES) / ATLAS_TILES, v0 = Math.floor(tile / ATLAS_TILES) / ATLAS_TILES;
+			const span = 1 / ATLAS_TILES, inset = 0.0008;
+			const uvs = [[u0 + inset, v0 + inset], [u0 + inset, v0 + span - inset], [u0 + span - inset, v0 + span - inset], [u0 + span - inset, v0 + inset]];
+			const emissive = type === 'glow' ? 1.6 : 0.0;
+			const base = verts.length / 7;
+			face.v.forEach((c, i) => verts.push(x + c[0], y + c[1], z + c[2], uvs[i][0], uvs[i][1], face.shade, emissive));
+			idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+		});
+	}
+	const vao = gl.createVertexArray();
+	gl.bindVertexArray(vao);
+	const vb = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW);
+	const ib = gl.createBuffer();
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(idx), gl.STATIC_DRAW);
+	gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 28, 0);
+	gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 28, 12);
+	gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 28, 20);
+	gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3, 1, gl.FLOAT, false, 28, 24);
+	gl.bindVertexArray(null);
+	return { vao, count: idx.length };
+})();
+const BLOCK_VS = `#version 300 es
+layout(location = 0) in vec3 aPos;
+layout(location = 1) in vec2 aUv;
+layout(location = 2) in float aShade;
+layout(location = 3) in float aEmissive;
+uniform mat4 uViewProj;
+uniform vec3 uCam;
+out vec2 vUv;
+out float vShade;
+out float vEmissive;
+out float vDist;
+void main() {
+	vUv = aUv; vShade = aShade; vEmissive = aEmissive;
+	vDist = length(aPos - uCam);
+	gl_Position = uViewProj * vec4(aPos, 1.0);
+}`;
+const BLOCK_FS = `#version 300 es
+precision highp float;
+uniform sampler2D uAtlas;
+uniform vec3 uLight;
+uniform vec3 uAmb;
+uniform vec3 uFog;
+in vec2 vUv;
+in float vShade;
+in float vEmissive;
+in float vDist;
+out vec4 fragColor;
+void main() {
+	vec4 c = texture(uAtlas, vUv);
+	vec3 col = c.rgb * (uLight * vShade + uAmb) + c.rgb * vEmissive;
+	col = mix(col, uFog, smoothstep(16.0, 46.0, vDist) * 0.7);
+	fragColor = vec4(col, 1.0);
+}`;
+const blockProg = makeProgram(gl, BLOCK_VS, BLOCK_FS);
+const atlasTex = makeTexture(gl, buildAtlas());
+
+// Block aura -----------------------------------------------------------------------------------
+const AURA_VS = `#version 300 es
+layout(location = 0) in vec3 aPos;
+layout(location = 1) in vec2 aFace;
+uniform mat4 uViewProj;
+uniform vec3 uCenter;
+uniform float uScale;
+out vec2 vFace;
+void main() {
+	vFace = aFace;
+	gl_Position = uViewProj * vec4(uCenter + aPos * uScale, 1.0);
+}`;
+const AURA_FS = `#version 300 es
+precision highp float;
+uniform vec3 uColor;
+uniform float uFill;
+uniform float uGlow;
+uniform float uHalo;
+in vec2 vFace;
+out vec4 fragColor;
+void main() {
+	float e = min(min(vFace.x, 1.0 - vFace.x), min(vFace.y, 1.0 - vFace.y));
+	float px = fwidth(e);
+	float a;
+	if (uHalo > 0.5) {
+		a = exp(-e / (0.014 * uGlow)) * 0.6;
+	} else {
+		float line = 1.0 - smoothstep(0.0, 0.008 + px * 1.5, e);
+		a = line + exp(-e / (0.009 * uGlow)) * 0.7 + uFill;
+	}
+	fragColor = vec4(uColor * a, 1.0);
+}`;
+const auraProg = makeProgram(gl, AURA_VS, AURA_FS);
+const auraMesh = (() => {
+	const verts = [], idx = [];
+	FACES.forEach((face) => {
+		const base = verts.length / 5;
+		const uv = [[0, 0], [0, 1], [1, 1], [1, 0]];
+		face.v.forEach((c, i) => verts.push(c[0] - 0.5, c[1] - 0.5, c[2] - 0.5, uv[i][0], uv[i][1]));
+		idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+	});
+	const vao = gl.createVertexArray();
+	gl.bindVertexArray(vao);
+	const vb = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW);
+	const ib = gl.createBuffer();
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(idx), gl.STATIC_DRAW);
+	gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 20, 0);
+	gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 20, 12);
+	gl.bindVertexArray(null);
+	return { vao, count: idx.length };
+})();
+function auraColorNow(seconds) {
+	if (settings.auraRainbow) return hsv((seconds * 0.12) % 1, 0.8, 1.0);
+	return hexToRgb(settings.auraColor);
+}
+
+const itemRenderer = createItemRenderer(gl);
+
+// Camera & picking ----------------------------------------------------------------------------
+const camera = { yaw: 0, pitch: 0.28, radius: 13, target: [0, 1.0, 0], height: 2.6, fov: 1.05 };
+let targetView = null;
+function heroView(sky) {
+	const h = norm(sky.hero);
+	targetView = { yaw: Math.atan2(h[0], h[2]), pitch: Math.asin(h[1]) };
+}
+function viewDir() {
+	const cp = Math.cos(camera.pitch);
+	return [Math.sin(camera.yaw) * cp, Math.sin(camera.pitch), Math.cos(camera.yaw) * cp];
+}
+// The camera circles the island at a fixed height and looks out along (yaw, pitch), so the island sits
+// in the lower part of the frame and the sky fills the rest.
+function eyePos() {
+	const orbit = camera.yaw - 0.42;
+	return [camera.target[0] - Math.sin(orbit) * camera.radius, camera.target[1] + camera.height, camera.target[2] - Math.cos(orbit) * camera.radius];
+}
+let pointer = null;
+let lastInteraction = -1e9;
+let dragging = false;
+let lastPos = null;
+canvas.addEventListener('pointerdown', (e) => {
+	dragging = true;
+	lastPos = [e.clientX, e.clientY];
+	canvas.classList.add('dragging');
+	canvas.setPointerCapture(e.pointerId);
+	lastInteraction = performance.now();
+	targetView = null;
+});
+canvas.addEventListener('pointermove', (e) => {
+	pointer = [e.clientX, e.clientY];
+	if (!dragging) return;
+	camera.yaw -= (e.clientX - lastPos[0]) * 0.005;
+	camera.pitch = Math.max(-0.75, Math.min(0.95, camera.pitch + (e.clientY - lastPos[1]) * 0.004));
+	lastPos = [e.clientX, e.clientY];
+	lastInteraction = performance.now();
+});
+const endDrag = () => { dragging = false; canvas.classList.remove('dragging'); };
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);
+canvas.addEventListener('pointerleave', () => { pointer = null; });
+canvas.addEventListener('wheel', (e) => {
+	e.preventDefault();
+	camera.radius = Math.max(6, Math.min(24, camera.radius * Math.exp(e.deltaY * 0.001)));
+	lastInteraction = performance.now();
+}, { passive: false });
+
+function pickBlock(eye, dir) {
+	let x = Math.floor(eye[0]), y = Math.floor(eye[1]), z = Math.floor(eye[2]);
+	const step = dir.map((d) => (d > 0 ? 1 : -1));
+	const tDelta = dir.map((d) => Math.abs(1 / (d || 1e-9)));
+	const pos = [x, y, z];
+	const tMax = dir.map((d, i) => {
+		const edge = d > 0 ? pos[i] + 1 - eye[i] : eye[i] - pos[i];
+		return edge * tDelta[i];
+	});
+	for (let i = 0; i < 200; i++) {
+		if (blocks.has(bkey(pos[0], pos[1], pos[2]))) return pos.slice();
+		const axis = tMax[0] < tMax[1] ? (tMax[0] < tMax[2] ? 0 : 2) : (tMax[1] < tMax[2] ? 1 : 2);
+		if (tMax[axis] > 60) return null;
+		pos[axis] += step[axis];
+		tMax[axis] += tDelta[axis];
+	}
+	return null;
+}
+
+// Thumbnails -----------------------------------------------------------------------------------
+function renderThumbnails() {
+	const w = 256, h = 144;
+	const fbo = gl.createFramebuffer();
+	const tex = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, tex);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+	gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+	const pixels = new Uint8Array(w * h * 4);
+	const proj = M4.perspective(1.15, w / h, 0.05, 100);
+	for (const sky of SKIES) {
+		const tile = document.querySelector('.sky-tile[data-sky="' + sky.id + '"] canvas');
+		if (!tile) continue;
+		const fwd = norm([sky.hero[0], sky.hero[1] + 0.12, sky.hero[2]]);
+		const view = M4.lookDir([0, 0, 0], fwd, [0, 1, 0]);
+		gl.viewport(0, 0, w, h);
+		gl.disable(gl.DEPTH_TEST);
+		drawSky(sky.id, M4.invert(M4.mul(proj, view)), 40.0);
+		gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+		const ctx = tile.getContext('2d');
+		const img = ctx.createImageData(w, h);
+		for (let y = 0; y < h; y++) img.data.set(pixels.subarray((h - 1 - y) * w * 4, (h - y) * w * 4), y * w * 4);
+		ctx.putImageData(img, 0, 0);
+	}
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	gl.deleteFramebuffer(fbo);
+	gl.deleteTexture(tex);
+}
+
+// Frame loop -----------------------------------------------------------------------------------
+let skyTime = 20.0;
+let lastFrame = performance.now();
+let renderScale = Math.min(window.devicePixelRatio || 1, 1.5);
+let fpsSmooth = 60, frames = 0, fpsTimer = 0, slowFrames = 0;
+function resize() {
+	const w = Math.max(1, Math.round(canvas.clientWidth * renderScale));
+	const h = Math.max(1, Math.round(canvas.clientHeight * renderScale));
+	if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+}
+function frame(now) {
+	const dt = Math.min(0.1, (now - lastFrame) / 1000);
+	lastFrame = now;
+	skyTime = (skyTime + dt * settings.speed / 100) % 7200;
+	resize();
+
+	// idle auto-pan / easing towards the hero view of the selected sky
+	if (targetView) {
+		let dy = targetView.yaw - camera.yaw;
+		dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+		camera.yaw += dy * Math.min(1, dt * 2.2);
+		camera.pitch += (targetView.pitch - camera.pitch) * Math.min(1, dt * 2.2);
+		if (Math.abs(dy) < 0.002 && Math.abs(targetView.pitch - camera.pitch) < 0.002) targetView = null;
+	} else if (!dragging && now - lastInteraction > 6000) {
+		camera.yaw += dt * 0.04;
+	}
+
+	const sky = SKIES.find((s) => s.id === settings.sky) || SKIES[0];
+	const aspect = canvas.width / canvas.height;
+	const proj = M4.perspective(camera.fov, aspect, 0.05, 200);
+	const dir = viewDir();
+	const eye = eyePos();
+	const rotView = M4.lookDir([0, 0, 0], dir, [0, 1, 0]);
+	const view = M4.lookDir(eye, dir, [0, 1, 0]);
+	const viewProj = M4.mul(proj, view);
+
+	gl.viewport(0, 0, canvas.width, canvas.height);
+	gl.disable(gl.DEPTH_TEST);
+	gl.disable(gl.BLEND);
+	drawSky(sky.id, M4.invert(M4.mul(proj, rotView)), skyTime);
+
+	gl.clear(gl.DEPTH_BUFFER_BIT);
+	gl.enable(gl.DEPTH_TEST);
+	gl.depthFunc(gl.LEQUAL);
+	gl.enable(gl.CULL_FACE);
+	gl.useProgram(blockProg.program);
+	gl.uniformMatrix4fv(blockProg.uniforms.uViewProj, false, viewProj);
+	gl.uniform3fv(blockProg.uniforms.uCam, eye);
+	gl.uniform3fv(blockProg.uniforms.uLight, sky.light);
+	gl.uniform3fv(blockProg.uniforms.uAmb, sky.amb);
+	gl.uniform3fv(blockProg.uniforms.uFog, settings.matchFog ? sky.fog : SKIES[0].fog);
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, atlasTex);
+	gl.uniform1i(blockProg.uniforms.uAtlas, 0);
+	gl.bindVertexArray(blockMesh.vao);
+	gl.drawElements(gl.TRIANGLES, blockMesh.count, gl.UNSIGNED_INT, 0);
+	gl.bindVertexArray(null);
+	gl.disable(gl.CULL_FACE);
+
+	if (settings.auraOn) {
+		let target = null;
+		if (pointer && !dragging) {
+			const rect = canvas.getBoundingClientRect();
+			const nx = ((pointer[0] - rect.left) / rect.width) * 2 - 1;
+			const ny = 1 - ((pointer[1] - rect.top) / rect.height) * 2;
+			const inv = M4.invert(viewProj);
+			const far = [0, 1, 2].map((i) => inv[i] * nx + inv[4 + i] * ny + inv[8 + i] + inv[12 + i]);
+			const w = inv[3] * nx + inv[7] * ny + inv[11] + inv[15];
+			const point = far.map((v) => v / w);
+			target = pickBlock(eye, norm([point[0] - eye[0], point[1] - eye[1], point[2] - eye[2]]));
+		}
+		if (!target) target = [0, 1, 0];
+		const seconds = now / 1000;
+		const pulse = 0.72 + 0.28 * Math.sin(seconds * 3.0 * settings.auraPulse / 100);
+		const color = auraColorNow(seconds).map((c) => c * pulse);
+		gl.enable(gl.BLEND);
+		gl.blendFunc(gl.ONE, gl.ONE);
+		gl.depthMask(false);
+		gl.useProgram(auraProg.program);
+		gl.uniformMatrix4fv(auraProg.uniforms.uViewProj, false, viewProj);
+		gl.uniform3f(auraProg.uniforms.uCenter, target[0] + 0.5, target[1] + 0.5, target[2] + 0.5);
+		gl.uniform3fv(auraProg.uniforms.uColor, color);
+		gl.uniform1f(auraProg.uniforms.uFill, settings.auraFill / 100);
+		gl.uniform1f(auraProg.uniforms.uGlow, settings.auraGlow);
+		gl.bindVertexArray(auraMesh.vao);
+		gl.uniform1f(auraProg.uniforms.uHalo, 0);
+		gl.uniform1f(auraProg.uniforms.uScale, 1.004);
+		gl.drawElements(gl.TRIANGLES, auraMesh.count, gl.UNSIGNED_SHORT, 0);
+		gl.uniform1f(auraProg.uniforms.uHalo, 1);
+		gl.uniform1f(auraProg.uniforms.uScale, 1.0 + 0.012 * settings.auraGlow);
+		gl.drawElements(gl.TRIANGLES, auraMesh.count, gl.UNSIGNED_SHORT, 0);
+		gl.bindVertexArray(null);
+		gl.depthMask(true);
+		gl.disable(gl.BLEND);
+	}
+
+	// held item with the selected glint, bottom right like the first-person hand
+	gl.disable(gl.DEPTH_TEST);
+	const size = Math.min(canvas.width, canvas.height) * 0.30;
+	const bob = Math.sin(now / 700) * 0.01;
+	itemRenderer.draw([1 - (size * 0.75) / canvas.width * 2, -1 + (size * 0.72) / canvas.height * 2 + bob, size / canvas.width * 2, size / canvas.height * 2], 0.15, now, glintModeIndex());
+
+	// fps + adaptive resolution
+	frames++;
+	fpsTimer += dt;
+	if (fpsTimer >= 0.5) {
+		fpsSmooth = frames / fpsTimer;
+		frames = 0; fpsTimer = 0;
+		$('#fps').textContent = Math.round(fpsSmooth) + ' fps · ' + Math.round(renderScale * 100) + '% resolutie';
+		if (fpsSmooth < 32 && renderScale > 0.5) { slowFrames++; if (slowFrames >= 2) { renderScale = Math.max(0.5, renderScale * 0.85); slowFrames = 0; } }
+		else slowFrames = 0;
+	}
+	requestAnimationFrame(frame);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Glint preview canvas (second context)
+// ---------------------------------------------------------------------------------------------
+let glintPreview = null;
+(function setupGlintPreview() {
+	const c = $('#glintPreview');
+	const g2 = c.getContext('webgl2', { antialias: false, alpha: true, premultipliedAlpha: false });
+	if (!g2) return;
+	const renderer = createItemRenderer(g2);
+	glintPreview = (now) => {
+		if (!$('#tab-glint').classList.contains('active') || $('#menu').classList.contains('hidden')) return;
+		g2.viewport(0, 0, c.width, c.height);
+		g2.clearColor(0, 0, 0, 0);
+		g2.clear(g2.COLOR_BUFFER_BIT);
+		renderer.draw([-0.5, 0.0, 0.85, 1.7], 0.0, now, 1);
+		renderer.draw([0.5, 0.0, 0.85, 1.7], 0.0, now, 2);
+	};
+	const loop = (now) => { glintPreview(now); requestAnimationFrame(loop); };
+	requestAnimationFrame(loop);
+})();
+
+// ---------------------------------------------------------------------------------------------
+// Menu UI (mirrors the in-game SkyFX screen)
+// ---------------------------------------------------------------------------------------------
+const menu = $('#menu');
+function setTab(tab) {
+	settings.tab = tab;
+	document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('selected', b.dataset.tab === tab));
+	document.querySelectorAll('.tab-body').forEach((s) => s.classList.toggle('active', s.id === 'tab-' + tab));
+	saveSettings();
+}
+document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab)));
+
+const skyGrid = $('#skyGrid');
+SKIES.forEach((sky) => {
+	const tile = document.createElement('button');
+	tile.type = 'button';
+	tile.className = 'sky-tile' + (sky.id === 'vanilla' ? ' wide' : '');
+	tile.dataset.sky = sky.id;
+	tile.innerHTML = '<canvas width="256" height="144"></canvas><span class="label"></span>';
+	tile.querySelector('.label').textContent = sky.name;
+	tile.addEventListener('click', () => {
+		settings.sky = sky.id;
+		heroView(sky);
+		refresh();
+	});
+	skyGrid.appendChild(tile);
+});
+const vanillaTile = skyGrid.querySelector('[data-sky="vanilla"]');
+skyGrid.appendChild(vanillaTile);
+
+const glintCards = $('#glintCards');
+GLINTS.forEach((glint) => {
+	const card = document.createElement('button');
+	card.type = 'button';
+	card.className = 'mc-btn glint-card';
+	card.dataset.glint = glint.id;
+	card.disabled = !!glint.locked;
+	card.innerHTML = '<span class="name"></span><span class="chip"></span><small></small>';
+	card.querySelector('.name').textContent = glint.name;
+	card.querySelector('.chip').style.background = glint.chip;
+	card.querySelector('small').textContent = glint.desc;
+	card.addEventListener('click', () => { settings.glint = glint.id; refresh(); });
+	glintCards.appendChild(card);
+});
+
+const swatches = $('#swatches');
+SWATCHES.forEach((hex) => {
+	const b = document.createElement('button');
+	b.type = 'button';
+	b.style.background = hex;
+	b.title = hex;
+	b.setAttribute('aria-label', 'Kleur ' + hex);
+	b.addEventListener('click', () => { settings.auraColor = hex; settings.auraRainbow = false; refresh(); });
+	swatches.appendChild(b);
+});
+
+function bindSlider(id, format) {
+	const input = $('#' + id);
+	const label = input.nextElementSibling;
+	input.addEventListener('input', () => {
+		settings[id] = Number(input.value);
+		label.textContent = format(settings[id]);
+		saveSettings();
+	});
+	return () => { input.value = settings[id]; label.textContent = format(settings[id]); };
+}
+function bindToggle(id, format, onChange) {
+	const btn = $('#' + id);
+	btn.addEventListener('click', () => { onChange(); refresh(); });
+	return () => { btn.textContent = format(); };
+}
+const onOff = (v) => (v ? 'AAN' : 'UIT');
+const refreshers = [
+	bindSlider('speed', (v) => 'Animatiesnelheid: ' + v + '%'),
+	bindSlider('brightness', (v) => 'Helderheid: ' + v + '%'),
+	bindSlider('auraPulse', (v) => 'Pulse snelheid: ' + (v === 0 ? 'UIT' : v + '%')),
+	bindSlider('auraGlow', (v) => 'Gloed dikte: ' + v),
+	bindSlider('auraFill', (v) => 'Vulling: ' + v + '%'),
+	bindToggle('auroraPalette', () => 'Noorderlicht kleur: ' + PALETTES[settings.auroraPalette], () => { settings.auroraPalette = (settings.auroraPalette + 1) % PALETTES.length; }),
+	bindToggle('hideClouds', () => 'Vanilla wolken verbergen: ' + onOff(settings.hideClouds), () => { settings.hideClouds = !settings.hideClouds; }),
+	bindToggle('matchFog', () => 'Mist past bij de lucht: ' + onOff(settings.matchFog), () => { settings.matchFog = !settings.matchFog; }),
+	bindToggle('auraOn', () => 'Block Aura: ' + onOff(settings.auraOn), () => { settings.auraOn = !settings.auraOn; }),
+	bindToggle('auraRainbow', () => 'Regenboog modus: ' + onOff(settings.auraRainbow), () => { settings.auraRainbow = !settings.auraRainbow; }),
+];
+const colorInput = $('#auraColor');
+const hexInput = $('#auraHex');
+colorInput.addEventListener('input', () => { settings.auraColor = colorInput.value; settings.auraRainbow = false; refresh(); });
+hexInput.addEventListener('input', () => {
+	let v = hexInput.value.trim();
+	if (!v.startsWith('#')) v = '#' + v;
+	const ok = /^#[0-9a-fA-F]{6}$/.test(v);
+	hexInput.classList.toggle('bad', !ok);
+	if (ok) { settings.auraColor = v.toLowerCase(); settings.auraRainbow = false; colorInput.value = settings.auraColor; saveSettings(); refreshers.forEach((r) => r()); }
+});
+
+function refresh() {
+	refreshers.forEach((r) => r());
+	document.querySelectorAll('.sky-tile').forEach((t) => t.classList.toggle('selected', t.dataset.sky === settings.sky));
+	document.querySelectorAll('.glint-card').forEach((c) => c.classList.toggle('selected', c.dataset.glint === settings.glint));
+	$('#auroraPalette').style.display = settings.sky === 'aurora' ? '' : 'none';
+	colorInput.value = settings.auraColor;
+	if (document.activeElement !== hexInput) { hexInput.value = settings.auraColor; hexInput.classList.remove('bad'); }
+	const sky = SKIES.find((s) => s.id === settings.sky);
+	$('#nowSky').textContent = sky ? sky.name : '-';
+	$('#nowGlint').textContent = (GLINTS.find((g) => g.id === settings.glint) || GLINTS[0]).name;
+	saveSettings();
+}
+
+function toggleMenu(show) {
+	const visible = show !== undefined ? show : menu.classList.contains('hidden');
+	menu.classList.toggle('hidden', !visible);
+}
+$('#done').addEventListener('click', () => toggleMenu(false));
+$('#menuToggle').addEventListener('click', () => toggleMenu());
+$('#reset').addEventListener('click', () => {
+	const tab = settings.tab;
+	settings = { ...DEFAULTS, tab };
+	heroView(SKIES.find((s) => s.id === settings.sky));
+	refresh();
+});
+window.addEventListener('keydown', (e) => {
+	if (e.target instanceof HTMLInputElement && e.target.type !== 'range') return;
+	if (e.key === 'k' || e.key === 'K') toggleMenu();
+	if (e.key === 'Escape') toggleMenu(false);
+});
+if (window.matchMedia('(max-width: 720px)').matches) menu.classList.add('hidden');
+
+// ---------------------------------------------------------------------------------------------
+// Start
+// ---------------------------------------------------------------------------------------------
+setTab(settings.tab || 'sky');
+refresh();
+const startSky = SKIES.find((s) => s.id === settings.sky) || SKIES[1];
+const h0 = norm(startSky.hero);
+camera.yaw = Math.atan2(h0[0], h0[2]);
+camera.pitch = Math.asin(h0[1]);
+try {
+	skyProgram(startSky.id);
+} catch (e) {
+	return;
+}
+requestAnimationFrame(frame);
+// compile the other skies after the first frames and draw their menu thumbnails
+setTimeout(() => {
+	try {
+		SKIES.forEach((s) => skyProgram(s.id));
+		renderThumbnails();
+	} catch (e) { /* error already shown */ }
+}, 350);
+})();
+</script>
+</body>
+</html>
