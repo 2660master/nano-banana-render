@@ -8,13 +8,9 @@ import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.shaders.UniformType;
-import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuTexture;
-import com.mojang.blaze3d.textures.GpuTextureView;
-import com.mojang.blaze3d.textures.TextureFormat;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import org.joml.Matrix4f;
@@ -24,8 +20,6 @@ import org.jspecify.annotations.Nullable;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
 
@@ -35,8 +29,9 @@ import com.skyfx.client.config.SkyFXConfig;
 /**
  * Item aura: a glowing outline around the item(s) held in first person.
  *
- * <p>The hand is drawn one extra time into an off-screen mask texture; a full-screen shader then paints a crisp outline
- * and a soft glow just outside the silhouette onto the screen, before the hand is drawn normally on top.
+ * <p>Vanilla clears the main depth buffer right before it draws the first-person hand, so once the hand is drawn the
+ * depth buffer holds exactly its silhouette. A full-screen shader reads that depth and paints a crisp outline and a
+ * soft glow just outside it. No extra render of the hand is needed.
  */
 public final class ItemAuraRenderer {
 	private static final RenderPipeline PIPELINE = RenderPipeline.builder()
@@ -53,16 +48,10 @@ public final class ItemAuraRenderer {
 			.withVertexFormat(DefaultVertexFormat.EMPTY, VertexFormat.Mode.TRIANGLES)
 			.build();
 
-	/** Same usage flags vanilla uses for its picture-in-picture GUI textures (render attachment + sampled). */
-	private static final int USAGE_COLOR = 12;
-	private static final int USAGE_DEPTH = 8;
-
-	private static @Nullable GpuTexture maskColor;
-	private static @Nullable GpuTexture maskDepth;
-	private static @Nullable GpuTextureView maskColorView;
-	private static @Nullable GpuTextureView maskDepthView;
+	/** Set when this frame's hand (with an item) was submitted; the outline is drawn once that hand has been drawn. */
+	private static boolean handSubmitted;
 	private static boolean reportedInvalid;
-	private static int reportedFrames;
+	private static boolean reportedActive;
 
 	private ItemAuraRenderer() {
 	}
@@ -72,40 +61,32 @@ public final class ItemAuraRenderer {
 				&& (!player.getMainHandItem().isEmpty() || !player.getOffhandItem().isEmpty());
 	}
 
+	/** Called when vanilla submits the first-person hand. */
+	public static void onHandSubmitted(@Nullable LocalPlayer player) {
+		handSubmitted = shouldRender(player);
+	}
+
 	/**
-	 * Called right after the hand was submitted for an extra mask pass: draws the submitted hand into the mask,
-	 * then composites the outline onto the main target.
+	 * Called after every {@code FeatureRenderDispatcher.renderAllFeatures()}. The first call after the hand was
+	 * submitted is the one that draws it: flush it, then paint the outline around its silhouette in the depth buffer.
 	 */
-	public static void renderMaskAndGlow(FeatureRenderDispatcher dispatcher, MultiBufferSource.BufferSource buffers) {
+	public static void afterFeatures() {
+		if (!handSubmitted) return;
+		handSubmitted = false;
+		Minecraft minecraft = Minecraft.getInstance();
+		minecraft.renderBuffers().bufferSource().endBatch();
 		if (!RenderSystem.getDevice().precompilePipeline(PIPELINE).isValid()) {
 			if (!reportedInvalid) {
 				reportedInvalid = true;
 				SkyFXClient.LOGGER.error("SkyFX item aura shader failed to compile, item aura disabled");
 			}
-			dispatcher.renderAllFeatures();
-			buffers.endBatch();
 			return;
 		}
-		if (reportedFrames < 3) {
-			reportedFrames++;
-			int items = 0;
-			for (var collection : dispatcher.getSubmitNodeStorage().getSubmitsPerOrder().values()) {
-				items += collection.getItemSubmits().size();
-			}
-			SkyFXClient.LOGGER.info("SkyFX item aura active, {} item(s) in the mask pass, model view {}", items, RenderSystem.getModelViewMatrix());
-		}
-		RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
-		ensureMask(main.width, main.height);
-
-		RenderSystem.getDevice().createCommandEncoder().clearColorAndDepthTextures(maskColor, 0, maskDepth, 1.0);
-		RenderSystem.outputColorTextureOverride = maskColorView;
-		RenderSystem.outputDepthTextureOverride = maskDepthView;
-		try {
-			dispatcher.renderAllFeatures();
-			buffers.endBatch();
-		} finally {
-			RenderSystem.outputColorTextureOverride = null;
-			RenderSystem.outputDepthTextureOverride = null;
+		RenderTarget main = minecraft.getMainRenderTarget();
+		if (main.getDepthTextureView() == null) return;
+		if (!reportedActive) {
+			reportedActive = true;
+			SkyFXClient.LOGGER.info("SkyFX item aura active");
 		}
 
 		SkyFXConfig config = SkyFXConfig.get();
@@ -123,25 +104,8 @@ public final class ItemAuraRenderer {
 			pass.setPipeline(PIPELINE);
 			RenderSystem.bindDefaultUniforms(pass);
 			pass.setUniform("DynamicTransforms", transforms);
-			pass.bindTexture("InSampler", maskColorView, RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR));
+			pass.bindTexture("InSampler", main.getDepthTextureView(), RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST));
 			pass.draw(0, 3);
 		}
-	}
-
-	private static void ensureMask(int width, int height) {
-		if (maskColor != null && maskColor.getWidth(0) == width && maskColor.getHeight(0) == height) {
-			return;
-		}
-		if (maskColor != null) {
-			maskColorView.close();
-			maskColor.close();
-			maskDepthView.close();
-			maskDepth.close();
-		}
-		GpuDevice device = RenderSystem.getDevice();
-		maskColor = device.createTexture(() -> "SkyFX item aura mask", USAGE_COLOR, TextureFormat.RGBA8, width, height, 1, 1);
-		maskColorView = device.createTextureView(maskColor);
-		maskDepth = device.createTexture(() -> "SkyFX item aura mask depth", USAGE_DEPTH, TextureFormat.DEPTH32, width, height, 1, 1);
-		maskDepthView = device.createTextureView(maskDepth);
 	}
 }

@@ -3,7 +3,8 @@
 #moj_import <minecraft:dynamictransforms.glsl>
 #moj_import <minecraft:globals.glsl>
 
-// SkyFX item aura: InSampler holds only the held item(s). Everything just outside their silhouette gets a crisp
+// SkyFX item aura: InSampler is the main depth buffer right after the first-person hand was drawn. Vanilla clears it
+// just before the hand, so depth < 1 is exactly the held item(s). Everything just outside that silhouette gets a crisp
 // coloured outline plus a soft glow. ColorModulator = (colour, strength), ModelOffset = (outline px, glow px, time).
 
 uniform sampler2D InSampler;
@@ -13,8 +14,7 @@ in vec2 texCoord;
 out vec4 fragColor;
 
 float coverage(vec2 uv) {
-    vec4 c = texture(InSampler, uv);
-    return max(c.a, step(0.004, max(c.r, max(c.g, c.b))));
+    return step(texture(InSampler, uv).r, 0.99999);
 }
 
 void main() {
