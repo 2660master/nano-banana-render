@@ -1,0 +1,30 @@
+{
+	"schemaVersion": 1,
+	"id": "skyfx",
+	"version": "${version}",
+	"name": "SkyFX",
+	"description": "Animated custom skies (Aurora, Galaxy, Anime Clouds, Storm Sea), custom enchantment glints and a colourable block aura - all configurable from one GUI (press K).",
+	"authors": [
+		"2660master"
+	],
+	"license": "GPL-3.0-or-later",
+	"icon": "assets/skyfx/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"com.skyfx.client.SkyFXClient"
+		]
+	},
+	"mixins": [
+		{
+			"config": "skyfx.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.17.0",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

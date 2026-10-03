@@ -1,0 +1,160 @@
+# TEMPORARY: prints API signatures from the 1.21.11 Mojang-mapped sources so the mod can be written against them.
+name: SkyFX API probe
+
+on:
+  push:
+    paths:
+      - '.github/workflows/skyfx-probe.yml'
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: skyfx-mod
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - run: chmod +x ./gradlew
+      - name: gen sources
+        run: ./gradlew genSources --stacktrace -q
+      - name: extract
+        run: |
+          mkdir -p /tmp/mcsrc
+          find ~/.gradle .gradle -name "*minecraft*sources.jar" 2>/dev/null | tee /tmp/jars.txt
+          for j in $(cat /tmp/jars.txt); do unzip -qo "$j" -d /tmp/mcsrc; done
+          find ~/.gradle -path "*fabric-api*" -name "*fabric-rendering-v1*sources*.jar" | head -3
+      - name: probe
+        run: |
+          cat > /tmp/probe.py <<'EOF'
+          import os, re, sys
+          ROOT = '/tmp/mcsrc'
+          DECL = re.compile(r'\b(class|interface|enum|record)\b')
+          def find(path):
+              p = os.path.join(ROOT, path)
+              if os.path.exists(p): return p
+              base = os.path.basename(path)
+              hits = []
+              for d, _, fs in os.walk(ROOT):
+                  if base in fs: hits.append(os.path.join(d, base))
+              print('!! missing', path, 'candidates:', [h[len(ROOT)+1:] for h in hits])
+              return hits[0] if len(hits) == 1 else None
+          CLS = re.compile(r'\b(class|interface|enum|record)\s+\w+')
+          def sig(lines):
+              stack = []
+              out = []
+              for ln in lines:
+                  s = ln.strip()
+                  top = stack[-1] if stack else 'class'
+                  if top == 'class' and s and not s.startswith(('//', 'import', 'package')) and s not in ('}', '};'):
+                      out.append(ln.rstrip())
+                  head = s.split('{')[0]
+                  kind = 'class' if (CLS.search(head) and '=' not in head and 'new ' not in head) else 'block'
+                  for ch in s:
+                      if ch == '{': stack.append(kind); kind = 'block'
+                      elif ch == '}' and stack: stack.pop()
+              return out
+          def method(lines, name):
+              out = []
+              i = 0
+              pat = re.compile(r'\b' + re.escape(name) + r'\s*\(')
+              while i < len(lines):
+                  ln = lines[i]
+                  if pat.search(ln) and not ln.strip().startswith(('return', '//')) and (ln.rstrip().endswith('{') or ln.rstrip().endswith(',')) and re.match(r'^\s*(public|private|protected|static|final|abstract|synchronized|default|<|void|[A-Z])', ln):
+                      depth = 0; started = False
+                      while i < len(lines):
+                          out.append(lines[i].rstrip())
+                          depth += lines[i].count('{') - lines[i].count('}')
+                          if '{' in lines[i]: started = True
+                          i += 1
+                          if started and depth <= 0: break
+                      out.append('')
+                  else:
+                      i += 1
+              return out
+          for spec in open('/tmp/specs.txt'):
+              spec = spec.strip()
+              if not spec or spec.startswith('#'): continue
+              parts = spec.split(' ', 2)
+              mode, path = parts[0], parts[1]
+              arg = parts[2] if len(parts) > 2 else None
+              print('\n######## %s %s %s' % (mode, path, arg or ''))
+              if mode == 'ls':
+                  d = os.path.join(ROOT, path)
+                  print(sorted(os.listdir(d)) if os.path.isdir(d) else '!! no dir')
+                  continue
+              f = find(path)
+              if not f: continue
+              lines = open(f, encoding='utf-8').read().split('\n')
+              if mode == 'full': res = lines
+              elif mode == 'sig': res = sig(lines)
+              elif mode == 'method': res = method(lines, arg)
+              elif mode == 'grep': res = ['%d: %s' % (n+1, l.rstrip()) for n, l in enumerate(lines) if re.search(arg, l)]
+              print('\n'.join(res))
+          EOF
+          cat > /tmp/specs.txt <<'EOF'
+          ls net/minecraft/client/renderer
+          ls net/minecraft/client/renderer/state
+          ls net/minecraft/client/renderer/rendertype
+          ls com/mojang/blaze3d/systems
+          ls com/mojang/blaze3d/vertex
+          sig net/minecraft/client/renderer/SkyRenderer.java
+          method net/minecraft/client/renderer/SkyRenderer.java renderSkyDisc
+          method net/minecraft/client/renderer/SkyRenderer.java buildSkyDisc
+          method net/minecraft/client/renderer/LevelRenderer.java addSkyPass
+          method net/minecraft/client/renderer/LevelRenderer.java addCloudsPass
+          method net/minecraft/client/renderer/LevelRenderer.java renderBlockOutline
+          method net/minecraft/client/renderer/LevelRenderer.java extractBlockOutline
+          grep net/minecraft/client/renderer/LevelRenderer.java addSkyPass|addCloudsPass|renderBlockOutline|getModelViewStack|skyRenderer\.
+          full net/minecraft/client/renderer/state/SkyRenderState.java
+          full net/minecraft/client/renderer/state/BlockOutlineRenderState.java
+          sig net/minecraft/client/renderer/state/LevelRenderState.java
+          sig net/minecraft/client/renderer/state/CameraRenderState.java
+          sig net/minecraft/client/renderer/DynamicUniforms.java
+          grep net/minecraft/client/renderer/RenderPipelines.java SKY|GLINT|LINES|SNIPPET|register|STARS|DEBUG_FILLED|DEBUG_QUADS|SUNRISE|CELESTIAL
+          method net/minecraft/client/renderer/RenderPipelines.java register
+          sig com/mojang/blaze3d/pipeline/RenderPipeline.java
+          sig com/mojang/blaze3d/systems/RenderPass.java
+          sig com/mojang/blaze3d/systems/CommandEncoder.java
+          sig com/mojang/blaze3d/systems/GpuDevice.java
+          sig com/mojang/blaze3d/systems/RenderSystem.java
+          sig com/mojang/blaze3d/buffers/GpuBuffer.java
+          sig com/mojang/blaze3d/vertex/BufferBuilder.java
+          sig com/mojang/blaze3d/vertex/MeshData.java
+          sig com/mojang/blaze3d/vertex/ByteBufferBuilder.java
+          sig com/mojang/blaze3d/vertex/Tesselator.java
+          sig com/mojang/blaze3d/vertex/VertexFormat.java
+          grep com/mojang/blaze3d/vertex/DefaultVertexFormat.java public static
+          sig com/mojang/blaze3d/vertex/VertexConsumer.java
+          sig com/mojang/blaze3d/pipeline/BlendFunction.java
+          full com/mojang/blaze3d/platform/DepthTestFunction.java
+          sig com/mojang/blaze3d/shaders/UniformType.java
+          sig net/minecraft/client/renderer/MappableRingBuffer.java
+          sig net/minecraft/client/renderer/CloudRenderer.java
+          method net/minecraft/client/renderer/CloudRenderer.java render
+          sig net/minecraft/client/renderer/GlobalSettingsUniform.java
+          method net/minecraft/client/renderer/GlobalSettingsUniform.java update
+          sig net/minecraft/client/renderer/ShapeRenderer.java
+          grep net/minecraft/client/renderer/rendertype/RenderTypes.java (?i)glint|lines|debugFilled|debugQuad|static RenderType [a-z]+\(\)
+          grep net/minecraft/client/renderer/RenderType.java (?i)glint|lines|debugFilled|debugQuad
+          sig net/minecraft/client/renderer/fog/FogRenderer.java
+          method net/minecraft/client/renderer/fog/FogRenderer.java computeFogColor
+          sig net/minecraft/client/KeyMapping.java
+          sig net/minecraft/client/gui/GuiGraphics.java
+          sig net/minecraft/client/gui/screens/Screen.java
+          sig net/minecraft/client/gui/components/AbstractSliderButton.java
+          sig net/minecraft/client/gui/components/Button.java
+          sig net/minecraft/client/gui/components/CycleButton.java
+          grep net/minecraft/client/gui/components/EditBox.java public EditBox|public void set|public String get
+          grep net/minecraft/client/gui/components/AbstractWidget.java public
+          grep net/minecraft/client/renderer/entity/ItemRenderer.java (?i)glint
+          grep net/minecraft/client/Minecraft.java public .*(getMainRenderTarget|getDeltaTracker|getWindow|reloadResourcePacks|getResourcePackRepository|setScreen)\(
+          sig com/mojang/blaze3d/pipeline/RenderTarget.java
+          grep net/minecraft/client/renderer/GameRenderer.java globalSettings|GlobalSettings
+          sig net/minecraft/util/ARGB.java
+          grep net/minecraft/util/Util.java public static long get
+          EOF
+          python3 /tmp/probe.py
