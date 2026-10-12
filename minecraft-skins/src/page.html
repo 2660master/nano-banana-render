@@ -169,7 +169,7 @@
 <div class="wrap">
   <header class="top">
     <h1>Kerst <span class="amp">&amp;</span> <span class="leaf">Blad</span> Skins</h1>
-    <p class="lede">Vijf kerstoutfits voor elk van de zeven spelers, plus vijf bladwezens. De kerstskins worden bovenop de basis-skin van de speler gezet: gezicht, haar en huidskleur blijven van de speler, de shirtkleur kleurt de kersttrui en de notenkraker.</p>
+    <p class="lede">Vijf kerstversies van de skin van elk van de zeven spelers, plus vijf bladwezens. De eigen skin blijft staan en krijgt er kerstdingen bij: een muts, sjaal, lichtjes, gewei of een kersttrui in de eigen shirtkleuren. Zo blijft iedereen herkenbaar.</p>
     <ul class="facts">
       <li><b>7</b> spelers</li>
       <li><b>35</b> kerstskins</li>
@@ -200,7 +200,7 @@
       </div>
       <section class="detail" id="detail" data-kind="kerst">
         <p class="eyebrow" id="d-eyebrow">Kerst · speler</p>
-        <h2 id="d-name">Kerstman</h2>
+        <h2 id="d-name">Kerstmuts</h2>
         <p class="base-line" id="d-base"></p>
         <ul class="notes" id="d-notes"></ul>
         <div class="filebox">
@@ -231,7 +231,7 @@
       <section id="kerst">
         <div class="section-head">
           <h2>Kerst</h2>
-          <p>Kerstman · Foute kersttrui · Kerstelf · Rendier-onesie · Notenkraker</p>
+          <p>Kerstmuts · Winterwarm · Kerstlichtjes · Rendier · Kersttrui</p>
         </div>
         <div id="players"></div>
       </section>
@@ -448,8 +448,8 @@
     n.hidden = missing.length === 0;
     if (!missing.length) return;
     $("#notice-text").textContent = missing.length === PLAYERS.length
-      ? "De echte skins van deze spelers konden niet automatisch worden opgehaald: de Minecraft-servers waren niet bereikbaar toen deze pagina werd gemaakt. Alle kerstskins staan daarom nu op een neutrale voorbeeldbasis. Laad de echte skin van een speler (PNG) en de vijf kerstoutfits worden meteen op die skin gezet."
-      : `Nog ${missing.length} van de ${PLAYERS.length} spelers op de voorbeeldbasis: ${missing.join(", ")}. Laad hun skin (PNG) om hun kerstskins op hun eigen gezicht en kleuren te zetten.`;
+      ? "De echte skins van deze spelers konden niet automatisch worden opgehaald: de Minecraft-servers waren niet bereikbaar toen deze pagina werd gemaakt. Alle kerstskins staan daarom nu op een neutrale voorbeeldbasis. Laad de echte skin van een speler (PNG) en de vijf kerstversies worden meteen van die skin gemaakt."
+      : `Nog ${missing.length} van de ${PLAYERS.length} spelers op de voorbeeldbasis: ${missing.join(", ")}. Laad hun skin (PNG) om hun kerstversies van hun eigen skin te maken.`;
   }
 
   // ---------- bestanden laden ----------
@@ -487,7 +487,7 @@
       try { localStorage.setItem(STORE + player, url); } catch (e) { /* opslag niet beschikbaar */ }
       renderPlayerCards(player, true);
       updateNotice();
-      select(`${player}/${(selected && selected.player === player ? selected.def.id : "kerstman")}`, false);
+      select(`${player}/${(selected && selected.player === player ? selected.def.id : "kerstmuts")}`, false);
       status.textContent = `Skin van ${player} geladen. De vijf kerstskins zijn opnieuw gemaakt.`;
     } catch (err) {
       status.textContent = `${player}: ${err.message}`;
@@ -759,7 +759,7 @@
     updateNotice();
     initViewer();
     initDownloads();
-    select(`${PLAYERS[1]}/kerstman`, false);
+    select(`${PLAYERS[1]}/kerstmuts`, false);
     fx.start();
 
     // 3D-snapshots in kleine stukjes, zodat de pagina vlot blijft

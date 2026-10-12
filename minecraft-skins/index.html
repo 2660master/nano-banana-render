@@ -177,7 +177,7 @@
 <div class="wrap">
   <header class="top">
     <h1>Kerst <span class="amp">&amp;</span> <span class="leaf">Blad</span> Skins</h1>
-    <p class="lede">Vijf kerstoutfits voor elk van de zeven spelers, plus vijf bladwezens. De kerstskins worden bovenop de basis-skin van de speler gezet: gezicht, haar en huidskleur blijven van de speler, de shirtkleur kleurt de kersttrui en de notenkraker.</p>
+    <p class="lede">Vijf kerstversies van de skin van elk van de zeven spelers, plus vijf bladwezens. De eigen skin blijft staan en krijgt er kerstdingen bij: een muts, sjaal, lichtjes, gewei of een kersttrui in de eigen shirtkleuren. Zo blijft iedereen herkenbaar.</p>
     <ul class="facts">
       <li><b>7</b> spelers</li>
       <li><b>35</b> kerstskins</li>
@@ -208,7 +208,7 @@
       </div>
       <section class="detail" id="detail" data-kind="kerst">
         <p class="eyebrow" id="d-eyebrow">Kerst · speler</p>
-        <h2 id="d-name">Kerstman</h2>
+        <h2 id="d-name">Kerstmuts</h2>
         <p class="base-line" id="d-base"></p>
         <ul class="notes" id="d-notes"></ul>
         <div class="filebox">
@@ -239,7 +239,7 @@
       <section id="kerst">
         <div class="section-head">
           <h2>Kerst</h2>
-          <p>Kerstman · Foute kersttrui · Kerstelf · Rendier-onesie · Notenkraker</p>
+          <p>Kerstmuts · Winterwarm · Kerstlichtjes · Rendier · Kersttrui</p>
         </div>
         <div id="players"></div>
       </section>
@@ -262,9 +262,9 @@
 /*
  * SkinForge — procedurele generator voor Minecraft-skins (64×64).
  *
- * - 5 kerstoutfits die bovenop een bestaande skin worden gezet:
- *   het hoofd (gezicht + haar) van de basis blijft behouden, kleuren
- *   van de basis (huidskleur, shirtkleur) worden hergebruikt.
+ * - 5 kerstversies van een bestaande skin: de eigen skin blijft staan
+ *   en krijgt kerstaccessoires (muts, sjaal, lichtjes, gewei, kersttrui
+ *   in de eigen shirtkleuren), zodat de speler herkenbaar blijft.
  * - 5 natuur/bladeren-skins die geen basis nodig hebben.
  *
  * Werkt in de browser (window.SkinForge) en in Node (require).
@@ -431,6 +431,8 @@
     const ringOff = { right: 0, front: g.d, left: g.d + g.w, back: 2 * g.d + g.w };
     const outerFace = part === "rarm" || part === "rleg" ? "right" : part === "larm" || part === "lleg" ? "left" : null;
     const innerFace = outerFace === "right" ? "left" : outerFace === "left" ? "right" : null;
+    // dezelfde pixel op de andere laag (basis <-> tweede laag)
+    const [tx, ty] = layer === "o" ? [g.b[0] - g.o[0], g.b[1] - g.o[1]] : [g.o[0] - g.b[0], g.o[1] - g.b[1]];
     for (const face of only || FACE_NAMES) {
       const r = rects[face];
       for (let y = 0; y < r.h; y++) {
@@ -443,6 +445,7 @@
             outer: face === outerFace,
             inner: face === innerFace,
             cur: skin.get(X, Y),
+            twin: skin.get(X + tx, Y + ty),
           };
           const c = fn(info);
           if (c !== undefined) skin.set(X, Y, c);
@@ -547,11 +550,6 @@
     t += (hash(i.X, i.Y, seed) - 0.5) * (grain == null ? 0.07 : grain);
     return shade(c, t);
   }
-  // Breiwerk: V-steekjes in kolommen.
-  function knit(c, i, seed) {
-    const col = (i.side || i.face === "front" || i.face === "back" ? i.s : i.x) & 1;
-    return shade(cloth(c, i, seed, 0.05), col ? -0.07 : 0.03);
-  }
   // Pluizig bont (kraagjes, kerstmuts, baard).
   const FUR = hex("#f4f1ea");
   function fur(i, seed, edgeShadow) {
@@ -567,698 +565,304 @@
     const t = 0.15 - ((lx / Math.max(1, w - 1)) * 0.2 + (ly / Math.max(1, h - 1)) * 0.25);
     return shade(c, t);
   }
-  function handPx(A, i) {
-    let t = 0;
-    if (i.face === "bottom") t = -0.18;
-    else if (i.face === "back") t = -0.06;
-    else if (i.side) t = -0.03;
-    if (i.y === i.h - 1 && i.face !== "bottom") t -= 0.06;
-    return shade(A.tone, t);
-  }
 
-  function prepare(base, A) {
-    const s = base.clone();
-    // Kleding-overlays van de basis weg; hoofd-overlay (haar/hoed) blijft.
-    for (const part of ["body", "rarm", "larm", "rleg", "lleg"]) {
-      const r = faceRects(geom(part, false), "o");
-      for (const f of FACE_NAMES) s.clearRect(r[f].x, r[f].y, r[f].w, r[f].h);
-    }
-    if (A.slim) {
-      // ongebruikte pixels netjes leeg laten
-      s.clearRect(50, 16, 2, 4); s.clearRect(54, 20, 2, 12);
-      s.clearRect(42, 48, 2, 4); s.clearRect(46, 52, 2, 12);
-    }
-    return s;
-  }
   const P = (s, A) => (part, layer, fn, only) => paint(s, A.slim, part, layer, fn, only);
   const ARMS = ["rarm", "larm"], LEGS = ["rleg", "lleg"];
 
-  // Front-coördinaat rond het midden: -3.5 … 3.5 op een torso van 8 breed.
-  const cx = (i) => i.x - (i.w - 1) / 2;
+  // De kerstversies laten de eigen skin staan: alleen accessoires komen erbij,
+  // meestal op de tweede laag. Zo blijft de speler herkenbaar.
+  const XR = hex("#c8102e"), XG = hex("#1f7a3a"), XGOLD = hex("#e8b33c"), CREAM = hex("#f3efe4");
+  const SNOW = [hex("#ffffff"), hex("#eef4fa"), hex("#d6e3ef"), hex("#b9cde0")];
+  const snowPx = (i, seed, under) => {
+    const n = hash(i.X, i.Y, seed);
+    return n > 0.88 ? SNOW[0] : n > 0.4 ? SNOW[1] : under ? SNOW[3] : SNOW[2];
+  };
+  // Is dit de laag die je echt ziet? (de tweede laag wint als die gevuld is)
+  const isTop = (i) => (i.layer === "o" ? i.cur[3] > 0 : i.twin[3] === 0);
 
-  // ------------------------------------------------------------------
-  // KERST 1 — Kerstman
-  // ------------------------------------------------------------------
-  function santa(base) {
-    const A = analyze(base);
-    const s = prepare(base, A), p = P(s, A);
-    const RED = hex("#c41a2b"), RED_P = hex("#a8142a"), BOOT = hex("#25201f"), GLOVE = hex("#2b2422");
-    const GOLD = hex("#e7b53c"), BELT = hex("#1f1a1a"), SACK = hex("#8c6a3d"), ROPE = hex("#d8b46a");
-    const velvet = (i, seed) => {
-      let c = cloth(RED, i, seed, 0.09);
-      if (hash(i.X, i.Y, seed + 3) > 0.9) c = shade(c, 0.1);
-      return c;
-    };
-
-    // Kerstmuts op de hoed-laag
-    p("head", "o", (i) => {
-      if (i.face === "top") {
-        const fold = i.y === 3 ? -0.18 : 0;
-        return shade(velvet(i, 21), 0.12 - (7 - i.y) * 0.03 + fold);
+  // Rij waar de hand begint (eerste rij die vooral huidskleur heeft)
+  function sleeveEnd(skin, A, arm) {
+    const g = geom(arm, A.slim), fb = faceRects(g, "b").front, fo = faceRects(g, "o").front;
+    for (let y = 0; y < 12; y++) {
+      let n = 0;
+      for (let x = 0; x < fb.w; x++) {
+        const o = skin.get(fo.x + x, fo.y + y);
+        const c = o[3] > 0 ? o : skin.get(fb.x + x, fb.y + y);
+        if (dist(c, A.tone) < 45) n++;
       }
+      if (n * 2 > fb.w) return y;
+    }
+    return 12;
+  }
+  function cuffRow(skin, A, arm) {
+    const e = sleeveEnd(skin, A, arm);
+    if (e >= 2 && e <= 11) return e - 1;
+    return e === 12 ? 9 : -1;
+  }
+  // Breiwerk-kleur die past bij de speler: de shirtkleur als die uitgesproken is
+  function knitColor(A) {
+    const [h, sat, l] = rgb2hsl(A.shirt);
+    if (sat > 0.25 && l > 0.15 && l < 0.75) return hsl2rgb(h, Math.max(0.45, Math.min(0.8, sat)), Math.max(0.3, Math.min(0.5, l)));
+    return XR;
+  }
+  const knitPx = (c, i) => shade(c, (((i.s >= 0 ? i.s : i.x) & 1) ? -0.08 : 0.03) + (hash(i.X, i.Y, 7) - 0.5) * 0.05);
+
+  // Kerstmuts op de hoed-laag (voorkant 1 rij bont, zodat het gezicht vrij blijft)
+  function paintSantaHat(p) {
+    const velvet = (i, seed) => shade(cloth(XR, i, seed, 0.09), hash(i.X, i.Y, seed + 3) > 0.9 ? 0.1 : 0);
+    p("head", "o", (i) => {
       if (i.face === "bottom") return undefined;
+      if (i.face === "top") return shade(velvet(i, 21), 0.12 - (7 - i.y) * 0.03 + (i.y === 3 ? -0.18 : 0));
       if (i.y <= 1) return shade(velvet(i, 22), i.y === 1 ? -0.04 : 0.04);
-      if (i.y <= 3) return fur(i, 23, i.y === 3 && hash(i.X, i.Y, 5) > 0.5);
+      if (i.y === 2) return fur(i, 23, false);
+      if (i.y === 3 && i.face !== "front") return fur(i, 24, hash(i.X, i.Y, 5) > 0.5);
       return undefined;
     });
-    // Muts-punt hangt over de achterkant, pompon onderaan
     p("head", "o", (i) => {
       const tail = { 0: [3, 6], 1: [3, 6], 2: [4, 6], 3: [4, 6], 4: [4, 5] }[i.y];
-      if (tail && i.x >= tail[0] && i.x <= tail[1]) {
-        const edge = i.x === tail[1] ? -0.25 : i.x === tail[0] ? 0.08 : 0;
-        return shade(velvet(i, 24), edge - i.y * 0.03);
-      }
+      if (tail && i.x >= tail[0] && i.x <= tail[1]) return shade(velvet(i, 25), (i.x === tail[1] ? -0.25 : i.x === tail[0] ? 0.08 : 0) - i.y * 0.03);
       const pom = { 5: [4, 5], 6: [3, 6], 7: [4, 5] }[i.y];
-      if (pom && i.x >= pom[0] && i.x <= pom[1]) return fur(i, 25, i.y === 7 || i.x === 6);
+      if (pom && i.x >= pom[0] && i.x <= pom[1]) return fur(i, 26, i.y === 7 || i.x === 6);
       return undefined;
     }, ["back"]);
-    // Baard en snor
-    p("head", "o", (i) => {
-      if (i.face === "front") {
-        if (i.y === 6 && i.x >= 1 && i.x <= 6) return fur(i, 31, i.x === 3 || i.x === 4);
-        if (i.y === 7) return fur(i, 32, false);
-        if (i.y >= 4 && (i.x === 0 || i.x === 7)) return fur(i, 33, i.y === 4);
-        return undefined;
-      }
-      if (i.face === "bottom") return fur(i, 34, i.x > 1 && i.x < 6 && i.y > 1 && i.y < 6);
-      if (i.side) {
-        const fx = i.face === "right" ? 7 - i.x : i.x; // afstand tot de voorkant
-        if (i.y >= 4 && fx <= i.y - 4) return fur(i, 35, fx === i.y - 4);
-      }
-      return undefined;
-    }, ["front", "bottom", "right", "left"]);
-
-    // Jas (basislaag)
-    p("body", "b", (i) => {
-      if (i.face === "bottom") return shade(RED, -0.35);
-      if (i.face === "top") return velvet(i, 41);
-      if (i.y === 7 || i.y === 8) return shade(BELT, i.y === 7 ? 0.08 : -0.05);
-      if (i.face === "front" && (i.x === 3 || i.x === 4)) return fur(i, 42, false);
-      if (i.y >= 10) return fur(i, 43, false);
-      let c = velvet(i, 44);
-      if (i.face === "front" && i.y >= 9 && (i.x === 1 || i.x === 6)) c = shade(c, -0.15); // plooien
-      if (i.side && i.x === 1) c = shade(c, -0.08); // zijnaad
-      return c;
-    });
-    // Jas (overlay): bontkraag, middenstrook, riem, zoom
+  }
+  // Rood lint om de hals met een gouden belletje
+  function paintBellCollar(p) {
     p("body", "o", (i) => {
-      if (i.face === "top") return fur(i, 51, i.x > 1 && i.x < 6 && i.y > 0 && i.y < 3);
+      if (i.face === "top") return i.y === 0 || i.y === 3 || i.x === 0 || i.x === 7 ? shade(XR, i.y === 0 ? 0.05 : -0.05) : undefined;
       if (i.face === "bottom") return undefined;
-      if (i.y === 0) return fur(i, 52, false);
-      if (i.y === 7 || i.y === 8) {
-        if (i.face === "front" && i.x >= 2 && i.x <= 5) return undefined; // gesp apart
-        const hl = i.y === 7 && hash(i.X, i.Y, 9) > 0.6;
-        return shade(BELT, hl ? 0.22 : i.y === 7 ? 0.06 : -0.08);
+      if (i.y === 0) return shade(XR, i.s % 3 === 0 ? -0.12 : 0.02);
+      if (i.face === "front") {
+        if (i.y === 1 && (i.x === 2 || i.x === 5)) return shade(XR, -0.08); // strikje
+        if (i.y === 1 && (i.x === 3 || i.x === 4)) return metal(XGOLD, i.x - 3, 0, 2, 3);
+        if (i.y === 2 && (i.x === 3 || i.x === 4)) return i.x === 3 ? hex("#5b3f12") : shade(XGOLD, -0.25);
       }
-      if (i.y >= 10) return fur(i, 53, i.y === 10 && hash(i.X, i.Y, 4) > 0.6);
-      if (i.face === "front" && (i.x === 3 || i.x === 4)) return fur(i, 54, i.x === 4 && i.y % 3 === 2);
       return undefined;
     });
-    // Gouden gesp
-    p("body", "o", (i) => {
-      if (i.x < 2 || i.x > 5 || i.y < 6 || i.y > 9) return undefined;
-      const lx = i.x - 2, ly = i.y - 6;
-      if ((lx === 1 || lx === 2) && (ly === 1 || ly === 2)) return lx === 1 && ly === 1 ? shade(GOLD, -0.35) : shade(BELT, 0.05);
-      return metal(GOLD, lx, ly, 4, 4);
-    }, ["front"]);
-    // Cadeauzak op de rug, met zuurstok
-    p("body", "o", (i) => {
-      const rows = { 0: [3, 4], 1: [2, 5], 2: [2, 5], 3: [1, 6], 4: [0, 7], 5: [0, 7], 6: [0, 7], 7: [0, 7], 8: [0, 7], 9: [0, 7], 10: [1, 6] };
-      const r = rows[i.y];
-      if (i.y <= 1 && i.x === 6) return i.y === 0 ? hex("#f5f1ea") : shade(RED, 0.05); // zuurstok
-      if (i.y === 0 && i.x === 5) return shade(RED, 0.1);
-      if (i.y === 1 && i.x === 6) return hex("#f5f1ea");
-      if (!r || i.x < r[0] || i.x > r[1]) return undefined;
-      if (i.y === 2) return shade(ROPE, i.x === 3 ? 0.2 : (i.x & 1 ? -0.1 : 0.05));
-      if (i.y >= 7 && i.y <= 8 && i.x >= 5 && i.x <= 6) {
-        const st = (i.x + i.y) & 1;
-        return shade(hex("#6d5130"), st ? -0.1 : 0.1); // lap met steek
-      }
-      let t = 0.12 - (i.x / 7) * 0.22 - (i.y / 10) * 0.18;
-      if (((i.X + i.Y) & 1) === 0) t -= 0.06; // jute-weefsel
-      if (i.x === r[0]) t += 0.08;
-      if (i.x === r[1]) t -= 0.12;
-      return shade(SACK, t);
-    }, ["back"]);
+  }
 
-    // Mouwen + handschoenen
+  // ------------------------------------------------------------------
+  // KERST 1 — Kerstmuts
+  // ------------------------------------------------------------------
+  function santaHat(base) {
+    const A = analyze(base);
+    const s = base.clone(), p = P(s, A);
+    paintSantaHat(p);
+    // bontkraag
+    p("body", "o", (i) => {
+      if (i.face === "top") return i.y === 0 || i.y === 3 || i.x === 0 || i.x === 7 ? fur(i, 31, false) : undefined;
+      if (i.face === "bottom") return undefined;
+      if (i.y === 0) return fur(i, 32, hash(i.X, i.Y, 6) > 0.7);
+      return undefined;
+    });
+    // hulsttakje op de borst
+    p("body", "o", (i) => {
+      const H = { "5,1": "#1d5e2a", "6,1": "#2f8a3b", "5,2": "#2f8a3b", "6,2": "#e02c34", "5,3": "#c41f2e", "6,3": "#1d5e2a" }[i.x + "," + i.y];
+      return H ? hex(H) : undefined;
+    }, ["front"]);
+    // bontmanchetten aan het eind van de mouwen
     for (const arm of ARMS) {
-      p(arm, "b", (i) => {
-        if (i.face === "top") return velvet(i, 61);
-        if (i.face === "bottom") return shade(GLOVE, -0.2);
-        if (i.y >= 10) {
-          let c = shade(GLOVE, i.y === 10 ? 0.08 : -0.05);
-          if (i.face === "front" && i.x === 1 && i.y === 10) c = shade(GLOVE, 0.35);
-          return c;
-        }
-        if (i.y >= 8) return fur(i, 62, false);
-        let c = velvet(i, 63);
-        if (i.y === 5 && i.inner) c = shade(c, -0.15); // elleboogplooi
-        return c;
-      });
-      p(arm, "o", (i) => {
-        if (i.face === "top" || i.face === "bottom") return undefined;
-        if (i.y === 8 || i.y === 9) return fur(i, 64, i.y === 9 && hash(i.X, i.Y, 2) > 0.55);
-        return undefined;
-      });
-    }
-    // Broek + laarzen
-    for (const leg of LEGS) {
-      p(leg, "b", (i) => {
-        if (i.face === "top") return cloth(RED_P, i, 71);
-        if (i.face === "bottom") return shade(BOOT, -0.4);
-        if (i.y <= 6) {
-          let c = cloth(RED_P, i, 72, 0.08);
-          if (i.y === 4 && i.face === "front") c = shade(c, -0.12); // knie
-          return c;
-        }
-        let c = shade(BOOT, i.y === 11 ? -0.25 : 0);
-        if (i.face === "front" && i.x === 1 && i.y >= 8 && i.y <= 9) c = shade(BOOT, 0.3);
-        if (i.face === "front" && i.y === 10) c = shade(BOOT, 0.1);
-        if (i.outer && i.y >= 8 && i.y <= 9 && i.x >= 1 && i.x <= 2) c = metal(GOLD, i.x - 1, i.y - 8, 2, 2);
-        return c;
-      });
-      p(leg, "o", (i) => {
-        if (i.face === "top" || i.face === "bottom") return undefined;
-        if (i.y === 6) return fur(i, 73, false);
-        if (i.y === 7) return fur(i, 74, true);
-        return undefined;
-      });
+      const r = cuffRow(s, A, arm);
+      if (r < 0) continue;
+      p(arm, "o", (i) => (i.face !== "top" && i.face !== "bottom" && i.y === r ? fur(i, 33, false) : undefined));
     }
     return s;
   }
 
   // ------------------------------------------------------------------
-  // KERST 2 — Foute kersttrui + pyjamabroek
+  // KERST 2 — Winterwarm: muts, sjaal, wanten en sneeuw
   // ------------------------------------------------------------------
-  function sweater(base) {
+  function winter(base) {
     const A = analyze(base);
-    const s = prepare(base, A), p = P(s, A);
-    let M = hex("#b8202c");
-    if (A.accent) {
-      const [h, sat, l] = rgb2hsl(A.accent);
-      M = hsl2rgb(h, Math.max(0.45, Math.min(0.75, sat)), Math.max(0.3, Math.min(0.48, l)));
-    }
-    const mh = rgb2hsl(M)[0];
-    const greenish = mh > 75 && mh < 170;
-    const W = hex("#f3efe4");
-    const G = greenish ? hex("#c4262e") : hex("#2b7a3a");
-    const Y = hex("#f2c14e"), TRUNK = hex("#6b4226");
-    const at = (c, i, seed) => knit(c, i, seed);
-
-    // Muts met pompon
+    const s = base.clone(), p = P(s, A);
+    const K = knitColor(A);
+    const scarfA = dist(K, XR) < 80 ? XG : XR;
+    // muts met pompon en sneeuw
     p("head", "o", (i) => {
       if (i.face === "bottom") return undefined;
       if (i.face === "top") {
         const dx = i.x - 3.5, dy = i.y - 3.5, r = dx * dx + dy * dy;
-        if (r < 4.6) return fur(i, 81, r > 2.5 && (dx > 0 || dy > 0));
-        return knit(G, i, 82);
+        if (r < 4.6) return fur(i, 41, r > 2.5 && (dx > 0 || dy > 0));
+        if ((i.x === 0 || i.y === 0 || i.x === 7 || i.y === 7) && hash(i.X, i.Y, 42) > 0.55) return snowPx(i, 43);
+        return knitPx(K, i);
       }
-      if (i.y === 0) return knit(G, i, 83);
-      if (i.y === 1) return (i.s % 3 === 1) ? shade(W, -0.03) : knit(G, i, 84);
-      if (i.y === 2) return shade(knit(G, i, 85), (i.s & 1) ? -0.22 : -0.08); // omgeslagen boord
+      if (i.y === 0) return hash(i.X, i.Y, 44) > 0.8 ? snowPx(i, 45) : knitPx(K, i);
+      if (i.y === 1) return i.s % 3 === 1 ? shade(CREAM, -0.02) : knitPx(K, i);
+      if (i.y === 2) return shade(K, (i.s & 1) ? -0.24 : -0.1); // omgeslagen boord
       return undefined;
     });
-
-    // Trui: patroonbanden
-    const band = (i) => {
-      if (i.y === 0) return shade(G, (i.s & 1) ? -0.18 : -0.02); // kraagboord
-      if (i.y === 1) return (i.s & 1) ? at(W, i, 91) : at(M, i, 92);
-      if (i.y === 9) {
-        const k = i.s % 4;
-        return k === 0 ? at(W, i, 93) : at(M, i, 94);
-      }
-      if (i.y >= 10) return shade(G, ((i.s & 1) ? -0.16 : 0) - (i.y === 11 ? 0.1 : 0)); // boord
-      return null;
-    };
-    const TREE = [
-      "...YY...",
-      "...GG...",
-      "..GRGG..",
-      "..GGGG..",
-      ".GYGGRG.",
-      ".GGRGGG.",
-      "...TT...",
-    ];
-    const FLAKE = [
-      "W..W..W",
-      ".W.W.W.",
-      "..WWW..",
-      "WWW.WWW",
-      "..WWW..",
-      ".W.W.W.",
-      "W..W..W",
-    ];
-    const ornament = greenish ? Y : hex("#d62f36");
-    p("body", "b", (i) => {
-      if (i.face === "top") return knit(M, i, 95);
-      if (i.face === "bottom") return shade(G, -0.3);
-      const b = band(i);
-      if (b) return b;
-      if (i.face === "front") {
-        const ch = (TREE[i.y - 2] || "")[i.x];
-        if (ch === "Y") return shade(Y, i.y === 2 && i.x === 3 ? 0.3 : 0);
-        if (ch === "G") return at(G, i, 96);
-        if (ch === "R") return shade(ornament, 0.05);
-        if (ch === "T") return at(TRUNK, i, 97);
-        if ((i.x === 0 && (i.y === 3 || i.y === 7)) || (i.x === 7 && (i.y === 5 || i.y === 2))) return at(W, i, 98);
-      }
-      if (i.face === "back") {
-        const ch = (FLAKE[i.y - 2] || "")[i.x - 1];
-        if (ch === "W") return at(W, i, 99);
-      }
-      if (i.side && (i.y === 3 || i.y === 6) && ((i.x + (i.y === 6 ? 1 : 0)) & 1)) return at(W, i, 100);
-      return at(M, i, 101);
-    });
-    // Sjaal (overlay) met franje
-    const SC = shade(G, 0.05);
+    // gestreepte sjaal om de hals, uiteinde hangt voor
+    const scarf = (u) => (Math.floor(u / 2) & 1 ? shade(CREAM, -0.03) : scarfA);
     p("body", "o", (i) => {
-      if (i.face === "top") return (i.y === 0 || i.y === 3 || i.x === 0 || i.x === 7) ? knit(SC, i, 110) : undefined;
+      if (i.face === "top") return i.y === 0 || i.y === 3 || i.x === 0 || i.x === 7 ? scarf(i.x + i.y) : undefined;
       if (i.face === "bottom") return undefined;
-      if (i.y === 0) return (i.s % 4 === 3) ? shade(W, -0.04) : knit(SC, i, 111);
-      if (i.face === "front" && i.x >= 5 && i.x <= 6) {
-        if (i.y >= 1 && i.y <= 6) {
-          const stripe = i.y === 3 || i.y === 5;
-          return stripe ? shade(W, i.x === 6 ? -0.1 : 0) : shade(knit(SC, i, 112), i.x === 6 ? -0.12 : 0);
-        }
-        if (i.y === 7) return ((i.x + i.y) & 1) ? shade(SC, -0.2) : undefined; // franje
+      if (i.y <= 1) return shade(scarf(i.s), i.y === 1 ? -0.1 : 0.02);
+      if (i.face === "front" && (i.x === 1 || i.x === 2)) {
+        if (i.y <= 7) return shade(scarf(i.y), i.x === 2 ? -0.12 : 0);
+        if (i.y === 8) return (i.x + i.y) & 1 ? shade(scarfA, -0.2) : undefined; // franje
       }
       return undefined;
     });
-    // Mouwen
+    // wanten met witte rand
     for (const arm of ARMS) {
-      p(arm, "b", (i) => {
-        if (i.face === "top") return knit(M, i, 120);
-        if (i.face === "bottom") return handPx(A, i);
-        if (i.y >= 10) return handPx(A, i);
-        if (i.y === 8 || i.y === 9) return shade(G, (i.s & 1) ? -0.16 : 0);
-        if (i.y === 1) return (i.s & 1) ? at(W, i, 121) : at(M, i, 122);
-        if (i.y === 3) return (i.s % 4 === 1) ? at(G, i, 123) : at(M, i, 124);
-        if (i.y === 4) return (i.s % 2 === 0) ? at(G, i, 125) : at(M, i, 126);
-        if (i.y === 6 && (i.s % 4 === 2)) return at(W, i, 127);
-        return at(M, i, 128);
-      });
+      p(arm, "b", (i) => (i.y >= 10 || i.face === "bottom" ? knitPx(shade(K, i.face === "bottom" ? -0.2 : 0), i) : undefined));
       p(arm, "o", (i) => {
-        if (i.face === "top" || i.face === "bottom") return undefined;
-        if (i.y === 9) return shade(G, (i.s & 1) ? -0.2 : -0.04);
+        if (i.face === "top") return snowPx(i, 46); // sneeuw op de schouders
+        if (i.face === "bottom") return knitPx(shade(K, -0.2), i);
+        if (i.y === 0 && !i.inner && hash(i.X, i.Y, 47) > 0.45) return snowPx(i, 48, true);
+        if (i.y === 9) return fur(i, 49, false);
+        if (i.y >= 10) return knitPx(K, i);
         return undefined;
       });
     }
-    // Tartan pyjamabroek + rendier-sloffen
-    const TR = hex("#a31b28"), TG = hex("#1f4b2e"), TK = hex("#151a17"), TY = hex("#e1b84a");
-    const tartan = (i) => {
-      const u = i.s >= 0 ? i.s : i.x, v = i.y + 1;
-      const bu = u % 6 < 2, bv = v % 6 < 2, lu = u % 6 === 4, lv = v % 6 === 4;
-      let c;
-      if (bu && bv) c = mix(TG, TK, 0.5);
-      else if (bu || bv) c = mix(TR, TG, 0.62);
-      else if (lu && lv) c = TY;
-      else if (lu || lv) c = mix(TR, TK, 0.55);
-      else c = TR;
-      return cloth(c, i, 131, 0.04);
-    };
-    const SLIP = hex("#7a4e2d");
-    for (const leg of LEGS) {
-      p(leg, "b", (i) => {
-        if (i.face === "top") return tartan(i);
-        if (i.face === "bottom") return shade(SLIP, -0.4);
-        if (i.y <= 8) return tartan(i);
-        if (i.y === 9) return fur(i, 132, false);
-        let c = cloth(SLIP, i, 133, 0.1);
-        if (i.face === "front") {
-          if (i.y === 10 && (i.x === 0 || i.x === 3)) c = hex("#1b1412"); // oogjes
-          if (i.y === 11 && (i.x === 1 || i.x === 2)) c = i.x === 1 ? hex("#e4232f") : shade(hex("#e4232f"), -0.2); // rode neus
-        }
-        if (i.y === 11 && i.face !== "front") c = shade(c, -0.15);
-        return c;
-      });
-      p(leg, "o", (i) => {
-        if (i.face === "top" || i.face === "bottom") return undefined;
-        if (i.y === 9) return fur(i, 134, hash(i.X, i.Y, 6) > 0.6);
-        if (i.y === 8) return shade(W, (i.s & 1) ? -0.14 : -0.04); // broekboord
-        return undefined;
-      });
-    }
+    // sneeuw rond de schoenen
+    for (const leg of LEGS)
+      p(leg, "o", (i) => (i.face !== "top" && i.face !== "bottom" && i.y === 11 && hash(i.X, i.Y, 51) > 0.45 ? snowPx(i, 52, true) : undefined));
     return s;
   }
 
   // ------------------------------------------------------------------
-  // KERST 3 — Kerstelf
+  // KERST 3 — Kerstlichtjes
   // ------------------------------------------------------------------
-  function elf(base) {
+  function lights(base) {
     const A = analyze(base);
-    const s = prepare(base, A), p = P(s, A);
-    const GR = hex("#2f8a3b"), RD = hex("#cc2b37"), W = hex("#f4f1ea"), GOLD = hex("#ecb83b"), BR = hex("#5a3720");
-    const felt = (c, i, seed) => cloth(c, i, seed, 0.06);
-
-    // Muts met gestreepte rand, punt met belletje op de rug
+    const s = base.clone(), p = P(s, A);
+    const BULBS = ["#ff3b3b", "#ffd23f", "#3ddc5a", "#3fa9ff", "#ff5ad1"].map(hex);
+    const WIRE = hex("#173a22");
+    const bulb = (k, i) => shade(BULBS[((k % 5) + 5) % 5], hash(i.X, i.Y, 61) > 0.5 ? 0.25 : 0.05);
+    const SWAG = [0, 1, 2, 2, 1, 0];
+    // twee slingers rond de romp
+    p("body", "o", (i) => {
+      if (i.face === "top" || i.face === "bottom") return undefined;
+      for (const [row, shift] of [[1, 0], [7, 3]]) {
+        const ph = (i.s + shift) % 6, wy = row + SWAG[ph];
+        if (i.y === wy) return WIRE;
+        if (i.y === wy + 1 && (ph === 1 || ph === 4)) return bulb(Math.floor(i.s / 3) + shift, i);
+      }
+      return undefined;
+    });
+    // spiraal om de armen (tot aan de hand)
+    for (const arm of ARMS) {
+      const end = Math.min(10, sleeveEnd(s, A, arm));
+      p(arm, "o", (i) => {
+        if (i.face === "top" || i.face === "bottom" || i.y >= end) return undefined;
+        const step = Math.floor((4 * i.s) / i.P);
+        if ((((i.y - step) % 4) + 4) % 4 !== 0) return undefined;
+        return i.s % 3 === 1 ? bulb(i.s + i.y, i) : WIRE;
+      });
+    }
+    // lichtjeskrans om het hoofd, ster bovenop
     p("head", "o", (i) => {
       if (i.face === "bottom") return undefined;
       if (i.face === "top") {
-        const tilt = (i.y / 7) * 0.12 - (i.x / 7) * 0.08;
-        return shade(felt(GR, i, 141), tilt);
-      }
-      if (i.y <= 1) return shade(felt(GR, i, 142), i.y === 1 ? -0.05 : 0.04);
-      if (i.y === 2) return (i.s % 4 < 2) ? shade(RD, 0.02) : shade(W, -0.02);
-      if (i.y === 3 && (i.face === "front" || i.face === "back") && i.s % 4 === 1) return shade(RD, -0.2);
-      return undefined;
-    });
-    p("head", "o", (i) => {
-      const tip = { 0: [1, 4], 1: [1, 4], 2: [2, 4], 3: [2, 3], 4: [2, 3] }[i.y];
-      if (tip && i.x >= tip[0] && i.x <= tip[1]) return shade(felt(GR, i, 143), i.x === tip[1] ? -0.22 : 0.02 - i.y * 0.02);
-      if (i.y === 5 && i.x >= 2 && i.x <= 3) return metal(GOLD, i.x - 2, 0, 2, 2);
-      if (i.y === 6 && i.x >= 2 && i.x <= 3) return i.x === 2 ? shade(GOLD, -0.2) : hex("#5b3f12");
-      return undefined;
-    }, ["back"]);
-    // Puntoren in huidskleur
-    p("head", "o", (i) => {
-      const fx = i.face === "right" ? 7 - i.x : i.x; // 0 = voorkant
-      const ear = { 3: [5, 6], 4: [3, 5], 5: [2, 4], 6: [2, 3] }[i.y];
-      if (!ear || fx < ear[0] || fx > ear[1]) return undefined;
-      let c = A.tone;
-      if (fx === ear[1] || i.y === 6) c = shade(A.tone, -0.25);
-      if (i.y === 4 && fx === 4) c = shade(A.tone, -0.35);
-      if (i.y === 5 && fx === 3) c = shade(mix(A.tone, hex("#d9737a"), 0.35), -0.15);
-      if (i.y === 3 && fx === 5) c = shade(A.tone, 0.12);
-      return c;
-    }, ["right", "left"]);
-
-    // Tuniek
-    p("body", "b", (i) => {
-      if (i.face === "top") return felt(GR, i, 151);
-      if (i.face === "bottom") return shade(GR, -0.35);
-      if (i.y === 7 || i.y === 8) return shade(BR, i.y === 7 ? 0.08 : -0.06);
-      if (i.y >= 10) return i.y === 10 ? shade(W, -0.03) : shade(RD, 0);
-      let c = felt(GR, i, 152);
-      if (i.face === "front" && i.x === 4 && i.y >= 3 && i.y <= 6) c = shade(c, -0.1); // naad
-      return c;
-    });
-    p("body", "o", (i) => {
-      if (i.face === "top") return (i.y === 0 || i.y === 3 || i.x === 0 || i.x === 7) ? felt(RD, i, 160) : undefined;
-      if (i.face === "bottom") return undefined;
-      if (i.y === 0) return felt(RD, i, 161);
-      if (i.y === 1) return (i.s & 1) ? shade(RD, -0.12) : felt(RD, i, 162);
-      if (i.y === 2 && (i.s & 1) === 0) return shade(RD, -0.15); // gekartelde kraag
-      if (i.y === 7 || i.y === 8) {
-        if (i.face === "front" && i.x >= 2 && i.x <= 5) return undefined;
-        return shade(BR, i.y === 7 ? (hash(i.X, i.Y, 3) > 0.6 ? 0.25 : 0.08) : -0.08);
-      }
-      if (i.y === 10) return fur(i, 163, false);
-      if (i.y === 11 && (i.s & 1) === 0) return shade(RD, -0.06); // zigzag-zoom
-      return undefined;
-    });
-    p("body", "o", (i) => {
-      // belletje bij de kraag
-      if (i.y === 2 && (i.x === 3 || i.x === 4)) return metal(GOLD, i.x - 3, 0, 2, 2);
-      if (i.y === 3 && (i.x === 3 || i.x === 4)) return i.x === 3 ? shade(GOLD, -0.18) : hex("#5b3f12");
-      // hulst-broche
-      if (i.y === 4 && i.x === 1) return hex("#1d5e2a");
-      if (i.y === 4 && i.x === 2) return hex("#2f7d3b");
-      if (i.y === 5 && i.x === 1) return hex("#2f7d3b");
-      if (i.y === 5 && i.x === 2) return hex("#e02c34");
-      // gesp
-      if (i.y >= 6 && i.y <= 9 && i.x >= 2 && i.x <= 5) {
-        const lx = i.x - 2, ly = i.y - 6;
-        if ((lx === 1 || lx === 2) && (ly === 1 || ly === 2)) return shade(BR, ly === 1 ? 0.05 : -0.08);
-        return metal(GOLD, lx, ly, 4, 4);
-      }
-      return undefined;
-    }, ["front"]);
-
-    for (const arm of ARMS) {
-      p(arm, "b", (i) => {
-        if (i.face === "top") return felt(RD, i, 171);
-        if (i.face === "bottom") return handPx(A, i);
-        if (i.y >= 10) return handPx(A, i);
-        if (i.y === 8) return shade(W, -0.03);
-        if (i.y === 9) return shade(RD, -0.02);
-        return felt(GR, i, 172);
-      });
-      p(arm, "o", (i) => {
-        if (i.face === "top") return felt(RD, i, 173);
-        if (i.face === "bottom") return undefined;
-        if (i.y === 0 && !i.inner) return felt(RD, i, 174); // schouderkraag
-        if (i.y === 1 && !i.inner && (i.s & 1) === 0) return shade(RD, -0.15);
-        if (i.y === 8) return shade(W, (i.s & 1) ? -0.1 : 0);
-        if (i.y === 9) return shade(RD, (i.s & 1) ? -0.15 : -0.02);
+        const STAR = ["...Y....", "..YYY...", "YYYWYYY.", ".YYYYY..", ".YY.YY..", "Y.....Y."];
+        const ch = (STAR[i.y - 1] || "")[i.x];
+        if (ch === "Y") return shade(XGOLD, i.y < 3 ? 0.15 : -0.05);
+        if (ch === "W") return hex("#fff6c8");
         return undefined;
-      });
-    }
-    // Zuurstokkousen (spiraal) + krulschoenen
-    const SH = hex("#2a6b33");
-    for (const leg of LEGS) {
-      p(leg, "b", (i) => {
-        if (i.face === "top") return W;
-        if (i.face === "bottom") return shade(BR, -0.45);
-        if (i.y <= 7) {
-          const stripe = Math.floor((i.y + i.s) / 2) & 1;
-          return cloth(stripe ? RD : W, i, 181, 0.05);
-        }
-        if (i.y === 11) return shade(BR, -0.25);
-        let c = cloth(SH, i, 182, 0.06);
-        if (i.face === "front" && i.y === 9 && i.x === 1) c = shade(SH, 0.3);
-        return c;
-      });
-      p(leg, "o", (i) => {
-        if (i.face === "top" || i.face === "bottom") return undefined;
-        if (i.y === 8) return (i.s & 1) ? shade(RD, -0.1) : shade(RD, 0.06);
-        if (i.face === "front") {
-          if (i.y === 10 && i.x <= 3) return shade(SH, -0.05 + i.x * 0.03);
-          if (i.y === 9 && i.x === 3) return shade(SH, 0.08); // krul omhoog
-          if (i.y === 9 && i.x === 2) return metal(GOLD, 0, 0, 1, 1);
-        }
-        return undefined;
-      });
-    }
+      }
+      if (i.y === 0) return i.s % 3 === 1 ? bulb(i.s, i) : WIRE;
+      return undefined;
+    });
     return s;
   }
 
   // ------------------------------------------------------------------
-  // KERST 4 — Rendier-onesie (Rudolph)
+  // KERST 4 — Rendier: gewei, rode neus, belletje
   // ------------------------------------------------------------------
   function reindeer(base) {
     const A = analyze(base);
-    const s = prepare(base, A), p = P(s, A);
-    const BR = hex("#7d4b2a"), CR = hex("#ead6b0"), HOOF = hex("#2f2621"), ANT = hex("#d8bf87");
-    const NOSE = hex("#e3202b"), GOLD = hex("#ecb83b"), RIB = hex("#c41f2e");
-    const furry = (c, i, seed) => {
-      const n = vnoise(i.X * 0.9, i.Y * 0.45, seed);
-      let t = (n - 0.5) * 0.22;
-      if (hash(i.X, i.Y, seed + 1) > 0.88) t += 0.12;
-      return shade(cloth(c, i, seed + 2, 0.03), t);
-    };
-
-    // Capuchon
-    p("head", "o", (i) => {
-      if (i.face === "bottom") return undefined;
-      if (i.face === "front") {
-        if (i.y === 0) return furry(BR, i, 201);
-        if (i.x === 0 || i.x === 7) return shade(furry(BR, i, 202), -0.08);
-        if (i.y === 1) return shade(CR, (i.x === 1 || i.x === 6) ? -0.12 : -0.02);
-        if (i.y === 5 && (i.x === 3 || i.x === 4)) return i.x === 3 ? shade(NOSE, 0.25) : NOSE; // rode neus
-        return undefined;
-      }
-      if (i.face === "back" && i.y === 7) return shade(BR, -0.25);
-      return furry(BR, i, 203);
-    });
-    // Gewei: op de bovenkant en de zijkanten
+    const s = base.clone(), p = P(s, A);
+    const ANT = hex("#d8bf87"), EAR = hex("#7d4b2a"), NOSE = hex("#e3202b");
     const ANT_TOP = ["........", ".a....a.", "aa....aa", ".a....a.", ".aa..aa.", "..a..a..", "........", "........"];
-    p("head", "o", (i) => {
-      if (ANT_TOP[i.y][i.x] === "a") return shade(ANT, i.y > 3 ? -0.08 : 0.08);
-      return undefined;
-    }, ["top"]);
+    p("head", "o", (i) => (ANT_TOP[i.y][i.x] === "a" ? shade(ANT, i.y > 3 ? -0.08 : 0.08) : undefined), ["top"]);
     p("head", "o", (i) => {
       const bx = i.face === "right" ? i.x : 7 - i.x; // 0 = achterkant
-      const ANT_SIDE = ["a.a.a...", ".aaa....", "..aa....", "...a.ee.", "....eEe.", "....ee.."];
-      const ch = (ANT_SIDE[i.y] || "")[bx];
-      if (ch === "a") return shade(ANT, -0.04 * i.y + (hash(i.X, i.Y, 7) > 0.6 ? 0.1 : 0));
-      if (ch === "e") return shade(BR, -0.18);
-      if (ch === "E") return mix(hex("#d98b8b"), BR, 0.25);
+      const SIDE = ["a.a.a...", ".aaa....", "..aa.ee.", "...aeEe.", "....ee.."];
+      const ch = (SIDE[i.y] || "")[bx];
+      if (ch === "a") return shade(ANT, -0.05 * i.y + (hash(i.X, i.Y, 7) > 0.6 ? 0.1 : 0));
+      if (ch === "e") return shade(EAR, bx === 6 ? 0.05 : -0.12);
+      if (ch === "E") return mix(hex("#d98b8b"), EAR, 0.25);
       return undefined;
     }, ["right", "left"]);
-
-    p("body", "b", (i) => {
-      if (i.face === "bottom") return shade(BR, -0.35);
-      if (i.face === "front") {
-        const belly = { 3: [3, 4], 4: [2, 5], 5: [2, 5], 6: [2, 5], 7: [2, 5], 8: [2, 5], 9: [2, 5], 10: [3, 4] }[i.y];
-        if (belly && i.x >= belly[0] && i.x <= belly[1]) {
-          const edge = i.x === belly[0] || i.x === belly[1] || i.y === 10;
-          return shade(furry(CR, i, 211), edge ? -0.08 : 0.02);
-        }
-      }
-      return furry(BR, i, 212);
-    });
+    p("head", "o", (i) => (i.y === 5 && (i.x === 3 || i.x === 4) ? (i.x === 3 ? shade(NOSE, 0.3) : NOSE) : undefined), ["front"]);
+    paintBellCollar(p);
+    // wit staartje
     p("body", "o", (i) => {
-      if (i.face === "top") return (i.y === 0 || i.y === 3 || i.x === 0 || i.x === 7) ? shade(RIB, i.y === 0 ? 0.05 : -0.05) : undefined;
-      if (i.face === "bottom") return undefined;
-      if (i.y === 0) return shade(RIB, (i.s % 3 === 0) ? -0.12 : 0.02); // lint
-      if (i.face === "front") {
-        if (i.y === 1 && (i.x === 3 || i.x === 4)) return metal(GOLD, i.x - 3, 0, 2, 3);
-        if (i.y === 2 && (i.x === 3 || i.x === 4)) return metal(GOLD, i.x - 3, 1, 2, 3);
-        if (i.y === 3 && (i.x === 3 || i.x === 4)) return i.x === 3 ? hex("#4f360f") : shade(GOLD, -0.3);
-        if (i.y === 1 && (i.x === 2 || i.x === 5)) return shade(RIB, -0.08); // strikje
-      }
-      if (i.face === "back") {
-        const tail = { 9: [3, 4], 10: [2, 5], 11: [3, 4] }[i.y];
-        if (tail && i.x >= tail[0] && i.x <= tail[1]) return fur(i, 213, i.y === 11);
-      }
-      return undefined;
-    });
-    for (const arm of ARMS) {
-      p(arm, "b", (i) => {
-        if (i.face === "bottom") return shade(HOOF, -0.2);
-        if (i.y >= 10) {
-          let c = shade(HOOF, i.y === 10 ? 0.06 : -0.06);
-          if (i.face === "front" && i.x === Math.floor(i.w / 2)) c = shade(HOOF, -0.35); // gespleten hoef
-          if (i.face === "front" && i.x === 0 && i.y === 10) c = shade(HOOF, 0.3);
-          return c;
-        }
-        return furry(BR, i, 221);
-      });
-      p(arm, "o", (i) => {
-        if (i.face === "top" || i.face === "bottom") return undefined;
-        if (i.y === 9) return shade(furry(CR, i, 222), (i.s & 1) ? -0.08 : 0);
-        return undefined;
-      });
-    }
-    for (const leg of LEGS) {
-      p(leg, "b", (i) => {
-        if (i.face === "bottom") return shade(HOOF, -0.3);
-        if (i.y >= 9) {
-          let c = shade(HOOF, i.y === 11 ? -0.12 : 0.04);
-          if (i.face === "front" && i.x === 2) c = shade(HOOF, -0.35);
-          if (i.face === "front" && i.x === 0 && i.y === 9) c = shade(HOOF, 0.3);
-          return c;
-        }
-        let c = furry(BR, i, 231);
-        if (i.face === "front" && i.y === 4) c = shade(c, -0.1);
-        return c;
-      });
-      p(leg, "o", (i) => {
-        if (i.face === "top" || i.face === "bottom") return undefined;
-        if (i.y === 8) return shade(furry(CR, i, 232), (i.s & 1) ? -0.1 : 0.02);
-        return undefined;
-      });
-    }
+      const t = { 9: [3, 4], 10: [2, 5], 11: [3, 4] }[i.y];
+      return t && i.x >= t[0] && i.x <= t[1] ? fur(i, 71, i.y === 11) : undefined;
+    }, ["back"]);
     return s;
   }
 
   // ------------------------------------------------------------------
-  // KERST 5 — Notenkraker
+  // KERST 5 — Eigen shirt omgebreid tot kersttrui
   // ------------------------------------------------------------------
-  function nutcracker(base) {
+  function sweater(base) {
     const A = analyze(base);
-    const s = prepare(base, A), p = P(s, A);
-    let J = hex("#b5162f");
-    if (A.accent) {
-      const [h, sat] = rgb2hsl(A.accent);
-      J = hsl2rgb(h, Math.max(0.55, Math.min(0.8, sat)), 0.36);
-    }
-    const GOLD = hex("#e5b23a"), WH = hex("#f2efe6"), BL = hex("#1c1a21"), PLUME = hex("#d92436");
-    const coat = (i, seed) => cloth(J, i, seed, 0.06);
-    const gold = (i, seed) => shade(GOLD, (hash(i.X, i.Y, seed) > 0.7 ? 0.2 : 0) - (i.face === "back" ? 0.1 : 0));
-
-    // Kolbak (sjako)
-    p("head", "o", (i) => {
-      if (i.face === "bottom") return i.y === 4 ? shade(GOLD, -0.2) : undefined; // kinband
-      if (i.face === "top") {
-        if ((i.x === 3 || i.x === 4) && (i.y === 5 || i.y === 6)) return i.y === 5 ? shade(PLUME, 0.15) : PLUME; // pluim
-        if (i.x === 0 || i.x === 7 || i.y === 0 || i.y === 7) return shade(GOLD, -0.12);
-        return shade(BL, 0.08 + (hash(i.X, i.Y, 3) > 0.8 ? 0.08 : 0));
+    const s = base.clone(), p = P(s, A);
+    // de stofkleuren van het eigen shirt
+    const g = geom("body", false), fb = faceRects(g, "b").front, fo = faceRects(g, "o").front;
+    const seen = new Skin();
+    for (let y = 0; y < 12; y++)
+      for (let x = 0; x < 8; x++) {
+        const o = s.get(fo.x + x, fo.y + y);
+        seen.set(fb.x + x, fb.y + y, o[3] > 0 ? o : s.get(fb.x + x, fb.y + y));
       }
-      if (i.y <= 1) {
-        if (i.face === "front" && (i.x === 3 || i.x === 4)) return metal(GOLD, i.x - 3, i.y, 2, 2); // embleem
-        let c = shade(BL, 0.06 - i.y * 0.04);
-        if (i.side && i.x === 4 && i.y === 0) c = shade(BL, 0.25);
-        return c;
-      }
-      if (i.y === 2) return gold(i, 241);
-      if (i.y === 3 && i.face === "front" && i.x >= 1 && i.x <= 6) return shade(BL, i.x === 2 ? 0.3 : 0.02); // klep
-      if (i.side) {
-        const fx = i.face === "right" ? 7 - i.x : i.x;
-        if (fx === 1 && i.y >= 3) return shade(GOLD, -0.08 - (i.y - 3) * 0.04); // kinband
-      }
-      return undefined;
-    });
-
-    // Jas met tressen
-    p("body", "b", (i) => {
-      if (i.face === "top") return coat(i, 251);
-      if (i.face === "bottom") return shade(J, -0.35);
-      if (i.y === 8 || i.y === 9) return shade(WH, i.y === 9 ? -0.08 : 0);
-      if (i.y === 0) return gold(i, 252);
+    const c1 = dominant(seen, [[fb.x, fb.y, 8, 12]], [A.tone]) || A.shirt;
+    const c2 = dominant(seen, [[fb.x, fb.y, 8, 12]], [A.tone, c1]);
+    const cols = c2 ? [c1, c2] : [c1];
+    const fabric = (c) => c[3] > 0 && cols.some((k) => dist(k, c) < 70) && dist(c, A.tone) > 45;
+    const [hue, , light] = rgb2hsl(c1);
+    const W = light > 0.72 ? hex("#b3172b") : CREAM;
+    const reddish = hue < 20 || hue > 330, greenish = hue > 75 && hue < 170;
+    const C2 = reddish ? XG : XR;
+    const TREE_C = greenish ? CREAM : XG;
+    const TREE = ["...YY...", "...GG...", "..GRGG..", "..GGGG..", ".GYGGRG.", ".GGRGGG.", "...TT..."];
+    const FLAKE = ["W..W..W", ".W.W.W.", "..WWW..", "WWW.WWW", "..WWW..", ".W.W.W.", "W..W..W"];
+    const pattern = (i) => {
+      if (i.face === "top" || i.face === "bottom") return null;
+      if (i.y === 0) return shade(i.cur, (i.s & 1) ? -0.2 : 0.02); // boord
+      if (i.y === 1) return i.s % 2 === 0 ? W : null;
+      if (i.y === 9) return i.s % 4 === 1 ? C2 : null;
+      if (i.y === 10) return i.s % 4 === 0 || i.s % 4 === 2 ? C2 : null;
       if (i.face === "front") {
-        if ((i.y === 2 || i.y === 4 || i.y === 6) && i.x >= 1 && i.x <= 6) return shade(GOLD, -0.12 + (i.x === 1 ? 0.1 : 0));
-        if (i.y === 11) return shade(GOLD, -0.1);
-        let c = coat(i, 253);
-        if ((i.x === 3 || i.x === 4) && i.y >= 1 && i.y <= 7) c = shade(c, i.x === 3 ? -0.1 : -0.04);
-        return c;
+        const ch = (TREE[i.y - 2] || "")[i.x];
+        if (ch === "Y") return shade(XGOLD, i.y === 2 && i.x === 3 ? 0.3 : 0);
+        if (ch === "G") return knitPx(TREE_C, i);
+        if (ch === "R") return reddish ? XGOLD : XR;
+        if (ch === "T") return hex("#6b4226");
       }
-      if (i.face === "back") {
-        if ((i.x === 2 || i.x === 5) && i.y >= 10) return shade(GOLD, -0.15);
-        if (i.y === 11) return shade(GOLD, -0.15);
-        let c = coat(i, 254);
-        if (i.y >= 2 && i.y <= 4 && (i.x === 1 || i.x === 6)) c = shade(c, -0.08);
-        return c;
-      }
-      if (i.y === 11) return shade(GOLD, -0.15);
-      return coat(i, 255);
-    });
-    p("body", "o", (i) => {
-      if (i.face === "top" || i.face === "bottom") return undefined;
-      if (i.y === 0) return gold(i, 261); // hoge kraag
-      if (i.face === "front") {
-        if ((i.y === 2 || i.y === 4 || i.y === 6) && (i.x === 1 || i.x === 6)) return metal(GOLD, 0, 0, 1, 1); // knopen
-        if ((i.y === 8 || i.y === 9) && (i.x === 3 || i.x === 4)) return metal(GOLD, i.x - 3, i.y - 8, 2, 2); // gesp
-      }
-      if (i.face === "back" && i.y === 10 && (i.x === 2 || i.x === 5)) return metal(GOLD, 0, 0, 1, 1);
-      if (i.y === 8) return shade(WH, 0.04);
-      return undefined;
-    });
+      if (i.face === "back" && (FLAKE[i.y - 2] || "")[i.x - 1] === "W") return W;
+      if (i.side && (i.y === 4 || i.y === 6) && ((i.x + (i.y === 6 ? 1 : 0)) & 1)) return W;
+      return null;
+    };
+    const knitBody = (i) => {
+      if (!isTop(i) || !fabric(i.cur)) return undefined;
+      return pattern(i) || knitPx(i.cur, i);
+    };
+    p("body", "b", knitBody);
+    p("body", "o", knitBody);
     for (const arm of ARMS) {
-      p(arm, "b", (i) => {
-        if (i.face === "top") return gold(i, 271);
-        if (i.face === "bottom") return shade(WH, -0.2);
-        if (i.y >= 9) {
-          let c = shade(WH, i.y === 11 ? -0.12 : -0.02);
-          if (i.face === "front" && i.y === 11 && (i.x & 1)) c = shade(WH, -0.2); // vingers
-          return c;
-        }
-        if (i.y === 8) return shade(GOLD, -0.08);
-        let c = coat(i, 272);
-        if (i.y === 5 && i.inner) c = shade(c, -0.14);
-        return c;
-      });
-      p(arm, "o", (i) => {
-        if (i.face === "top") return metal(GOLD, i.x, i.y, i.w, i.h); // epaulet
-        if (i.face === "bottom" || i.inner) return undefined;
-        if (i.y === 0) return gold(i, 273);
-        if (i.y === 1) return (i.s & 1) ? shade(GOLD, -0.18) : undefined; // franje
-        if (i.y === 8) return shade(GOLD, (i.s & 1) ? -0.15 : 0.05);
-        return undefined;
-      });
+      const end = sleeveEnd(s, A, arm);
+      const sleeve = (i) => {
+        if (!isTop(i) || !fabric(i.cur) || i.y >= end) return undefined;
+        if (i.face === "top" || i.face === "bottom") return knitPx(i.cur, i);
+        if (i.y === end - 1 && end < 12) return shade(i.cur, (i.s & 1) ? -0.22 : 0); // manchet
+        if (i.y === 1) return i.s % 2 === 0 ? W : knitPx(i.cur, i);
+        if (i.y === 3) return i.s % 4 === 1 ? C2 : knitPx(i.cur, i);
+        if (i.y === 4) return i.s % 4 === 0 || i.s % 4 === 2 ? C2 : knitPx(i.cur, i);
+        if (i.y === 6) return i.s % 4 === 2 ? W : knitPx(i.cur, i);
+        return knitPx(i.cur, i);
+      };
+      p(arm, "b", sleeve);
+      p(arm, "o", sleeve);
     }
-    for (const leg of LEGS) {
-      p(leg, "b", (i) => {
-        if (i.face === "top") return WH;
-        if (i.face === "bottom") return shade(BL, -0.3);
-        if (i.y <= 5) {
-          let c = cloth(WH, i, 281, 0.04);
-          if (i.outer && (i.x === 1 || i.x === 2)) c = i.x === 1 ? shade(GOLD, -0.05) : shade(J, -0.05); // biezen
-          return c;
-        }
-        let c = shade(BL, i.y === 11 ? -0.2 : 0.02);
-        if (i.face === "front" && i.x === 1 && i.y >= 7 && i.y <= 10) c = shade(BL, i.y === 7 ? 0.45 : 0.28); // glans
-        if (i.face === "front" && i.x === 2 && i.y === 8) c = shade(BL, 0.15);
-        return c;
-      });
-      p(leg, "o", (i) => {
-        if (i.face === "top" || i.face === "bottom") return undefined;
-        if (i.y === 6) return shade(BL, (i.s & 1) ? 0.18 : 0.08); // laarsrand
-        if (i.face === "front" && i.y === 7 && (i.x === 1 || i.x === 2)) return metal(GOLD, i.x - 1, 0, 2, 2); // kwastje
-        return undefined;
-      });
-    }
+    // sneeuwvlokje in het haar
+    p("head", "o", (i) => {
+      const F = { "1,1": 1, "0,0": 1, "2,0": 1, "0,2": 1, "2,2": 1 }[(i.x - 4) + "," + (i.y - 0)];
+      return F ? (i.x === 5 && i.y === 1 ? SNOW[0] : SNOW[2]) : undefined;
+    }, ["right"]);
     return s;
   }
 
@@ -1619,11 +1223,11 @@
   // Catalogus
   // ------------------------------------------------------------------
   const CHRISTMAS = [
-    { id: "kerstman", name: "Kerstman", make: santa, notes: ["Fluwelen kerstmuts met pompon op de rug", "Witte baard en snor", "Bontkraag, bontstrook en bontzoom", "Leren riem met gouden gesp", "Jute cadeauzak met zuurstok op de rug", "Zwarte laarzen met gouden gespje"] },
-    { id: "kersttrui", name: "Foute kersttrui", make: sweater, notes: ["Gebreide trui in de shirtkleur van de basis", "Kerstboom met ballen en ster op de voorkant", "Sneeuwvlok op de rug", "Muts met pompon en sjaal met franje", "Tartan pyjamabroek", "Rendier-sloffen met rode neus"] },
-    { id: "elf", name: "Kerstelf", make: elf, notes: ["Elfenmuts met belletje op de rug", "Puntoren in de huidskleur van de basis", "Gekartelde kraag met gouden belletje", "Hulstbroche en riem met gesp", "Zuurstok-kousen in spiraal", "Krulschoenen met belletje"] },
-    { id: "rendier", name: "Rendier-onesie", make: reindeer, notes: ["Capuchon met gewei en oortjes", "Rode Rudolph-neus", "Lichte buikvacht", "Rood lint met gouden belletje", "Wit staartje op de rug", "Hoefjes aan handen en voeten"] },
-    { id: "notenkraker", name: "Notenkraker", make: nutcracker, notes: ["Kolbak met pluim, embleem en kinband", "Huzarenjas met gouden tressen", "Gouden knopen en hoge kraag", "Epauletten met franje", "Witte handschoenen en riem", "Glanzende laarzen met kwastje"] },
+    { id: "kerstmuts", name: "Kerstmuts", make: santaHat, notes: ["Rode fluwelen kerstmuts met bontrand", "Punt met pompon hangt over de rug", "Witte bontkraag", "Bontmanchetten waar de mouwen eindigen", "Hulsttakje met bessen op de borst", "Eigen gezicht, haar en kleding blijven"] },
+    { id: "winterwarm", name: "Winterwarm", make: winter, notes: ["Gebreide muts in de eigen shirtkleur, met pompon", "Gestreepte sjaal met franje", "Gebreide wanten met witte rand", "Sneeuw op muts en schouders", "Sneeuwhoopjes rond de schoenen", "Eigen gezicht en kleding blijven"] },
+    { id: "kerstlichtjes", name: "Kerstlichtjes", make: lights, notes: ["Twee lichtslingers rond de romp", "Lampjes in spiraal om de armen", "Lichtjeskrans om het hoofd", "Gouden ster bovenop", "Lampjes in vijf kleuren met glimlicht", "Eigen kleding blijft zichtbaar"] },
+    { id: "rendier", name: "Rendier", make: reindeer, notes: ["Gewei op de zijkanten en bovenkant", "Rendieroortjes met roze binnenkant", "Rode Rudolph-neus", "Rood lint met gouden belletje", "Wit staartje op de rug", "Eigen haar, ogen en kleding blijven"] },
+    { id: "kersttrui", name: "Kersttrui", make: sweater, notes: ["Het eigen shirt omgebreid tot kersttrui", "Breisteek in de eigen shirtkleuren", "Kerstboom met ballen op de borst", "Sneeuwvlok op de rug", "Zigzag- en stippenbanden op romp en mouwen", "Sneeuwvlokje in het haar"] },
   ];
   const NATURE = [
     { id: "eik", name: "Eikenwachter", notes: ["Frisgroene eikenbladeren als kap en mantel", "Bastgezicht met amberkleurige ogen", "Gloeiend levenshart in de borst", "Eikels op kap, arm en rug", "Twijgvingers en wortelvoeten"] },
@@ -1835,8 +1439,8 @@
     n.hidden = missing.length === 0;
     if (!missing.length) return;
     $("#notice-text").textContent = missing.length === PLAYERS.length
-      ? "De echte skins van deze spelers konden niet automatisch worden opgehaald: de Minecraft-servers waren niet bereikbaar toen deze pagina werd gemaakt. Alle kerstskins staan daarom nu op een neutrale voorbeeldbasis. Laad de echte skin van een speler (PNG) en de vijf kerstoutfits worden meteen op die skin gezet."
-      : `Nog ${missing.length} van de ${PLAYERS.length} spelers op de voorbeeldbasis: ${missing.join(", ")}. Laad hun skin (PNG) om hun kerstskins op hun eigen gezicht en kleuren te zetten.`;
+      ? "De echte skins van deze spelers konden niet automatisch worden opgehaald: de Minecraft-servers waren niet bereikbaar toen deze pagina werd gemaakt. Alle kerstskins staan daarom nu op een neutrale voorbeeldbasis. Laad de echte skin van een speler (PNG) en de vijf kerstversies worden meteen van die skin gemaakt."
+      : `Nog ${missing.length} van de ${PLAYERS.length} spelers op de voorbeeldbasis: ${missing.join(", ")}. Laad hun skin (PNG) om hun kerstversies van hun eigen skin te maken.`;
   }
 
   // ---------- bestanden laden ----------
@@ -1874,7 +1478,7 @@
       try { localStorage.setItem(STORE + player, url); } catch (e) { /* opslag niet beschikbaar */ }
       renderPlayerCards(player, true);
       updateNotice();
-      select(`${player}/${(selected && selected.player === player ? selected.def.id : "kerstman")}`, false);
+      select(`${player}/${(selected && selected.player === player ? selected.def.id : "kerstmuts")}`, false);
       status.textContent = `Skin van ${player} geladen. De vijf kerstskins zijn opnieuw gemaakt.`;
     } catch (err) {
       status.textContent = `${player}: ${err.message}`;
@@ -2146,7 +1750,7 @@
     updateNotice();
     initViewer();
     initDownloads();
-    select(`${PLAYERS[1]}/kerstman`, false);
+    select(`${PLAYERS[1]}/kerstmuts`, false);
     fx.start();
 
     // 3D-snapshots in kleine stukjes, zodat de pagina vlot blijft
