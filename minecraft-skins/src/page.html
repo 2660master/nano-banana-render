@@ -1,0 +1,791 @@
+<title>Kerst &amp; Blad Skins</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  /* Layout: links een vaste 3D-etalage met details, rechts de rekken met skins per speler. */
+  :root {
+    --bg: #edf2ee;
+    --panel: #ffffff;
+    --panel-2: #f5f8f5;
+    --ink: #15231d;
+    --muted: #586a61;
+    --line: #d4ddd6;
+    --cranberry: #b3213a;
+    --pine: #1d5b3c;
+    --gold: #a77816;
+    --warn-bg: #fbf1dc;
+    --warn-ink: #6d4c0c;
+    --ok-bg: #e2f2e7;
+    --ok-ink: #1d5b3c;
+    --stage-sky-a: #0c1a28;
+    --stage-sky-b: #1e3c4f;
+    --stage-forest-a: #10200f;
+    --stage-forest-b: #2e4a24;
+    --stage-ink: #eef5f1;
+    --focus: #1d6fd6;
+
+    --f-display: "Pixelify Sans", "Courier New", ui-monospace, monospace;
+    --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d1613; --panel: #14201b; --panel-2: #182720; --ink: #e7efe9; --muted: #98aaa1; --line: #24352d;
+      --cranberry: #e45a70; --pine: #63b98b; --gold: #e2b54a;
+      --warn-bg: #33280f; --warn-ink: #f0d08a; --ok-bg: #16301f; --ok-ink: #8fd6a9; --focus: #6aa8ff;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1613; --panel: #14201b; --panel-2: #182720; --ink: #e7efe9; --muted: #98aaa1; --line: #24352d;
+    --cranberry: #e45a70; --pine: #63b98b; --gold: #e2b54a;
+    --warn-bg: #33280f; --warn-ink: #f0d08a; --ok-bg: #16301f; --ok-ink: #8fd6a9; --focus: #6aa8ff;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 64px; }
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+  button, input, label { font: inherit; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  /* Kop */
+  .top { display: grid; gap: 10px; margin-bottom: 26px; }
+  .top h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(34px, 6vw, 58px); line-height: 1; letter-spacing: 0.01em; }
+  .top h1 .amp { color: var(--cranberry); }
+  .top h1 .leaf { color: var(--pine); }
+  .lede { max-width: 64ch; margin: 0; color: var(--muted); font-size: 16px; }
+  .facts { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 4px 0 0; padding: 0; list-style: none; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+  .facts b { color: var(--ink); font-weight: 600; }
+
+  .layout { display: grid; grid-template-columns: minmax(300px, 400px) minmax(0, 1fr); gap: 28px; align-items: start; }
+  @media (max-width: 880px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+  /* Etalage */
+  .showcase { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: grid; gap: 12px; }
+  @media (max-width: 880px) { .showcase { position: static; } }
+  .stage { position: relative; aspect-ratio: 4 / 5; max-width: 100%; border-radius: 6px; overflow: hidden;
+    background: linear-gradient(180deg, var(--stage-sky-a), var(--stage-sky-b)); }
+  .stage[data-kind="natuur"] { background: linear-gradient(180deg, var(--stage-forest-a), var(--stage-forest-b)); }
+  .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .stage #viewer { touch-action: none; cursor: grab; }
+  .stage .flat { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 18px; padding: 18% 10% 22%; }
+  .stage .flat canvas { position: static; width: auto; height: 100%; image-rendering: pixelated; }
+  .stage-tag { position: absolute; left: 12px; top: 10px; font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--stage-ink); opacity: 0.85; }
+  .nav { position: absolute; top: 50%; translate: 0 -50%; width: 36px; height: 36px; border: 0; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.14); color: var(--stage-ink); font-size: 18px; cursor: pointer; display: grid; place-items: center; }
+  .nav:hover { background: rgba(255, 255, 255, 0.26); }
+  .nav.prev { left: 8px; } .nav.next { right: 8px; }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); }
+  .seg button { border: 0; background: transparent; color: var(--muted); padding: 6px 10px; cursor: pointer; font-size: 13px; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+  .toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); cursor: pointer; user-select: none; }
+  .toggle input { accent-color: var(--cranberry); }
+
+  .detail { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 12px; }
+  .eyebrow { margin: 0; font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .detail h2 { font-family: var(--f-display); font-weight: 700; font-size: 28px; line-height: 1.05; }
+  .detail .base-line { margin: -6px 0 0; font-size: 13px; color: var(--muted); }
+  .notes { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 14px; }
+  .notes li { display: grid; grid-template-columns: 10px minmax(0, 1fr); gap: 8px; align-items: baseline; }
+  .notes li::before { content: ""; width: 6px; height: 6px; background: var(--cranberry); translate: 0 -1px; }
+  .detail[data-kind="natuur"] .notes li::before { background: var(--pine); }
+  .filebox { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center; padding-top: 12px; border-top: 1px solid var(--line); }
+  .filebox canvas { width: 128px; height: 128px; image-rendering: pixelated; border-radius: 3px;
+    background: repeating-conic-gradient(var(--panel-2) 0 25%, var(--bg) 0 50%) 0 0 / 16px 16px; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 0; padding: 0; list-style: none; }
+  .swatches li { width: 18px; height: 18px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12); }
+  .dl-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .dl-status:empty { display: none; }
+  .dl-status { margin-top: 6px; }
+  .meta { margin: 0; font-family: var(--f-mono); font-size: 12px; color: var(--muted); display: grid; gap: 2px; }
+  .btn { position: relative; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+    padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .btn input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+  /* Melding */
+  .notice { background: var(--warn-bg); color: var(--warn-ink); border-radius: 6px; padding: 14px 16px; display: grid; gap: 10px; margin-bottom: 26px; }
+  .notice p { margin: 0; max-width: 72ch; font-size: 14px; }
+  .notice .row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+  .notice .hint { font-size: 13px; opacity: 0.85; }
+  .status { min-height: 1.4em; font-size: 13px; font-weight: 600; }
+
+  /* Rekken */
+  .section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--ink); }
+  .section-head h2 { font-family: var(--f-display); font-weight: 700; font-size: 32px; line-height: 1; }
+  .section-head p { margin: 0; color: var(--muted); font-size: 14px; }
+  section + section { margin-top: 40px; }
+
+  .player { display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  @media (max-width: 620px) { .player { grid-template-columns: minmax(0, 1fr); } }
+  .who { display: grid; gap: 8px; align-content: start; }
+  .who h3 { font-family: var(--f-mono); font-weight: 600; font-size: 15px; overflow-wrap: anywhere; }
+  .base-slot { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center;
+    border: 1px dashed var(--line); border-radius: 6px; padding: 8px; transition: border-color 0.15s, background 0.15s; }
+  .base-slot.drag { border-color: var(--cranberry); background: var(--panel-2); }
+  .base-slot canvas { width: 32px; height: 64px; image-rendering: pixelated; }
+  .base-slot .lbl { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+  .chip { justify-self: start; font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; }
+  .chip.warn { background: var(--warn-bg); color: var(--warn-ink); }
+  .chip.ok { background: var(--ok-bg); color: var(--ok-ink); }
+  .who .links { display: flex; flex-wrap: wrap; gap: 6px 10px; font-size: 12px; }
+  .who a { color: var(--muted); }
+
+  .cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 1060px) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 420px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .card { display: grid; gap: 6px; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+  .thumb { position: relative; display: block; aspect-ratio: 5 / 7; max-width: 100%; border-radius: 5px; overflow: hidden;
+    background: var(--panel); border: 1px solid var(--line); transition: border-color 0.15s, transform 0.15s; }
+  .card[data-kind="kerst"] .thumb { background: linear-gradient(180deg, var(--panel), var(--panel-2)); }
+  .thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; image-rendering: auto; transition: opacity 0.18s; }
+  .thumb img.flat { image-rendering: pixelated; padding: 14% 10%; }
+  .thumb img.back { opacity: 0; }
+  .card:hover .thumb img.back, .card:focus-visible .thumb img.back { opacity: 1; }
+  .card:hover .thumb img.front, .card:focus-visible .thumb img.front { opacity: 0; }
+  .card:hover .thumb { border-color: var(--muted); }
+  .card[aria-pressed="true"] .thumb { border: 2px solid var(--cranberry); }
+  .card[data-kind="natuur"][aria-pressed="true"] .thumb { border-color: var(--pine); }
+  .card-name { font-size: 13px; font-weight: 600; line-height: 1.25; }
+  .card-sub { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+
+  .nature .cards { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  @media (max-width: 1060px) { .nature .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 420px) { .nature .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+  .foot { margin-top: 36px; font-size: 13px; color: var(--muted); max-width: 72ch; }
+  .foot code { font-family: var(--f-mono); font-size: 12px; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Kerst <span class="amp">&amp;</span> <span class="leaf">Blad</span> Skins</h1>
+    <p class="lede">Vijf kerstoutfits voor elk van de zeven spelers, plus vijf bladwezens. De kerstskins worden bovenop de basis-skin van de speler gezet: gezicht, haar en huidskleur blijven van de speler, de shirtkleur kleurt de kersttrui en de notenkraker.</p>
+    <ul class="facts">
+      <li><b>7</b> spelers</li>
+      <li><b>35</b> kerstskins</li>
+      <li><b>5</b> bladskins</li>
+      <li>formaat <b>64×64</b> · Java &amp; Bedrock</li>
+    </ul>
+  </header>
+
+  <div class="layout">
+    <aside class="showcase" aria-label="Geselecteerde skin">
+      <div class="stage" id="stage" data-kind="kerst">
+        <canvas id="fx" aria-hidden="true"></canvas>
+        <canvas id="viewer" aria-label="3D-weergave van de skin, sleep om te draaien"></canvas>
+        <div class="flat" id="flat" hidden></div>
+        <span class="stage-tag" id="stage-tag">Kerst</span>
+        <button class="nav prev" id="prev" type="button" aria-label="Vorige skin">‹</button>
+        <button class="nav next" id="next" type="button" aria-label="Volgende skin">›</button>
+      </div>
+      <div class="controls" id="controls">
+        <div class="seg" role="group" aria-label="Animatie">
+          <button type="button" id="anim-walk" data-anim="walk" aria-pressed="true">Lopen</button>
+          <button type="button" id="anim-run" data-anim="run" aria-pressed="false">Rennen</button>
+          <button type="button" id="anim-wave" data-anim="wave" aria-pressed="false">Zwaaien</button>
+          <button type="button" id="anim-idle" data-anim="idle" aria-pressed="false">Stil</button>
+        </div>
+        <label class="toggle"><input type="checkbox" id="opt-rotate" checked> Draaien</label>
+        <label class="toggle"><input type="checkbox" id="opt-layer" checked> Tweede laag</label>
+      </div>
+      <section class="detail" id="detail" data-kind="kerst">
+        <p class="eyebrow" id="d-eyebrow">Kerst · speler</p>
+        <h2 id="d-name">Kerstman</h2>
+        <p class="base-line" id="d-base"></p>
+        <ul class="notes" id="d-notes"></ul>
+        <div class="filebox">
+          <canvas id="d-tex" width="64" height="64" aria-label="Het skin-bestand"></canvas>
+          <div>
+            <p class="meta" id="d-meta"></p>
+            <ul class="swatches" id="d-swatches" aria-label="Hoofdkleuren"></ul>
+            <div class="dl-row" id="dl-row" hidden>
+              <button class="btn primary" type="button" id="d-download">Download PNG</button>
+              <button class="btn" type="button" id="all-download">Alle 40 als ZIP</button>
+            </div>
+            <p class="meta dl-status" id="dl-status" role="status" aria-live="polite"></p>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <main>
+      <div class="notice" id="notice" hidden>
+        <p id="notice-text"></p>
+        <div class="row">
+          <label class="btn primary">Skins van spelers laden<input type="file" id="multi" accept="image/png" multiple></label>
+          <span class="hint">Meerdere PNG's tegelijk: de bestandsnaam moet de spelersnaam bevatten, bijvoorbeeld <code>2660master.png</code>.</span>
+        </div>
+        <div class="status" id="status" role="status" aria-live="polite"></div>
+      </div>
+
+      <section id="kerst">
+        <div class="section-head">
+          <h2>Kerst</h2>
+          <p>Kerstman · Foute kersttrui · Kerstelf · Rendier-onesie · Notenkraker</p>
+        </div>
+        <div id="players"></div>
+      </section>
+
+      <section id="natuur" class="nature">
+        <div class="section-head">
+          <h2>Natuur</h2>
+          <p>Bladwezens van bast en blad, met een gloeiend hart</p>
+        </div>
+        <div class="cards" id="nature-cards"></div>
+      </section>
+
+      <p class="foot">Tip: beweeg over een kaart om de achterkant te zien. In de 3D-weergave sleep je om te draaien en scroll je om te zoomen. De PNG-bestanden staan ook in de map <code>minecraft-skins/skins/</code> van de repository.</p>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/skinview3d@3.4.1/bundles/skinview3d.bundle.js"></script>
+<script>
+/*SKINFORGE*/
+</script>
+<script>
+(function () {
+  "use strict";
+  const SF = window.SkinForge;
+  const PLAYERS = ["spawnerbase", "2660master", "stitchcpvp", "akosdebeste", "pickzugng", "johnpork400", "ITZberryTT_x"];
+  const EMBEDDED = /*BASES*/{};
+  const STORE = "kbskins.base.";
+  const $ = (s, r) => (r || document).querySelector(s);
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const framed = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+
+  const bases = {};       // speler -> { skin, source: 'voorbeeld' | 'eigen' }
+  const entries = [];     // alle skins in weergavevolgorde
+  const byKey = new Map();
+  let selected = null;
+
+  // ---------- canvas helpers ----------
+  function toCanvas(skin) {
+    const c = document.createElement("canvas");
+    c.width = c.height = 64;
+    const ctx = c.getContext("2d");
+    const img = ctx.createImageData(64, 64);
+    img.data.set(skin.data);
+    ctx.putImageData(img, 0, 0);
+    return c;
+  }
+  // Platte voor- of achteraanzicht (16×32) met tweede laag
+  function flat(src, slim, back) {
+    const aw = slim ? 3 : 4;
+    const c = document.createElement("canvas");
+    c.width = 16; c.height = 32;
+    const ctx = c.getContext("2d");
+    const parts = back
+      ? [[24, 8, 56, 8, 8, 8, 4, 0], [32, 20, 32, 36, 8, 12, 4, 8],
+         [48 + aw, 20, 48 + aw, 36, aw, 12, 12, 8], [40 + aw, 52, 56 + aw, 52, aw, 12, 4 - aw, 8],
+         [12, 20, 12, 36, 4, 12, 8, 20], [28, 52, 12, 52, 4, 12, 4, 20]]
+      : [[8, 8, 40, 8, 8, 8, 4, 0], [20, 20, 20, 36, 8, 12, 4, 8],
+         [44, 20, 44, 36, aw, 12, 4 - aw, 8], [36, 52, 52, 52, aw, 12, 12, 8],
+         [4, 20, 4, 36, 4, 12, 4, 20], [20, 52, 4, 52, 4, 12, 8, 20]];
+    for (const [bx, by, ox, oy, w, h, px, py] of parts) {
+      ctx.drawImage(src, bx, by, w, h, px, py, w, h);
+      ctx.drawImage(src, ox, oy, w, h, px, py, w, h);
+    }
+    return c;
+  }
+  function scaled(c, k) {
+    const o = document.createElement("canvas");
+    o.width = c.width * k; o.height = c.height * k;
+    const ctx = o.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(c, 0, 0, o.width, o.height);
+    return o;
+  }
+  function palette(skin, n) {
+    const m = new Map();
+    for (let i = 0; i < skin.data.length; i += 4) {
+      if (skin.data[i + 3] < 200) continue;
+      const k = (skin.data[i] >> 5) * 64 + (skin.data[i + 1] >> 5) * 8 + (skin.data[i + 2] >> 5);
+      const e = m.get(k) || { n: 0, r: 0, g: 0, b: 0 };
+      e.n++; e.r += skin.data[i]; e.g += skin.data[i + 1]; e.b += skin.data[i + 2];
+      m.set(k, e);
+    }
+    return [...m.values()].sort((a, b) => b.n - a.n).slice(0, n)
+      .map((e) => SF.toHex([e.r / e.n, e.g / e.n, e.b / e.n]));
+  }
+
+  // ---------- 3D-snapshots voor de kaarten ----------
+  let snapper;
+  function getSnapper() {
+    if (snapper !== undefined) return snapper;
+    snapper = null;
+    if (!window.skinview3d) return null;
+    try {
+      const c = document.createElement("canvas");
+      snapper = new skinview3d.SkinViewer({ canvas: c, width: 250, height: 350, preserveDrawingBuffer: true, renderPaused: true, zoom: 0.92, fov: 38, pixelRatio: 2 });
+      snapper.controls.enabled = false;
+      snapper.background = null;
+    } catch (e) { snapper = null; }
+    return snapper;
+  }
+  function snapshot(entry, angle) {
+    const v = getSnapper();
+    if (!v) return null;
+    try {
+      v.loadSkin(entry.canvas, { model: entry.slim ? "slim" : "default" });
+      const p = v.playerObject;
+      p.rotation.y = angle;
+      const sk = p.skin;
+      sk.rightArm.rotation.set(0.12, 0, 0.1);
+      sk.leftArm.rotation.set(-0.12, 0, -0.1);
+      sk.rightLeg.rotation.set(-0.1, 0, 0);
+      sk.leftLeg.rotation.set(0.1, 0, 0);
+      sk.head.rotation.set(0, angle > 1.6 ? -0.15 : 0.15, 0);
+      v.render();
+      return v.canvas.toDataURL("image/png");
+    } catch (e) { return null; }
+  }
+
+  // ---------- skins maken ----------
+  function makeEntry(kind, player, def, skin) {
+    const slim = SF.detectSlim(skin);
+    return { key: kind === "kerst" ? `${player}/${def.id}` : `natuur/${def.id}`, kind, player, def, skin, slim, canvas: toCanvas(skin) };
+  }
+  function buildPlayer(player) {
+    const base = bases[player].skin;
+    return SF.CHRISTMAS.map((def) => makeEntry("kerst", player, def, def.make(base)));
+  }
+
+  // ---------- DOM ----------
+  function cardEl(entry) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "card";
+    b.dataset.key = entry.key;
+    b.dataset.kind = entry.kind;
+    b.setAttribute("aria-pressed", "false");
+    b.title = "Beweeg erover voor de achterkant";
+    b.innerHTML = `<span class="thumb"><img class="front" alt=""><img class="back" alt=""></span>
+      <span class="card-name">${entry.def.name}${entry.kind === "kerst" ? `<span class="card-sub">${entry.player}</span>` : ""}</span>`;
+    b.addEventListener("click", () => select(entry.key, true));
+    entry.el = b;
+    paintThumb(entry, false);
+    return b;
+  }
+  function paintThumb(entry, use3d) {
+    const [f, k] = [entry.el.querySelector(".front"), entry.el.querySelector(".back")];
+    const front = use3d && snapshot(entry, 0.5);
+    const back = use3d && snapshot(entry, Math.PI + 0.5);
+    if (front && back) {
+      f.className = "front"; k.className = "back";
+      f.src = front; k.src = back;
+    } else {
+      f.className = "front flat"; k.className = "back flat";
+      f.src = scaled(flat(entry.canvas, entry.slim, false), 8).toDataURL();
+      k.src = scaled(flat(entry.canvas, entry.slim, true), 8).toDataURL();
+    }
+    f.alt = `${entry.def.name}${entry.player ? " voor " + entry.player : ""}, voorkant`;
+  }
+
+  function playerRow(player) {
+    const art = document.createElement("article");
+    art.className = "player";
+    art.dataset.player = player;
+    const id = "file-" + player.toLowerCase();
+    art.innerHTML = `
+      <div class="who">
+        <h3>${player}</h3>
+        <div class="base-slot">
+          <canvas width="16" height="32" aria-hidden="true"></canvas>
+          <div class="lbl"><span class="chip"></span><span>Sleep hier een skin-PNG</span></div>
+        </div>
+        <div class="links">
+          <label class="btn" for="${id}">Skin laden<input type="file" id="${id}" accept="image/png"></label>
+        </div>
+        <div class="links"><a href="https://namemc.com/profile/${encodeURIComponent(player)}" target="_blank" rel="noopener">Skin op NameMC ↗</a></div>
+      </div>
+      <div class="cards"></div>`;
+    const slot = art.querySelector(".base-slot");
+    ["dragenter", "dragover"].forEach((t) => slot.addEventListener(t, (e) => { e.preventDefault(); slot.classList.add("drag"); }));
+    ["dragleave", "drop"].forEach((t) => slot.addEventListener(t, () => slot.classList.remove("drag")));
+    slot.addEventListener("drop", (e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) loadFile(player, f); });
+    art.querySelector("input[type=file]").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) loadFile(player, f); e.target.value = ""; });
+    return art;
+  }
+  function renderBaseSlot(player) {
+    const art = document.querySelector(`.player[data-player="${player}"]`);
+    const b = bases[player];
+    const c = art.querySelector(".base-slot canvas");
+    const ctx = c.getContext("2d");
+    ctx.clearRect(0, 0, 16, 32);
+    ctx.drawImage(flat(toCanvas(b.skin), SF.detectSlim(b.skin), false), 0, 0);
+    const chip = art.querySelector(".chip");
+    chip.className = "chip " + (b.source === "eigen" ? "ok" : "warn");
+    chip.textContent = b.source === "eigen" ? "Eigen skin" : "Voorbeeldbasis";
+  }
+  function renderPlayerCards(player, use3d) {
+    const art = document.querySelector(`.player[data-player="${player}"]`);
+    const box = art.querySelector(".cards");
+    // oude items vervangen
+    for (const e of entries.filter((x) => x.player === player)) byKey.delete(e.key);
+    const fresh = buildPlayer(player);
+    const firstIdx = entries.findIndex((x) => x.player === player);
+    if (firstIdx >= 0) entries.splice(firstIdx, fresh.length, ...fresh);
+    else entries.push(...fresh);
+    box.replaceChildren(...fresh.map((e) => { byKey.set(e.key, e); return cardEl(e); }));
+    if (use3d) fresh.forEach((e) => paintThumb(e, true));
+    renderBaseSlot(player);
+  }
+
+  function updateNotice() {
+    const missing = PLAYERS.filter((p) => bases[p].source !== "eigen");
+    const n = $("#notice");
+    n.hidden = missing.length === 0;
+    if (!missing.length) return;
+    $("#notice-text").textContent = missing.length === PLAYERS.length
+      ? "De echte skins van deze spelers konden niet automatisch worden opgehaald: de Minecraft-servers waren niet bereikbaar toen deze pagina werd gemaakt. Alle kerstskins staan daarom nu op een neutrale voorbeeldbasis. Laad de echte skin van een speler (PNG) en de vijf kerstoutfits worden meteen op die skin gezet."
+      : `Nog ${missing.length} van de ${PLAYERS.length} spelers op de voorbeeldbasis: ${missing.join(", ")}. Laad hun skin (PNG) om hun kerstskins op hun eigen gezicht en kleuren te zetten.`;
+  }
+
+  // ---------- bestanden laden ----------
+  function imageToSkin(img) {
+    const w = img.naturalWidth, h = img.naturalHeight;
+    if (w < 64 || w % 64 !== 0 || (h !== w && h !== w / 2)) throw new Error(`Dit is geen Minecraft-skin: ${w}×${h} pixels. Een skin is 64×64 of 64×32.`);
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const ctx = c.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    return SF.fromImageData(ctx.getImageData(0, 0, w, h));
+  }
+  function loadImage(src) {
+    return new Promise((res, rej) => {
+      const img = new Image();
+      img.onload = () => res(img);
+      img.onerror = () => rej(new Error("Dit bestand kon niet als afbeelding worden gelezen."));
+      img.src = src;
+    });
+  }
+  function readAsDataURL(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = () => rej(new Error("Het bestand kon niet worden gelezen."));
+      r.readAsDataURL(file);
+    });
+  }
+  async function loadFile(player, file) {
+    const status = $("#status");
+    try {
+      const url = await readAsDataURL(file);
+      const skin = imageToSkin(await loadImage(url));
+      bases[player] = { skin, source: "eigen" };
+      try { localStorage.setItem(STORE + player, url); } catch (e) { /* opslag niet beschikbaar */ }
+      renderPlayerCards(player, true);
+      updateNotice();
+      select(`${player}/${(selected && selected.player === player ? selected.def.id : "kerstman")}`, false);
+      status.textContent = `Skin van ${player} geladen. De vijf kerstskins zijn opnieuw gemaakt.`;
+    } catch (err) {
+      status.textContent = `${player}: ${err.message}`;
+      $("#notice").hidden = false;
+    }
+  }
+  function matchPlayer(name) {
+    const n = name.toLowerCase().replace(/\.png$/, "");
+    return PLAYERS.find((p) => n === p.toLowerCase()) || PLAYERS.find((p) => n.includes(p.toLowerCase()));
+  }
+  $("#multi").addEventListener("change", async (e) => {
+    const files = [...e.target.files];
+    e.target.value = "";
+    const unknown = [];
+    for (const f of files) {
+      const p = matchPlayer(f.name);
+      if (p) await loadFile(p, f); else unknown.push(f.name);
+    }
+    if (unknown.length) $("#status").textContent = `Geen speler gevonden in: ${unknown.join(", ")}. Zet de spelersnaam in de bestandsnaam.`;
+  });
+
+  // ---------- 3D-viewer ----------
+  let viewer = null;
+  let animName = reduced ? "idle" : "walk";
+  function makeAnim(name) {
+    const S = window.skinview3d;
+    if (name === "run") { const a = new S.RunningAnimation(); a.speed = 0.75; return a; }
+    if (name === "wave") return new S.WaveAnimation();
+    if (name === "idle") return new S.IdleAnimation();
+    const a = new S.WalkingAnimation(); a.speed = 0.7; return a;
+  }
+  function initViewer() {
+    if (!window.skinview3d) return false;
+    try {
+      const stage = $("#stage");
+      viewer = new skinview3d.SkinViewer({ canvas: $("#viewer"), width: stage.clientWidth || 360, height: stage.clientHeight || 450, zoom: 0.68, fov: 45 });
+      viewer.background = null;
+      viewer.animation = makeAnim(animName);
+      viewer.autoRotate = !reduced;
+      viewer.autoRotateSpeed = 0.55;
+      $("#opt-rotate").checked = !reduced;
+      new ResizeObserver(() => viewer.setSize(stage.clientWidth, stage.clientHeight)).observe(stage);
+      return true;
+    } catch (e) { viewer = null; return false; }
+  }
+  function setLayer(on) {
+    if (!viewer) return;
+    const sk = viewer.playerObject.skin;
+    for (const part of [sk.head, sk.body, sk.rightArm, sk.leftArm, sk.rightLeg, sk.leftLeg]) part.outerLayer.visible = on;
+  }
+  document.querySelectorAll("[data-anim]").forEach((b) => b.addEventListener("click", () => {
+    animName = b.dataset.anim;
+    document.querySelectorAll("[data-anim]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    if (viewer) viewer.animation = makeAnim(animName);
+  }));
+  $("#opt-rotate").addEventListener("change", (e) => { if (viewer) viewer.autoRotate = e.target.checked; });
+  $("#opt-layer").addEventListener("change", (e) => { setLayer(e.target.checked); if (!viewer && selected) showFlat(selected); });
+
+  function showFlat(entry) {
+    const box = $("#flat");
+    box.hidden = false;
+    const layer = $("#opt-layer").checked;
+    const src = layer ? entry.canvas : (() => { const c = toCanvas(entry.skin); c.getContext("2d").clearRect(32, 0, 32, 16); const x = c.getContext("2d"); x.clearRect(0, 32, 64, 16); x.clearRect(0, 48, 16, 16); x.clearRect(48, 48, 16, 16); return c; })();
+    box.replaceChildren(scaled(flat(src, entry.slim, false), 8), scaled(flat(src, entry.slim, true), 8));
+  }
+
+  // ---------- selectie ----------
+  function select(key, scroll) {
+    const entry = byKey.get(key);
+    if (!entry) return;
+    selected = entry;
+    document.querySelectorAll(".card[aria-pressed=true]").forEach((c) => c.setAttribute("aria-pressed", "false"));
+    if (entry.el) entry.el.setAttribute("aria-pressed", "true");
+    const kind = entry.kind;
+    $("#stage").dataset.kind = kind;
+    $("#detail").dataset.kind = kind;
+    $("#stage-tag").textContent = kind === "kerst" ? `Kerst · ${entry.player}` : "Natuur";
+    $("#d-eyebrow").textContent = kind === "kerst" ? `Kerst · ${entry.player}` : "Natuur · bladwezen";
+    $("#d-name").textContent = entry.def.name;
+    const b = kind === "kerst" ? bases[entry.player] : null;
+    $("#d-base").textContent = kind === "kerst"
+      ? (b.source === "eigen" ? `Gemaakt op de eigen skin van ${entry.player}.` : `Gemaakt op de voorbeeldbasis. Laad de skin van ${entry.player} voor de echte versie.`)
+      : "Volledig zelf getekend, geen basis nodig.";
+    $("#d-notes").replaceChildren(...entry.def.notes.map((t) => { const li = document.createElement("li"); li.textContent = t; return li; }));
+    const tex = $("#d-tex").getContext("2d");
+    tex.clearRect(0, 0, 64, 64);
+    tex.drawImage(entry.canvas, 0, 0);
+    $("#d-meta").innerHTML = `${entry.slim ? "slim · armen 3 px" : "classic · armen 4 px"}<br>64 × 64 px · ${countPixels(entry.skin)} pixels gekleurd`;
+    $("#d-swatches").replaceChildren(...palette(entry.skin, 10).map((h) => { const li = document.createElement("li"); li.style.background = h; li.title = h; return li; }));
+    fx.setKind(kind, entry);
+    if (viewer) {
+      viewer.loadSkin(entry.canvas, { model: entry.slim ? "slim" : "default" });
+      setLayer($("#opt-layer").checked);
+    } else showFlat(entry);
+    if (scroll && innerWidth <= 880) $("#stage").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+  }
+  function countPixels(skin) {
+    let n = 0;
+    for (let i = 3; i < skin.data.length; i += 4) if (skin.data[i] > 0) n++;
+    return n;
+  }
+  function step(d) {
+    if (!selected) return;
+    const i = entries.indexOf(selected);
+    const next = entries[(i + d + entries.length) % entries.length];
+    select(next.key, false);
+  }
+  $("#prev").addEventListener("click", () => step(-1));
+  $("#next").addEventListener("click", () => step(1));
+  // ---------- downloads ----------
+  // In de Claude-viewer via de downloads-capability, los geopend via een gewone link.
+  let saver = null;
+  async function initDownloads() {
+    if (!framed) {
+      saver = {
+        save: async ({ filename, data }) => {
+          const url = URL.createObjectURL(data);
+          const a = document.createElement("a");
+          a.href = url; a.download = filename; a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+          return { status: "saved" };
+        },
+      };
+    } else if (window.claude && typeof window.claude.use === "function") {
+      try { saver = await window.claude.use("downloads"); } catch (e) { saver = null; }
+    }
+    $("#dl-row").hidden = !saver;
+  }
+  const toBlob = (c) => new Promise((res) => c.toBlob(res, "image/png"));
+  const fileName = (e) => (e.kind === "kerst" ? `${e.player}-${e.def.id}.png` : `blad-${e.def.id}.png`);
+  async function offer(filename, blob) {
+    const st = $("#dl-status");
+    st.textContent = "";
+    try {
+      const r = await saver.save({ filename, data: blob });
+      if (r && r.status === "saved") st.textContent = `${filename} opgeslagen.`;
+    } catch (err) {
+      const code = err && err.code;
+      if (code === "declined") st.textContent = "Download geannuleerd.";
+      else if (code === "rate_limited") st.textContent = "Er staat al een download klaar. Rond die eerst af.";
+      else { st.textContent = "Downloaden werkt niet in deze weergave."; $("#dl-row").hidden = true; }
+    }
+  }
+  // Minimale ZIP (zonder compressie; PNG's zijn al gecomprimeerd)
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  function crc32(b) { let c = 0xffffffff; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+  function zip(files) {
+    const enc = new TextEncoder(), out = [], central = [];
+    const date = ((2026 - 1980) << 9) | (12 << 5) | 25;
+    let offset = 0;
+    for (const f of files) {
+      const name = enc.encode(f.name), crc = crc32(f.data), n = f.data.length;
+      const lh = new DataView(new ArrayBuffer(30));
+      lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true);
+      lh.setUint16(12, date, true); lh.setUint32(14, crc, true); lh.setUint32(18, n, true); lh.setUint32(22, n, true);
+      lh.setUint16(26, name.length, true);
+      out.push(lh, name, f.data);
+      const ch = new DataView(new ArrayBuffer(46));
+      ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true);
+      ch.setUint16(14, date, true); ch.setUint32(16, crc, true); ch.setUint32(20, n, true); ch.setUint32(24, n, true);
+      ch.setUint16(28, name.length, true); ch.setUint32(42, offset, true);
+      central.push(ch, name);
+      offset += 30 + name.length + n;
+    }
+    const size = central.reduce((a, p) => a + p.byteLength, 0);
+    const end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+    end.setUint32(12, size, true); end.setUint32(16, offset, true);
+    return new Blob([...out, ...central, end], { type: "application/zip" });
+  }
+  $("#d-download").addEventListener("click", async () => {
+    if (!selected || !saver) return;
+    offer(fileName(selected), await toBlob(selected.canvas));
+  });
+  $("#all-download").addEventListener("click", async () => {
+    if (!saver) return;
+    const files = [];
+    for (const e of entries) {
+      const data = new Uint8Array(await (await toBlob(e.canvas)).arrayBuffer());
+      const name = e.kind === "kerst" ? `kerst/${e.player}/${e.def.id}.png` : `natuur/${e.def.id}.png`;
+      files.push({ name, data });
+    }
+    offer("kerst-en-blad-skins.zip", zip(files));
+  });
+
+  // ---------- sneeuw en vallende blaadjes ----------
+  const fx = (() => {
+    const c = $("#fx"), ctx = c.getContext("2d");
+    let kind = "kerst", colors = ["#ffffff"], parts = [], w = 0, h = 0, raf = 0, ground = null;
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    function resize() {
+      const r = c.getBoundingClientRect();
+      w = Math.max(1, Math.round(r.width)); h = Math.max(1, Math.round(r.height));
+      c.width = w; c.height = h;
+      ground = makeGround();
+      if (!parts.length) parts = Array.from({ length: 70 }, () => spawn(true));
+      draw();
+    }
+    function spawn(any) {
+      return { x: rnd(0, w), y: any ? rnd(0, h) : -6, s: Math.random() < 0.3 ? 4 : 2 + Math.round(Math.random()), v: rnd(0.25, 0.8), ph: rnd(0, 6.28), col: Math.floor(Math.random() * 8) };
+    }
+    // Rij blokken onderaan: sneeuwblokken of grasblokken (8×8 pixels per blok)
+    function makeGround() {
+      const B = 8, n = Math.ceil(w / 32) + 1;
+      const g = document.createElement("canvas");
+      g.width = n * B; g.height = B * 2;
+      const gx = g.getContext("2d");
+      const top = kind === "kerst" ? ["#f4f8fb", "#dfe8ef", "#c9d6e0"] : ["#5fa339", "#4e8a2e", "#6fb945"];
+      const dirt = ["#7a5332", "#694528", "#8a6240", "#5a3b22"];
+      for (let x = 0; x < g.width; x++)
+        for (let y = 0; y < g.height; y++) {
+          const h1 = Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1;
+          const lip = 2 + ((x * 7) % 3 === 0 ? 1 : 0);
+          gx.fillStyle = y < lip ? top[Math.floor(h1 * 3)] : dirt[Math.floor(h1 * 4)];
+          gx.fillRect(x, y, 1, 1);
+        }
+      return g;
+    }
+    function draw(t) {
+      ctx.clearRect(0, 0, w, h);
+      const gh = 64;
+      for (const p of parts) {
+        ctx.fillStyle = colors[p.col % colors.length];
+        ctx.globalAlpha = kind === "kerst" ? (p.s >= 4 ? 0.95 : 0.7) : 0.95;
+        ctx.fillRect(Math.round(p.x), Math.round(p.y), p.s, p.s);
+      }
+      ctx.globalAlpha = 1;
+      if (ground) {
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(ground, 0, 0, ground.width, ground.height, 0, h - gh, ground.width * 4, gh);
+      }
+    }
+    function tick(t) {
+      for (const p of parts) {
+        p.y += p.v * (kind === "kerst" ? 1 : 1.3);
+        p.x += Math.sin(t / 900 + p.ph) * (kind === "kerst" ? 0.25 : 0.6);
+        if (p.y > h - 60) Object.assign(p, spawn(false));
+      }
+      draw(t);
+      raf = requestAnimationFrame(tick);
+    }
+    new ResizeObserver(resize).observe(c);
+    return {
+      setKind(k, entry) {
+        const changed = k !== kind;
+        kind = k;
+        colors = k === "kerst" ? ["#ffffff", "#e6f0f7"] : palette(entry.skin, 12).filter((hx) => {
+          const r = parseInt(hx.slice(1, 3), 16), g = parseInt(hx.slice(3, 5), 16), b = parseInt(hx.slice(5, 7), 16);
+          return Math.max(r, g, b) - Math.min(r, g, b) > 40;
+        }).slice(0, 6);
+        if (!colors.length) colors = ["#6fb945"];
+        if (changed && w) ground = makeGround();
+        if (reduced) draw();
+      },
+      start() { if (!reduced && !raf) raf = requestAnimationFrame(tick); },
+    };
+  })();
+
+  // ---------- opstart ----------
+  function boot() {
+    const example = SF.exampleBase();
+    for (const p of PLAYERS) bases[p] = { skin: example, source: "voorbeeld" };
+    const players = $("#players");
+    for (const p of PLAYERS) players.appendChild(playerRow(p));
+    for (const p of PLAYERS) renderPlayerCards(p, false);
+    const nat = SF.NATURE.map((def) => makeEntry("natuur", null, def, SF.leafSkin(def.id)));
+    entries.push(...nat);
+    $("#nature-cards").replaceChildren(...nat.map((e) => { byKey.set(e.key, e); return cardEl(e); }));
+    updateNotice();
+    initViewer();
+    initDownloads();
+    select(`${PLAYERS[1]}/kerstman`, false);
+    fx.start();
+
+    // 3D-snapshots in kleine stukjes, zodat de pagina vlot blijft
+    if (getSnapper()) {
+      const queue = entries.slice();
+      const work = () => {
+        const until = performance.now() + 30;
+        while (queue.length && performance.now() < until) paintThumb(queue.shift(), true);
+        if (queue.length) setTimeout(work, 16);
+      };
+      setTimeout(work, 50);
+    }
+    // ingebouwde en eerder geladen basis-skins
+    for (const p of PLAYERS) {
+      let src = null, stored = false;
+      try { src = localStorage.getItem(STORE + p); stored = !!src; } catch (e) { src = null; }
+      if (!src && EMBEDDED[p]) src = EMBEDDED[p];
+      if (!src) continue;
+      loadImage(src).then((img) => {
+        bases[p] = { skin: imageToSkin(img), source: "eigen" };
+        renderPlayerCards(p, !!getSnapper());
+        updateNotice();
+        if (selected && selected.player === p) select(`${p}/${selected.def.id}`, false);
+      }).catch(() => { if (stored) try { localStorage.removeItem(STORE + p); } catch (e) {} });
+    }
+  }
+  boot();
+})();
+</script>
